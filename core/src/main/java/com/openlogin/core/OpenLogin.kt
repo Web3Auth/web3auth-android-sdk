@@ -15,18 +15,43 @@ class OpenLogin(
         MAINNET, TESTNET, DEVELOPMENT
     }
 
+    data class LoginOptions(
+        val loginProvider: String? = null,
+        val fastLogin: Boolean = false,
+        val redirectUrl: String? = null,
+        val appState: String? = null,
+        val extraLoginOptions: Any? = null
+    )
+
+    data class LogoutOptions(
+        val fastLogin: Boolean = false,
+        val redirectUrl: String? = null,
+        val appState: Any? = null
+    )
+
     private val iframeUrl: String
 
     init {
-        if (network === Network.MAINNET) {
-            this.iframeUrl = "https://app.openlogin.com";
-        } else if (network === Network.TESTNET) {
-            this.iframeUrl = "https://beta.openlogin.com";
-        } else if (iframeUrl != null) {
-            this.iframeUrl = iframeUrl
-        } else {
-            throw Error("Unspecified network and iframeUrl.");
+        when {
+            network === Network.MAINNET -> {
+                this.iframeUrl = "https://app.openlogin.com";
+            }
+            network === Network.TESTNET -> {
+                this.iframeUrl = "https://beta.openlogin.com";
+            }
+            iframeUrl != null -> {
+                this.iframeUrl = iframeUrl
+            }
+            else -> throw Error("Unspecified network and iframeUrl");
         }
+    }
+
+    fun login(
+        opts: LoginOptions = LoginOptions()
+    ): CompletableFuture<Array<String>> {
+        context.startActivity(getLoginIntent(opts))
+        // TODO: Implement login
+        return CompletableFuture.completedFuture(arrayOf("<private key>"))
     }
 
     fun login(
@@ -35,18 +60,50 @@ class OpenLogin(
         redirectUrl: String? = null,
         appState: String? = null,
         extraLoginOptions: Any? = null
-    ): CompletableFuture<Array<String>> {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(iframeUrl))
-        context.startActivity(intent)
-        return CompletableFuture.completedFuture(arrayOf("<private key>"))
+    ) = login(
+        LoginOptions(
+            loginProvider = loginProvider,
+            fastLogin = fastLogin,
+            redirectUrl = redirectUrl,
+            appState = appState,
+            extraLoginOptions = extraLoginOptions
+        )
+    )
+
+    fun getLoginIntent(opts: LoginOptions = LoginOptions()): Intent {
+        return Intent(Intent.ACTION_VIEW, Uri.parse(iframeUrl))
+    }
+
+    fun getLoginIntent(
+        loginProvider: String? = null,
+        fastLogin: Boolean = false,
+        redirectUrl: String? = null,
+        appState: String? = null,
+        extraLoginOptions: Any? = null
+    ) = getLoginIntent(
+        LoginOptions(
+            loginProvider = loginProvider,
+            fastLogin = fastLogin,
+            redirectUrl = redirectUrl,
+            appState = appState,
+            extraLoginOptions = extraLoginOptions
+        )
+    )
+
+    fun logout(opts: LogoutOptions = LogoutOptions()): CompletableFuture<Void> {
+        // TODO: Implement logout
+        return CompletableFuture.completedFuture(null)
     }
 
     fun logout(
         fastLogin: Boolean = false,
         redirectUrl: String? = null,
         appState: Any? = null
-    ): CompletableFuture<Void> {
-        // TODO: Log out
-        return CompletableFuture.completedFuture(null)
-    }
+    ) = logout(
+        LogoutOptions(
+            fastLogin = fastLogin,
+            redirectUrl = redirectUrl,
+            appState = appState
+        )
+    )
 }
