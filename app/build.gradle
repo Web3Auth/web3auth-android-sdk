@@ -43,7 +43,7 @@ dependencies {
     // OpenLogin
     implementation project(":core")
 
-    // Google login
+    // GooglePlay
     implementation 'com.google.android.gms:play-services-auth:19.0.0'
 
     testImplementation 'junit:junit:4.+'

@@ -23,9 +23,9 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         app:buttonSize="standard"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/contentTextView" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/contentTextView" />
 
     <Button
         android:id="@+id/signOutButton"
@@ -33,6 +33,7 @@
         android:layout_height="wrap_content"
         android:text="@string/sign_out"
         android:textAllCaps="false"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/contentTextView"
