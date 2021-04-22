@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        openlogin = OpenLogin(this)
+        openlogin = OpenLogin(this, "CLIENT ID", OpenLogin.Network.TESTNET)
 
         val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)
         val signInWithGoogleTextView = signInWithGoogleButton.getChildAt(0) as TextView
