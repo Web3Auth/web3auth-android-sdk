@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Torus OpenLogin</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="not_logged_in">Not logged in</string>
 </resources>
