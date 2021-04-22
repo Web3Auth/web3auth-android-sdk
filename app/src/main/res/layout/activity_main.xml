@@ -7,7 +7,7 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/text"
+        android:id="@+id/contentTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/not_logged_in"
@@ -17,14 +17,25 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/button"
+    <com.google.android.gms.common.SignInButton
+        android:id="@+id/signInWithGoogleButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        android:text="@string/sign_in_with_google"
+        app:buttonSize="standard"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/text" />
+        app:layout_constraintBottom_toTopOf="@id/contentTextView" />
+
+    <Button
+        android:id="@+id/signOutButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sign_out"
+        android:textAllCaps="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/contentTextView"
+        android:layout_marginTop="8dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
