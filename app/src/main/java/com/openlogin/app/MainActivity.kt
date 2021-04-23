@@ -12,18 +12,18 @@ import com.openlogin.core.OpenLogin
 class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
 
-    private var account: String? = null
+    private var privateKey: String? = null
 
     private fun signIn() {
         openlogin.login("google").thenApply {
-            account = it
+            privateKey = it
             reRender()
         }
     }
 
     private fun signOut() {
         openlogin.logout().thenApply {
-            account = null
+            privateKey = null
             reRender()
         }
     }
@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
-        val account = account
+        val account = privateKey
         if (account != null) {
             contentTextView.text = account
             contentTextView.visibility = View.VISIBLE
