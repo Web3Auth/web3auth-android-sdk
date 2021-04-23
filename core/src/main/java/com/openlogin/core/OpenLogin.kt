@@ -43,27 +43,28 @@ class OpenLogin(
 
     fun login(loginProvider: String): CompletableFuture<String> {
         val pid = randomPid()
-        val params = mapOf(
-            "_clientId" to clientId,
-            "_origin" to redirectUrl.authority,
-            "_originData" to mapOf(redirectUrl.authority to ""),
-            "redirectUrl" to redirectUrl.toString(),
-            "loginProvider" to loginProvider,
-        )
+
         val hash =
-            Uri.Builder().scheme(iframeUrl.scheme).authority(iframeUrl.authority).path("/start")
-                .appendQueryParameter("_pid", pid)
-                .appendQueryParameter("_method", "openlogin_login")
+            Uri.Builder().scheme(iframeUrl.scheme).authority(iframeUrl.authority)
+                .path(iframeUrl.path).appendPath("start")
                 .appendQueryParameter(
                     "b64Params",
-                    Base64.encodeBase64URLSafeString(gson.toJson(params).toByteArray())
-                ).build()
+                    Base64.encodeBase64URLSafeString(
+                        gson.toJson(emptyMap<String, Nothing>()).toByteArray()
+                    )
+                )
+                .appendQueryParameter("_pid", pid)
+                .appendQueryParameter("_method", "openlogin_login")
+                .build()
+
         val url =
-            Uri.Builder().scheme(iframeUrl.scheme).authority(iframeUrl.authority).path("/start")
+            Uri.Builder().scheme(iframeUrl.scheme).authority(iframeUrl.authority)
+                .path(iframeUrl.path).appendPath("start")
                 .encodedFragment(hash.encodedQuery).build()
+
         val intent = Intent(Intent.ACTION_VIEW, url)
         context.startActivity(intent)
-        return CompletableFuture.completedFuture("<private key>")
+        return CompletableFuture.completedFuture(url.toString())
     }
 
     fun logout(): CompletableFuture<Void> {

@@ -33,9 +33,9 @@ class MainActivity : AppCompatActivity() {
         val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
-        val account = privateKey
-        if (account != null) {
-            contentTextView.text = account
+        val key = privateKey
+        if (key != null) {
+            contentTextView.text = key
             contentTextView.visibility = View.VISIBLE
             signInWithGoogleButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
@@ -51,13 +51,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Configure OpenLogin
         openlogin = OpenLogin(
             this,
             clientId = getString(R.string.openlogin_project_id),
             network = OpenLogin.Network.MAINNET,
-            redirectUrl = "https://localhost"
+            redirectUrl = "http://localhost:3000"
         )
 
+        // Setup UI and event handlers
         val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)
         val signInWithGoogleTextView = signInWithGoogleButton.getChildAt(0) as TextView
         signInWithGoogleTextView.text = getString(R.string.sign_in_with_google)
