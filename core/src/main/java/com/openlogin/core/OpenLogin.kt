@@ -81,7 +81,39 @@ class OpenLogin(
     }
 
     fun logout(): CompletableFuture<Void> {
-        // TODO: Implement logout
+        val pid = randomId()
+
+        val origin = Uri.Builder().scheme(redirectUrl.scheme)
+            .encodedAuthority(redirectUrl.encodedAuthority)
+            .toString()
+
+        val params = mapOf(
+            "redirectUrl" to redirectUrl.toString(),
+            "_clientId" to clientId,
+            "_origin" to origin,
+            "_originData" to emptyMap<String, Nothing>()
+        )
+
+        val hash = Uri.Builder().scheme(iframeUrl.scheme)
+            .encodedAuthority(iframeUrl.encodedAuthority)
+            .encodedPath(iframeUrl.encodedPath)
+            .appendPath("start")
+            .appendQueryParameter("b64Params", params.toBase64URLSafeString())
+            .appendQueryParameter("_pid", pid)
+            .appendQueryParameter("_method", Method.LOGOUT)
+            .build().encodedQuery ?: ""
+
+        val url = Uri.Builder().scheme(iframeUrl.scheme)
+            .encodedAuthority(iframeUrl.encodedAuthority)
+            .encodedPath(iframeUrl.encodedPath)
+            .appendPath("start")
+            .encodedFragment(hash)
+            .build()
+
+        val intent = Intent(Intent.ACTION_VIEW, url)
+        context.startActivity(intent)
+
         return CompletableFuture.completedFuture(null)
     }
 }
+
