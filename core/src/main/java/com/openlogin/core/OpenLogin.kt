@@ -3,8 +3,6 @@ package com.openlogin.core
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import com.google.gson.Gson
-import org.apache.commons.codec.binary.Base64
 import java.util.concurrent.CompletableFuture
 
 class OpenLogin(
@@ -19,7 +17,10 @@ class OpenLogin(
     }
 
     companion object {
-        private val gson = Gson()
+        object Method {
+            const val LOGIN = "openlogin_login"
+            const val LOGOUT = "openlogin_logout"
+        }
     }
 
     private val iframeUrl: Uri
@@ -43,15 +44,15 @@ class OpenLogin(
     }
 
     fun login(loginProvider: String): CompletableFuture<String> {
-        val pid = randomPid()
+        val pid = randomId()
 
         val origin = Uri.Builder().scheme(redirectUrl.scheme)
             .encodedAuthority(redirectUrl.encodedAuthority)
             .toString()
 
         val params = mapOf(
-            "redirectUrl" to redirectUrl.toString(),
             "loginProvider" to loginProvider,
+            "redirectUrl" to redirectUrl.toString(),
             "_clientId" to clientId,
             "_origin" to origin,
             "_originData" to emptyMap<String, Nothing>()
@@ -61,11 +62,9 @@ class OpenLogin(
             .encodedAuthority(iframeUrl.encodedAuthority)
             .encodedPath(iframeUrl.encodedPath)
             .appendPath("start")
-            .appendQueryParameter(
-                "b64Params", Base64.encodeBase64URLSafeString(gson.toJson(params).toByteArray())
-            )
+            .appendQueryParameter("b64Params", params.toBase64URLSafeString())
             .appendQueryParameter("_pid", pid)
-            .appendQueryParameter("_method", "openlogin_login")
+            .appendQueryParameter("_method", Method.LOGIN)
             .build().encodedQuery ?: ""
 
         val url = Uri.Builder().scheme(iframeUrl.scheme)
@@ -78,7 +77,7 @@ class OpenLogin(
         val intent = Intent(Intent.ACTION_VIEW, url)
         context.startActivity(intent)
 
-        return CompletableFuture.completedFuture(url.toString())
+        return CompletableFuture.completedFuture("<private key>")
     }
 
     fun logout(): CompletableFuture<Void> {
