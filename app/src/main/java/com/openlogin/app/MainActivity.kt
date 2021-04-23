@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun signIn() {
         openlogin.login("google").thenApply {
-            account = it.first()
+            account = it
             reRender()
         }
     }
@@ -51,7 +51,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        openlogin = OpenLogin(this, "CLIENT ID", OpenLogin.Network.TESTNET)
+        openlogin =
+            OpenLogin(this, getString(R.string.openlogin_project_id), OpenLogin.Network.MAINNET)
 
         val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)
         val signInWithGoogleTextView = signInWithGoogleButton.getChildAt(0) as TextView

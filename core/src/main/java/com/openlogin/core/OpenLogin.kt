@@ -48,10 +48,10 @@ class OpenLogin(
 
     fun login(
         opts: LoginOptions = LoginOptions()
-    ): CompletableFuture<Array<String>> {
+    ): CompletableFuture<String> {
         context.startActivity(getLoginIntent(opts))
         // TODO: Implement login
-        return CompletableFuture.completedFuture(arrayOf("<private key>"))
+        return CompletableFuture.completedFuture("<private key>")
     }
 
     fun login(
