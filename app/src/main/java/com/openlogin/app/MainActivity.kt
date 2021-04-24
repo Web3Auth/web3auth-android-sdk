@@ -1,8 +1,6 @@
 package com.openlogin.app
 
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -14,20 +12,12 @@ import com.openlogin.core.OpenLogin
 class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
 
-    private var privateKey: String? = null
-
     private fun signIn() {
-        openlogin.login("google").thenApply {
-            privateKey = it
-            reRender()
-        }
+        openlogin.login("google")
     }
 
     private fun signOut() {
-        openlogin.logout().thenApply {
-            privateKey = null
-            reRender()
-        }
+        openlogin.logout()
     }
 
     private fun reRender() {
@@ -35,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
-        val key = privateKey
+        val key = openlogin.privKey
         if (key != null) {
             contentTextView.text = key
             contentTextView.visibility = View.VISIBLE
@@ -60,10 +50,6 @@ class MainActivity : AppCompatActivity() {
             network = OpenLogin.Network.MAINNET,
             redirectUrl = "http://localhost/app-links/auth"
         )
-
-        if (intent.action === Intent.ACTION_VIEW) {
-            Log.d("OpenLogin#onCreate redirectUrl=", intent.data.toString())
-        }
 
         // Setup UI and event handlers
         val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)

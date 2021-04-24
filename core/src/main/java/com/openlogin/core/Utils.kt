@@ -5,14 +5,14 @@ import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.binary.Hex
 import java.security.SecureRandom
 
-val secureRandom = SecureRandom()
-val gson = Gson()
+internal val secureRandom = SecureRandom()
+internal val gson = Gson()
 
-internal fun randomId(): String {
+internal fun randomPid(): String {
     val bytes = ByteArray(32)
     secureRandom.nextBytes(bytes)
     return Hex.encodeHexString(bytes)
 }
 
-internal fun Any.toBase64URLSafeString(): String =
-    Base64.encodeBase64URLSafeString(gson.toJson(this).toByteArray())
+internal fun Gson.toBase64URLSafeString(src: Any): String =
+    Base64.encodeBase64URLSafeString(toJson(src).toByteArray())
