@@ -22,6 +22,18 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
+                <!-- Accept URIs: http://localhost[:*]/app-links/* -->
+                <data
+                    android:scheme="http"
+                    android:host="localhost"
+                    android:pathPrefix="/app-links" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
                 <!-- Accept URIs: openlogin://*-->
                 <data android:scheme="openlogin" />
             </intent-filter>

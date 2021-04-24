@@ -1,6 +1,8 @@
 package com.openlogin.app
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -56,8 +58,12 @@ class MainActivity : AppCompatActivity() {
             this,
             clientId = getString(R.string.openlogin_project_id),
             network = OpenLogin.Network.MAINNET,
-            redirectUrl = "http://localhost:3000"
+            redirectUrl = "http://localhost/app-links/auth"
         )
+
+        if (intent.action === Intent.ACTION_VIEW) {
+            Log.d("OpenLogin#onCreate redirectUrl=", intent.data.toString())
+        }
 
         // Setup UI and event handlers
         val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)
