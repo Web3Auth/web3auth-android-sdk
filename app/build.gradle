@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.openlogin.app"
-        minSdkVersion 24
+        minSdkVersion 21
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -42,9 +42,6 @@ dependencies {
 
     // OpenLogin
     implementation project(":core")
-
-    // GooglePlay
-    implementation 'com.google.android.gms:play-services-auth:19.0.0'
 
     // Test
     testImplementation 'junit:junit:4.+'

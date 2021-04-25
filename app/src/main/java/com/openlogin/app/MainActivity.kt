@@ -5,7 +5,6 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.gms.common.SignInButton
 import com.openlogin.core.OpenLogin
 
 
@@ -22,7 +21,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun reRender() {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
-        val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)
+        val signInWithGoogleButton = findViewById<Button>(R.id.signInWithGoogleButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
         val key = openlogin.privKey
@@ -52,9 +51,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         // Setup UI and event handlers
-        val signInWithGoogleButton = findViewById<SignInButton>(R.id.signInWithGoogleButton)
-        val signInWithGoogleTextView = signInWithGoogleButton.getChildAt(0) as TextView
-        signInWithGoogleTextView.text = getString(R.string.sign_in_with_google)
+        val signInWithGoogleButton = findViewById<Button>(R.id.signInWithGoogleButton)
         signInWithGoogleButton.setOnClickListener { signIn() }
 
         val signOutButton = findViewById<Button>(R.id.signOutButton)
