@@ -3,8 +3,8 @@ package com.openlogin.core
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.util.Base64
 import android.util.Log
-import org.apache.commons.codec.binary.Base64
 
 class OpenLogin(
     private val context: Activity,
@@ -21,6 +21,10 @@ class OpenLogin(
         object Method {
             const val LOGIN = "openlogin_login"
             const val LOGOUT = "openlogin_logout"
+        }
+
+        init {
+            installBouncyCastle()
         }
     }
 
@@ -66,7 +70,8 @@ class OpenLogin(
                 if (resultQueryParams != null) {
                     val json =
                         gson.fromJson<Map<String, Any>>(
-                            Base64.decodeBase64(resultQueryParams).toString(Charsets.UTF_8),
+                            Base64.decode(resultQueryParams, Base64.URL_SAFE)
+                                .toString(Charsets.UTF_8),
                             Map::class.java
                         )
                     for (entry in json) resultData[entry.key] = entry.value
@@ -81,7 +86,8 @@ class OpenLogin(
                 if (resultHashParams != null) {
                     val json =
                         gson.fromJson<Map<String, Any>>(
-                            Base64.decodeBase64(resultHashParams).toString(Charsets.UTF_8),
+                            Base64.decode(resultHashParams, Base64.URL_SAFE)
+                                .toString(Charsets.UTF_8),
                             Map::class.java
                         )
                     for (entry in json) resultData[entry.key] = entry.value
@@ -98,20 +104,32 @@ class OpenLogin(
         if (resultStore is Map<*, *>) _store = resultStore
     }
 
-    fun login(loginProvider: String) {
+    private fun request(method: String, params: Map<String, Any>) {
         val pid = randomPid()
 
         val origin = Uri.Builder().scheme(redirectUrl.scheme)
             .encodedAuthority(redirectUrl.encodedAuthority)
             .toString()
 
-        val params = mapOf(
-            "loginProvider" to loginProvider,
+        val mergedParams = mutableMapOf(
             "redirectUrl" to redirectUrl.toString(),
             "_clientId" to clientId,
             "_origin" to origin,
             "_originData" to emptyMap<String, Nothing>()
         )
+        mergedParams.putAll(params)
+
+        /* Add current session
+        val currPrivKey = privKey
+        if (currPrivKey != null) {
+            val userData = mapOf(
+                "clientId" to clientId,
+                "timestamp" to System.currentTimeMillis().toString()
+            )
+
+            mergedParams["_userData"] = userData
+        }
+        */
 
         val hash = Uri.Builder().scheme(iframeUrl.scheme)
             .encodedAuthority(iframeUrl.encodedAuthority)
@@ -119,7 +137,13 @@ class OpenLogin(
             .appendPath("start")
             .appendQueryParameter("_pid", pid)
             .appendQueryParameter("_method", Method.LOGIN)
-            .appendQueryParameter("b64Params", gson.toBase64URLSafeString(params))
+            .appendQueryParameter(
+                "b64Params",
+                Base64.encodeToString(
+                    gson.toJson(mergedParams).toByteArray(Charsets.UTF_8),
+                    Base64.URL_SAFE
+                )
+            )
             .build().encodedQuery ?: ""
 
         val url = Uri.Builder().scheme(iframeUrl.scheme)
@@ -132,37 +156,13 @@ class OpenLogin(
         context.startActivity(Intent(Intent.ACTION_VIEW, url))
     }
 
+    fun login(loginProvider: String) {
+        request(Method.LOGIN, mapOf("loginProvider" to loginProvider))
+    }
+
     fun logout() {
-        val pid = randomPid()
-
-        val origin = Uri.Builder().scheme(redirectUrl.scheme)
-            .encodedAuthority(redirectUrl.encodedAuthority)
-            .toString()
-
-        val params = mapOf(
-            "redirectUrl" to redirectUrl.toString(),
-            "_clientId" to clientId,
-            "_origin" to origin,
-            "_originData" to emptyMap<String, Nothing>()
-        )
-
-        val hash = Uri.Builder().scheme(iframeUrl.scheme)
-            .encodedAuthority(iframeUrl.encodedAuthority)
-            .encodedPath(iframeUrl.encodedPath)
-            .appendPath("start")
-            .appendQueryParameter("_pid", pid)
-            .appendQueryParameter("_method", Method.LOGOUT)
-            .appendQueryParameter("b64Params", gson.toBase64URLSafeString(params))
-            .build().encodedQuery ?: ""
-
-        val url = Uri.Builder().scheme(iframeUrl.scheme)
-            .encodedAuthority(iframeUrl.encodedAuthority)
-            .encodedPath(iframeUrl.encodedPath)
-            .appendPath("start")
-            .encodedFragment(hash)
-            .build()
-
-        context.startActivity(Intent(Intent.ACTION_VIEW, url))
+        request(Method.LOGOUT, emptyMap())
+        this._privKey = null
     }
 }
 

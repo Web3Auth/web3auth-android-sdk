@@ -7,7 +7,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.openlogin.core.OpenLogin
 
-
 class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
 

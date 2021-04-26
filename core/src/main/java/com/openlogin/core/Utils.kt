@@ -1,18 +1,7 @@
 package com.openlogin.core
 
-import com.google.gson.Gson
-import org.apache.commons.codec.binary.Base64
-import org.apache.commons.codec.binary.Hex
-import java.security.SecureRandom
+import org.web3j.crypto.Hash
 
-internal val secureRandom = SecureRandom()
-internal val gson = Gson()
+fun keccak256(bytes: ByteArray) = Hash.sha3(bytes)
 
-internal fun randomPid(): String {
-    val bytes = ByteArray(32)
-    secureRandom.nextBytes(bytes)
-    return Hex.encodeHexString(bytes)
-}
-
-internal fun Gson.toBase64URLSafeString(src: Any): String =
-    Base64.encodeBase64URLSafeString(toJson(src).toByteArray())
+fun keccak256(s: String) = keccak256(s.toByteArray(Charsets.UTF_8))
