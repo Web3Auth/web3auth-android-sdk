@@ -7,20 +7,56 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.openlogin.core.OpenLogin
 
+
 class MainActivity : AppCompatActivity() {
-    val openlogin = OpenLogin()
+    private lateinit var openlogin: OpenLogin
+
+    private fun signIn() {
+        openlogin.login("google")
+    }
+
+    private fun signOut() {
+        openlogin.logout()
+    }
+
+    private fun reRender() {
+        val contentTextView = findViewById<TextView>(R.id.contentTextView)
+        val signInWithGoogleButton = findViewById<Button>(R.id.signInWithGoogleButton)
+        val signOutButton = findViewById<Button>(R.id.signOutButton)
+
+        val key = openlogin.privKey
+        if (key != null) {
+            contentTextView.text = key
+            contentTextView.visibility = View.VISIBLE
+            signInWithGoogleButton.visibility = View.GONE
+            signOutButton.visibility = View.VISIBLE
+        } else {
+            contentTextView.text = getString(R.string.not_logged_in)
+            contentTextView.visibility = View.GONE
+            signInWithGoogleButton.visibility = View.VISIBLE
+            signOutButton.visibility = View.GONE
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val button = findViewById<Button>(R.id.button)
-        val textView = findViewById<TextView>(R.id.text)
-        button.setOnClickListener {
-            openlogin.login().thenApply {
-                textView.visibility = View.VISIBLE
-                textView.text = it.first()
-            }
-        }
+        // Configure OpenLogin
+        openlogin = OpenLogin(
+            this,
+            clientId = getString(R.string.openlogin_project_id),
+            network = OpenLogin.Network.MAINNET,
+            redirectUrl = "http://localhost/app-links/auth"
+        )
+
+        // Setup UI and event handlers
+        val signInWithGoogleButton = findViewById<Button>(R.id.signInWithGoogleButton)
+        signInWithGoogleButton.setOnClickListener { signIn() }
+
+        val signOutButton = findViewById<Button>(R.id.signOutButton)
+        signOutButton.setOnClickListener { signOut() }
+
+        reRender()
     }
 }
