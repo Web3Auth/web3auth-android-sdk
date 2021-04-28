@@ -5,6 +5,10 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
+import com.google.gson.Gson
+import com.openlogin.core.utils.installBouncyCastle
+import com.openlogin.core.utils.toHexString
+import java.security.SecureRandom
 
 class OpenLogin(
     private val context: Activity,
@@ -18,13 +22,23 @@ class OpenLogin(
     }
 
     companion object {
+        init {
+            installBouncyCastle()
+        }
+
         object Method {
             const val LOGIN = "openlogin_login"
             const val LOGOUT = "openlogin_logout"
         }
 
-        init {
-            installBouncyCastle()
+        private val secureRandom = SecureRandom()
+       
+        private val gson = Gson()
+
+        private fun randomPid(): String {
+            val bytes = ByteArray(32)
+            secureRandom.nextBytes(bytes)
+            return bytes.toHexString()
         }
     }
 

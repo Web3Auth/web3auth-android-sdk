@@ -1,6 +1,8 @@
-package com.openlogin.app.utils
+package com.openlogin.core.utils
 
+import org.bitcoinj.core.ECKey
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.web3j.crypto.ECDSASignature
 import java.security.Security
 
 fun installBouncyCastle() {
@@ -17,3 +19,5 @@ fun installBouncyCastle() {
     Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
     Security.insertProviderAt(BouncyCastleProvider(), 1)
 }
+
+fun ECDSASignature.toDER() = ECKey.ECDSASignature(r, s).encodeToDER()

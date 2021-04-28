@@ -46,7 +46,6 @@ dependencies {
     // OpenLogin
     implementation project(":core")
     implementation 'org.web3j:core:4.6.0-android'
-    implementation('org.bitcoinj:bitcoinj-core:0.15.10') { exclude group: 'org.bouncycastle' }
 
     // Test
     testImplementation 'junit:junit:4.+'
