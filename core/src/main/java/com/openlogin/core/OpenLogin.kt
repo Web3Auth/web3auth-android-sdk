@@ -7,7 +7,11 @@ import android.util.Base64
 import android.util.Log
 import com.google.gson.Gson
 import com.openlogin.core.utils.installBouncyCastle
+import com.openlogin.core.utils.toDER
 import com.openlogin.core.utils.toHexString
+import org.web3j.crypto.ECKeyPair
+import org.web3j.crypto.Hash
+import java.math.BigInteger
 import java.security.SecureRandom
 
 class OpenLogin(
@@ -32,7 +36,7 @@ class OpenLogin(
         }
 
         private val secureRandom = SecureRandom()
-       
+
         private val gson = Gson()
 
         private fun randomPid(): String {
@@ -133,24 +137,27 @@ class OpenLogin(
         )
         mergedParams.putAll(params)
 
-        /* Add current session
         val currPrivKey = privKey
         if (currPrivKey != null) {
+            val keyPair = ECKeyPair.create(BigInteger(currPrivKey.padStart(64, '0'), 16))
             val userData = mapOf(
                 "clientId" to clientId,
                 "timestamp" to System.currentTimeMillis().toString()
             )
+            val sig =
+                keyPair.sign(Hash.sha256(gson.toJson(userData).toByteArray(Charsets.UTF_8))).toDER()
 
+            mergedParams["_user"] = "04${keyPair.publicKey.toHexString()}"
+            mergedParams["_userSig"] = Base64.encodeToString(sig, Base64.URL_SAFE)
             mergedParams["_userData"] = userData
         }
-        */
 
         val hash = Uri.Builder().scheme(iframeUrl.scheme)
             .encodedAuthority(iframeUrl.encodedAuthority)
             .encodedPath(iframeUrl.encodedPath)
             .appendPath("start")
             .appendQueryParameter("_pid", pid)
-            .appendQueryParameter("_method", Method.LOGIN)
+            .appendQueryParameter("_method", method)
             .appendQueryParameter(
                 "b64Params",
                 Base64.encodeToString(
@@ -167,6 +174,7 @@ class OpenLogin(
             .encodedFragment(hash)
             .build()
 
+        Log.d("OpenLogin#request", url.toString())
         context.startActivity(Intent(Intent.ACTION_VIEW, url))
     }
 
