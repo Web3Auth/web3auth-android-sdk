@@ -3,8 +3,10 @@ package com.openlogin.app
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.openlogin.core.utils.installBouncyCastle
+import com.openlogin.core.utils.toBase64URLString
 import com.openlogin.core.utils.toDER
 import com.openlogin.core.utils.toHexString
 import org.web3j.crypto.ECKeyPair
@@ -12,32 +14,49 @@ import org.web3j.crypto.Hash
 import java.math.BigInteger
 
 class TestActivity : AppCompatActivity() {
-    private val gson = GsonBuilder().setPrettyPrinting().create()
-    private val key = "7b7afb9be90646859c2fd51e4e79d724753ad7984f18932be0362f31434e9713"
+    private val prettyGson = GsonBuilder().setPrettyPrinting().create()
+    private val defaultGson = Gson()
+    private val key = "<POSTBOX KEY>"
 
     private fun setOnCreate() {
         installBouncyCastle()
 
-        val keyPair = ECKeyPair.create(BigInteger(key, 16))
-        val privHex = keyPair.privateKey.toHexString()
-        val pubHex = "04${keyPair.publicKey.toHexString()}"
+        val keyPair = ECKeyPair.create(BigInteger(key.padStart(64, '0'), 16))
+        val userData = mapOf(
+            "clientId" to getString(R.string.openlogin_project_id),
+            "timestamp" to "1619606866322"
+        )
 
         consoleLog(
             mapOf(
-                "privKey" to privHex,
-                "pubKey" to pubHex,
-                "valid" to (key == privHex && "04ddd0fd09f6375c2bad3cee123283347d0e28a21cde10bb946c2d552515778046d1bbc6fdf7790805903444a7993533e868d9b2039a50f2b570ba10e30289d920" == pubHex)
+                "userData" to defaultGson.toJson(userData),
+                "valid" to (defaultGson.toJson(userData) == "{\"clientId\":\"BEKbgRFZnqnMQFOQYcDdYFq0mOxZGdbVkIxzr-YoRpWWFQD5g04aAMc2xF1sf-qZ0StRkOOHqSkqQozdpwBXAz8\",\"timestamp\":\"1619606866322\"}")
             )
         )
 
-        val msg = Hash.sha256("This is a message.".toByteArray(Charsets.UTF_8))
-        val sign = keyPair.sign(msg).toDER()
-
+        val hash =
+            Hash.sha3(defaultGson.toJson(userData).toByteArray(Charsets.UTF_8))
         consoleLog(
             mapOf(
-                "msg" to msg.toHexString(),
-                "sign" to sign.toHexString(),
-                "valid" to ("a3964890912366008dee9864a4dfddf88446f354b989e340f826e21b2e83bd9c" == msg.toHexString() && "304402207cbbd6ad3ac06fb1eb9d6555ad324e84df708dc1e72071c664df75f13a194d39022003c18b858c154a147427c8407e1372c57b4498bfa4211491b2be2d1f81e15872" == sign.toHexString())
+                "hash" to hash.toHexString(),
+                "valid" to (hash.toHexString() == "a9de071c223fda7c19e6589a4617dc7eb5e39da7b12711968423e5ccc68de7d9")
+            )
+        )
+
+        val user = "04${keyPair.publicKey.toString(16)}"
+        consoleLog(
+            mapOf(
+                "user" to user,
+                "valid" to (user == "04b99258b5f4c0267a9b932ddc6e08245368a322b253b54d971320c0ab65e47f446f46f843e319fd9e25d85400618e9a3d502a1222d5a273efdc25ddf0e2b9de2f")
+            )
+        )
+
+        val sig = keyPair.sign(hash).toDER()
+        consoleLog(
+            mapOf(
+                "sig" to sig.toBase64URLString(),
+                "valid" to (sig.toBase64URLString() ==
+                        "MEQCIDT6s_pGtF_YvQbWOvPZov0puElsrYOXZY_igBM1ZZTvAiAmHP45Kvwf3WPmFCbxvrgV4FSA-CBV1G2pcWNHOdiifg")
             )
         )
     }
@@ -48,7 +67,7 @@ class TestActivity : AppCompatActivity() {
         var text = view.text.toString()
         if (text.isNotEmpty()) text += "\n"
 
-        text += if (msg is String) msg else gson.toJson(msg)
+        text += if (msg is String) msg else prettyGson.toJson(msg)
         view.text = text
     }
 

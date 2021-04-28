@@ -20,4 +20,4 @@ fun installBouncyCastle() {
     Security.insertProviderAt(BouncyCastleProvider(), 1)
 }
 
-fun ECDSASignature.toDER() = ECKey.ECDSASignature(r, s).encodeToDER()
+fun ECDSASignature.toDER(): ByteArray = ECKey.ECDSASignature(r, s).encodeToDER()

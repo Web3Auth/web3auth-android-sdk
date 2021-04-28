@@ -3,12 +3,9 @@ package com.openlogin.core
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
-import android.util.Base64
 import android.util.Log
 import com.google.gson.Gson
-import com.openlogin.core.utils.installBouncyCastle
-import com.openlogin.core.utils.toDER
-import com.openlogin.core.utils.toHexString
+import com.openlogin.core.utils.*
 import org.web3j.crypto.ECKeyPair
 import org.web3j.crypto.Hash
 import java.math.BigInteger
@@ -88,8 +85,7 @@ class OpenLogin(
                 if (resultQueryParams != null) {
                     val json =
                         gson.fromJson<Map<String, Any>>(
-                            Base64.decode(resultQueryParams, Base64.URL_SAFE)
-                                .toString(Charsets.UTF_8),
+                            bytesFromBase64URLString(resultQueryParams).toString(Charsets.UTF_8),
                             Map::class.java
                         )
                     for (entry in json) resultData[entry.key] = entry.value
@@ -104,8 +100,7 @@ class OpenLogin(
                 if (resultHashParams != null) {
                     val json =
                         gson.fromJson<Map<String, Any>>(
-                            Base64.decode(resultHashParams, Base64.URL_SAFE)
-                                .toString(Charsets.UTF_8),
+                            bytesFromBase64URLString(resultHashParams).toString(Charsets.UTF_8),
                             Map::class.java
                         )
                     for (entry in json) resultData[entry.key] = entry.value
@@ -140,15 +135,16 @@ class OpenLogin(
         val currPrivKey = privKey
         if (currPrivKey != null) {
             val keyPair = ECKeyPair.create(BigInteger(currPrivKey.padStart(64, '0'), 16))
+            mergedParams["_user"] = "04${keyPair.publicKey.toString(16)}"
+
             val userData = mapOf(
                 "clientId" to clientId,
                 "timestamp" to System.currentTimeMillis().toString()
             )
-            val sig =
-                keyPair.sign(Hash.sha256(gson.toJson(userData).toByteArray(Charsets.UTF_8))).toDER()
+            val userSig =
+                keyPair.sign(Hash.sha3(gson.toJson(userData).toByteArray(Charsets.UTF_8))).toDER()
 
-            mergedParams["_user"] = "04${keyPair.publicKey.toHexString()}"
-            mergedParams["_userSig"] = Base64.encodeToString(sig, Base64.URL_SAFE)
+            mergedParams["_userSig"] = userSig.toBase64URLString()
             mergedParams["_userData"] = userData
         }
 
@@ -160,10 +156,7 @@ class OpenLogin(
             .appendQueryParameter("_method", method)
             .appendQueryParameter(
                 "b64Params",
-                Base64.encodeToString(
-                    gson.toJson(mergedParams).toByteArray(Charsets.UTF_8),
-                    Base64.URL_SAFE
-                )
+                gson.toJson(mergedParams).toByteArray(Charsets.UTF_8).toBase64URLString(),
             )
             .build().encodedQuery ?: ""
 
@@ -174,7 +167,6 @@ class OpenLogin(
             .encodedFragment(hash)
             .build()
 
-        Log.d("OpenLogin#request", url.toString())
         context.startActivity(Intent(Intent.ACTION_VIEW, url))
     }
 
