@@ -45,7 +45,6 @@ dependencies {
 
     // OpenLogin
     implementation project(":core")
-    implementation 'org.web3j:core:4.6.0-android'
 
     // Test
     testImplementation 'junit:junit:4.+'

@@ -50,6 +50,18 @@ class OpenLogin(
     val privKey: String?
         get() = _privKey
 
+    private var _walletKey: String? = null
+    val walletKey: String?
+        get() = _walletKey
+
+    private var _tKey: String? = null
+    val tKey: String?
+        get() = _tKey
+
+    private var _oAuthPrivateKey: String? = null
+    val oAuthPrivateKey: String?
+        get() = _oAuthPrivateKey
+
     private var _store: Map<*, *>? = null
     val store: Map<*, *>?
         get() = _store
@@ -112,6 +124,15 @@ class OpenLogin(
 
         val resultPrivKey = resultData["privKey"]
         if (resultPrivKey is String) _privKey = resultPrivKey
+
+        val resultWalletKey = resultData["walletKey"]
+        if (resultWalletKey is String) _walletKey = resultWalletKey
+
+        val resultTKey = resultData["tKey"]
+        if (resultTKey is String) _tKey = resultTKey
+
+        val resultOAuthPrivateKey = resultData["oAuthPrivateKey"]
+        if (resultOAuthPrivateKey is String) _oAuthPrivateKey = resultOAuthPrivateKey
 
         val resultStore = resultData["store"]
         if (resultStore is Map<*, *>) _store = resultStore
