@@ -1,5 +1,6 @@
 package com.openlogin.app
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -8,8 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.openlogin.core.OpenLogin
 
 const val APP_LINK_BASE_URL = "http://localhost/app-links"
-const val APP_LINK_LOGIN_URL = "${APP_LINK_BASE_URL}/login"
-const val APP_LINK_LOGOUT_URL = "${APP_LINK_BASE_URL}/logout"
+const val APP_LINK_LOGGED_IN_URL = "${APP_LINK_BASE_URL}/logged-in"
+const val APP_LINK_LOGGED_OUT_URL = "${APP_LINK_BASE_URL}/logged-out"
 
 class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
@@ -17,7 +18,7 @@ class MainActivity : AppCompatActivity() {
     private fun signIn() {
         openlogin.login(
             mapOf(
-                "redirectUrl" to APP_LINK_LOGIN_URL
+                "redirectUrl" to APP_LINK_LOGGED_IN_URL
             )
         )
     }
@@ -25,7 +26,7 @@ class MainActivity : AppCompatActivity() {
     private fun signOut() {
         openlogin.logout(
             mapOf(
-                "redirectUrl" to APP_LINK_LOGOUT_URL
+                "redirectUrl" to APP_LINK_LOGGED_OUT_URL
             )
         )
     }
@@ -58,9 +59,13 @@ class MainActivity : AppCompatActivity() {
             this, mapOf(
                 "clientId" to getString(R.string.openlogin_project_id),
                 "network" to "mainnet",
-                "redirectUrl" to APP_LINK_LOGIN_URL
+                "redirectUrl" to APP_LINK_LOGGED_IN_URL
             )
         )
+
+        val redirectUrl = intent.data
+        if (redirectUrl != null && redirectUrl.path == Uri.parse(APP_LINK_LOGGED_IN_URL).path)
+            openlogin.onLoggedIn(redirectUrl)
 
         // Setup UI and event handlers
         val signInWithGoogleButton = findViewById<Button>(R.id.signInWithGoogleButton)

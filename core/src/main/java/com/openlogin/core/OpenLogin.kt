@@ -18,6 +18,14 @@ class OpenLogin(
     val state: Map<String, Any>
         get() = _state
 
+    fun onLoggedIn(uri: Uri) {
+        val hash = uri.fragment ?: return
+        _state = gson.fromJson<Map<String, Any>>(
+            bytesFromBase64URLString(hash).toString(Charsets.UTF_8),
+            Map::class.java
+        )
+    }
+
     fun login(params: Map<String, Any> = emptyMap()) {
         val url = Uri.Builder().scheme("http")
             .encodedAuthority("10.0.2.2:3000")
