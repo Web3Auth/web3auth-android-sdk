@@ -197,7 +197,13 @@ class OpenLogin(
 
     fun logout() {
         request(Method.LOGOUT, emptyMap())
+
+        // Cleanup
         this._privKey = null
+        this._walletKey = null
+        this._tKey = null
+        this._oAuthPrivateKey = null
+        this._store = null
     }
 }
 
