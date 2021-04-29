@@ -11,9 +11,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Openlogin">
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
@@ -24,9 +26,9 @@
 
                 <!-- Accept URIs: http://localhost[:*]/app-links/* -->
                 <data
-                    android:scheme="http"
                     android:host="localhost"
-                    android:pathPrefix="/app-links" />
+                    android:pathPrefix="/app-links"
+                    android:scheme="http" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -34,10 +36,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <!-- Accept URIs: openlogin://*-->
+                <!-- Accept URIs: openlogin://* -->
                 <data android:scheme="openlogin" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>
