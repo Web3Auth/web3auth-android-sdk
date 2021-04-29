@@ -191,8 +191,21 @@ class OpenLogin(
         context.startActivity(Intent(Intent.ACTION_VIEW, url))
     }
 
-    fun login(loginProvider: String) {
-        request(Method.LOGIN, mapOf("loginProvider" to loginProvider))
+    fun login(loginProvider: String? = null) {
+        val params = mapOf(
+            "redirectUrl" to redirectUrl.toString(),
+            "loginProvider" to loginProvider
+        )
+        val url = Uri.Builder().scheme("http")
+            .encodedAuthority("10.0.2.2:3000")
+            .appendPath("login.html")
+            .appendQueryParameter("clientId", clientId)
+            .appendQueryParameter(
+                "params",
+                gson.toJson(params).toByteArray(Charsets.UTF_8).toBase64URLString()
+            )
+            .build()
+        context.startActivity(Intent(Intent.ACTION_VIEW, url))
     }
 
     fun logout() {
