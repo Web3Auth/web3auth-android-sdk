@@ -7,15 +7,27 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.openlogin.core.OpenLogin
 
+const val APP_LINK_BASE_URL = "http://localhost/app-links"
+const val APP_LINK_LOGIN_URL = "${APP_LINK_BASE_URL}/login"
+const val APP_LINK_LOGOUT_URL = "${APP_LINK_BASE_URL}/logout"
+
 class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
 
     private fun signIn() {
-        openlogin.login("google")
+        openlogin.login(
+            mapOf(
+                "redirectUrl" to APP_LINK_LOGIN_URL
+            )
+        )
     }
 
     private fun signOut() {
-        openlogin.logout()
+        openlogin.logout(
+            mapOf(
+                "redirectUrl" to APP_LINK_LOGOUT_URL
+            )
+        )
     }
 
     private fun reRender() {
@@ -23,8 +35,8 @@ class MainActivity : AppCompatActivity() {
         val signInWithGoogleButton = findViewById<Button>(R.id.signInWithGoogleButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
-        val key = openlogin.privKey
-        if (key != null) {
+        val key = openlogin.state["privKey"]
+        if (key is String) {
             contentTextView.text = key
             contentTextView.visibility = View.VISIBLE
             signInWithGoogleButton.visibility = View.GONE
@@ -43,10 +55,11 @@ class MainActivity : AppCompatActivity() {
 
         // Configure OpenLogin
         openlogin = OpenLogin(
-            this,
-            clientId = getString(R.string.openlogin_project_id),
-            network = OpenLogin.Network.MAINNET,
-            redirectUrl = "http://localhost/app-links/auth"
+            this, mapOf(
+                "clientId" to getString(R.string.openlogin_project_id),
+                "network" to "mainnet",
+                "redirectUrl" to APP_LINK_LOGIN_URL
+            )
         )
 
         // Setup UI and event handlers

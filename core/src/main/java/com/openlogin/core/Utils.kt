@@ -1,9 +1,6 @@
-package com.openlogin.core.utils
+package com.openlogin.core
 
 import android.util.Base64
-import org.web3j.utils.Numeric
-
-fun ByteArray.toHexString(): String = Numeric.toHexStringNoPrefix(this)
 
 private const val base64URLFlags = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
 
