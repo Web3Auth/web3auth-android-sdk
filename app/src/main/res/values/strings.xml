@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Torus OpenLogin</string>
-    <string name="openlogin_project_id">BEKbgRFZnqnMQFOQYcDdYFq0mOxZGdbVkIxzr-YoRpWWFQD5g04aAMc2xF1sf-qZ0StRkOOHqSkqQozdpwBXAz8</string>
-    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="openlogin_project_id">BC01p_js5KUIjvqYYAzWlDKt6ft--5joV0TbZEKO7YbDTqnmU5v0sq_4wgkyh0QAfZZAi-v6nKD4kcxkAqPuj8U</string>
+    <string name="sign_in">Sign in</string>
     <string name="not_logged_in">Not logged in</string>
     <string name="sign_out">Sign out</string>
 </resources>
