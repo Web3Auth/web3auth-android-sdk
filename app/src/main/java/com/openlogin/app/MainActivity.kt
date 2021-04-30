@@ -18,7 +18,8 @@ class MainActivity : AppCompatActivity() {
     private fun signIn() {
         openlogin.login(
             mapOf(
-                "redirectUrl" to APP_LINK_LOGGED_IN_URL
+                "redirectUrl" to APP_LINK_LOGGED_IN_URL,
+                "loginProvider" to "discord"
             )
         )
     }
