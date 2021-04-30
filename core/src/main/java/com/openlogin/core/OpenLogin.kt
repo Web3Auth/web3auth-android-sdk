@@ -8,7 +8,8 @@ import com.google.gson.Gson
 class OpenLogin(
     private val context: Context,
     sdkUrl: String,
-    params: Map<String, Any>
+    params: Map<String, Any>,
+    resultUrl: Uri? = null
 ) {
     private val gson = Gson()
 
@@ -19,12 +20,14 @@ class OpenLogin(
     val state: Map<String, Any>
         get() = _state
 
-    fun onLoggedIn(uri: Uri) {
-        val hash = uri.fragment ?: return
-        _state = gson.fromJson<Map<String, Any>>(
-            decodeBase64URLString(hash).toString(Charsets.UTF_8),
-            Map::class.java
-        )
+    init {
+        val hash = resultUrl?.fragment
+        if (hash != null) {
+            _state = gson.fromJson<Map<String, Any>>(
+                decodeBase64URLString(hash).toString(Charsets.UTF_8),
+                Map::class.java
+            )
+        }
     }
 
     private fun request(path: String, params: Map<String, Any>) {

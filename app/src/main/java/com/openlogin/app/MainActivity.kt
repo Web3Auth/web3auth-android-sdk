@@ -1,6 +1,5 @@
 package com.openlogin.app
 
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -8,28 +7,15 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.openlogin.core.OpenLogin
 
-const val APP_LINK_BASE_URL = "http://localhost/app-links"
-const val APP_LINK_LOGGED_IN_URL = "${APP_LINK_BASE_URL}/logged-in"
-const val APP_LINK_LOGGED_OUT_URL = "${APP_LINK_BASE_URL}/logged-out"
-
 class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
 
     private fun signIn() {
-        openlogin.login(
-            mapOf(
-                "redirectUrl" to APP_LINK_LOGGED_IN_URL,
-                "loginProvider" to "discord"
-            )
-        )
+        openlogin.login(mapOf("loginProvider" to "discord"))
     }
 
     private fun signOut() {
-        openlogin.logout(
-            mapOf(
-                "redirectUrl" to APP_LINK_LOGGED_OUT_URL
-            )
-        )
+        openlogin.logout()
     }
 
     private fun reRender() {
@@ -38,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
         val key = openlogin.state["privKey"]
-        if (key is String) {
+        if (key is String && key.isNotEmpty()) {
             contentTextView.text = key
             contentTextView.visibility = View.VISIBLE
             signInWithGoogleButton.visibility = View.GONE
@@ -62,13 +48,10 @@ class MainActivity : AppCompatActivity() {
             params = mapOf(
                 "clientId" to getString(R.string.openlogin_project_id),
                 "network" to "mainnet",
-                "redirectUrl" to APP_LINK_LOGGED_IN_URL
-            )
+                "redirectUrl" to "http://localhost/app-links/auth"
+            ),
+            resultUrl = intent.data
         )
-
-        val redirectUrl = intent.data
-        if (redirectUrl != null && redirectUrl.path == Uri.parse(APP_LINK_LOGGED_IN_URL).path)
-            openlogin.onLoggedIn(redirectUrl)
 
         // Setup UI and event handlers
         val signInWithGoogleButton = findViewById<Button>(R.id.signInWithGoogleButton)
