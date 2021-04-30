@@ -7,11 +7,12 @@ import com.google.gson.Gson
 
 class OpenLogin(
     private val context: Context,
+    sdkUrl: String,
     params: Map<String, Any>
 ) {
     private val gson = Gson()
 
-    private val sdkUrl = Uri.parse("http://10.0.2.2:3000")
+    private val sdkUrl = Uri.parse(sdkUrl)
     private val initParams = params
 
     private var _state: Map<String, Any> = emptyMap()
