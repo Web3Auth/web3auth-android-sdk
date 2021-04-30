@@ -7,9 +7,9 @@ import com.google.gson.Gson
 
 class OpenLogin(
     private val context: Context,
-    sdkUrl: String,
     params: Map<String, Any>,
-    resultUrl: Uri? = null
+    resultUrl: Uri? = null,
+    sdkUrl: String = "https://sdk.openlogin.com",
 ) {
     private val gson = Gson()
 

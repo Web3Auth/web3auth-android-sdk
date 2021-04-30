@@ -44,7 +44,6 @@ class MainActivity : AppCompatActivity() {
         // Configure OpenLogin
         openlogin = OpenLogin(
             this,
-            sdkUrl = "http://10.0.2.2:3000",
             params = mapOf(
                 "clientId" to getString(R.string.openlogin_project_id),
                 "network" to "mainnet",
