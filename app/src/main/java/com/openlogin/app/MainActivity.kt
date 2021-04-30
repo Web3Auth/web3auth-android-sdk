@@ -11,7 +11,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
 
     private fun signIn() {
-        openlogin.login(mapOf("loginProvider" to "discord"))
+        openlogin.login()
     }
 
     private fun signOut() {
@@ -20,19 +20,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun reRender() {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
-        val signInWithGoogleButton = findViewById<Button>(R.id.signInWithGoogleButton)
+        val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
         val key = openlogin.state["privKey"]
         if (key is String && key.isNotEmpty()) {
             contentTextView.text = key
             contentTextView.visibility = View.VISIBLE
-            signInWithGoogleButton.visibility = View.GONE
+            signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
         } else {
             contentTextView.text = getString(R.string.not_logged_in)
             contentTextView.visibility = View.GONE
-            signInWithGoogleButton.visibility = View.VISIBLE
+            signInButton.visibility = View.VISIBLE
             signOutButton.visibility = View.GONE
         }
     }
@@ -54,8 +54,8 @@ class MainActivity : AppCompatActivity() {
         )
 
         // Setup UI and event handlers
-        val signInWithGoogleButton = findViewById<Button>(R.id.signInWithGoogleButton)
-        signInWithGoogleButton.setOnClickListener { signIn() }
+        val signInButton = findViewById<Button>(R.id.signInButton)
+        signInButton.setOnClickListener { signIn() }
 
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         signOutButton.setOnClickListener { signOut() }

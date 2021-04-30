@@ -30,7 +30,7 @@ class OpenLogin(
         }
     }
 
-    private fun request(path: String, params: Map<String, Any>) {
+    private fun request(path: String, params: Map<String, Any>?) {
         val hash = gson.toJson(
             mapOf(
                 "init" to initParams,
@@ -46,11 +46,11 @@ class OpenLogin(
         context.startActivity(Intent(Intent.ACTION_VIEW, url))
     }
 
-    fun login(params: Map<String, Any> = emptyMap()) {
+    fun login(params: Map<String, Any>? = null) {
         request("login.html", params)
     }
 
-    fun logout(params: Map<String, Any> = emptyMap()) {
+    fun logout(params: Map<String, Any>? = null) {
         request("logout.html", params)
     }
 }
