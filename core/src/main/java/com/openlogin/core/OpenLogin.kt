@@ -21,12 +21,12 @@ class OpenLogin(
     fun onLoggedIn(uri: Uri) {
         val hash = uri.fragment ?: return
         _state = gson.fromJson<Map<String, Any>>(
-            bytesFromBase64URLString(hash).toString(Charsets.UTF_8),
+            decodeBase64URLString(hash).toString(Charsets.UTF_8),
             Map::class.java
         )
     }
 
-    fun login(params: Map<String, Any> = emptyMap()) {
+    private fun request(path: String, params: Map<String, Any>) {
         val hash = gson.toJson(
             mapOf(
                 "init" to initParams,
@@ -36,26 +36,17 @@ class OpenLogin(
         val url = Uri.Builder().scheme(sdkUrl.scheme)
             .encodedAuthority(sdkUrl.encodedAuthority)
             .encodedPath(sdkUrl.encodedPath)
-            .appendPath("login.html")
+            .appendPath(path)
             .fragment(hash)
             .build()
         context.startActivity(Intent(Intent.ACTION_VIEW, url))
     }
 
+    fun login(params: Map<String, Any> = emptyMap()) {
+        request("login.html", params)
+    }
+
     fun logout(params: Map<String, Any> = emptyMap()) {
-        val hash = gson.toJson(
-            mapOf(
-                "init" to initParams,
-                "params" to params
-            )
-        ).toByteArray(Charsets.UTF_8).toBase64URLString()
-        val url = Uri.Builder().scheme(sdkUrl.scheme)
-            .encodedAuthority(sdkUrl.encodedAuthority)
-            .encodedPath(sdkUrl.encodedPath)
-            .appendPath("logout.html")
-            .fragment(hash)
-            .build()
-        context.startActivity(Intent(Intent.ACTION_VIEW, url))
-        context.startActivity(Intent(Intent.ACTION_VIEW, url))
+        request("logout.html", params)
     }
 }
