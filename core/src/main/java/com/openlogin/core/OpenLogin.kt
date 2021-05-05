@@ -73,8 +73,12 @@ class OpenLogin(
     fun login(
         loginProvider: Provider,
         fastLogin: Boolean? = null,
-        relogin: Boolean? = null, skipTKey: Boolean? = null, getWalletKey: Boolean? = null,
-        extraLoginOptions: Map<String, Any>? = null
+        relogin: Boolean? = null,
+        skipTKey: Boolean? = null,
+        getWalletKey: Boolean? = null,
+        extraLoginOptions: Map<String, Any>? = null,
+        redirectUrl: Uri? = null,
+        appState: String? = null,
     ) {
         val params = mutableMapOf<String, Any>(
             "loginProvider" to loginProvider.name.toLowerCase(Locale.ROOT),
@@ -84,10 +88,24 @@ class OpenLogin(
         if (skipTKey != null) params["skipTKey"] = skipTKey
         if (getWalletKey != null) params["getWalletKey"] = getWalletKey
         if (extraLoginOptions != null) params["extraLoginOptions"] = extraLoginOptions
+        if (redirectUrl != null) params["redirectUrl"] = redirectUrl.toString()
+        if (appState != null) params["appState"] = appState
         login(params)
     }
 
     fun logout(params: Map<String, Any>? = null) {
         request("logout", params)
+    }
+
+    fun logout(
+        fastLogin: Boolean? = null,
+        redirectUrl: Uri? = null,
+        appState: String? = null
+    ) {
+        val params = mutableMapOf<String, Any>()
+        if (fastLogin != null) params["fastLogin"] = fastLogin
+        if (redirectUrl != null) params["redirectUrl"] = redirectUrl.toString()
+        if (appState != null) params["appState"] = appState
+        logout(params)
     }
 }
