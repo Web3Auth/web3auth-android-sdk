@@ -4,23 +4,39 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import com.google.gson.Gson
+import java.util.*
 
 class OpenLogin(
     private val context: Context,
-    params: Map<String, Any>,
+    clientId: String,
+    network: Network,
+    redirectUrl: Uri? = null,
     resultUrl: Uri? = null,
     sdkUrl: String = "https://sdk.openlogin.com",
 ) {
+    enum class Network {
+        TESTNET, MAINNET
+    }
+
     private val gson = Gson()
 
     private val sdkUrl = Uri.parse(sdkUrl)
-    private val initParams = params
+    private val initParams: Map<String, Any>
 
     private var _state: Map<String, Any> = emptyMap()
     val state: Map<String, Any>
         get() = _state
 
     init {
+        // Build init params
+        val initParams = mutableMapOf(
+            "clientId" to clientId,
+            "network" to network.name.toLowerCase(Locale.ROOT)
+        )
+        if (redirectUrl != null) initParams["redirectUrl"] = redirectUrl.toString()
+        this.initParams = initParams
+
+        // Parse result hash
         val hash = resultUrl?.fragment
         if (hash != null) {
             _state = gson.fromJson<Map<String, Any>>(
@@ -47,10 +63,10 @@ class OpenLogin(
     }
 
     fun login(params: Map<String, Any>? = null) {
-        request("login.html", params)
+        request("login", params)
     }
 
     fun logout(params: Map<String, Any>? = null) {
-        request("logout.html", params)
+        request("logout", params)
     }
 }
