@@ -18,6 +18,10 @@ class OpenLogin(
         TESTNET, MAINNET
     }
 
+    enum class Provider {
+        GOOGLE, FACEBOOK, REDDIT, DISCORD, TWITCH, APPLE, LINE, GITHUB, KAKAO, LINKEDIN, TWITTER, WEIBO, WECHAT, EMAIL_PASSWORDLESS, WEBAUTHN
+    }
+
     private val gson = Gson()
 
     private val sdkUrl = Uri.parse(sdkUrl)
@@ -64,6 +68,23 @@ class OpenLogin(
 
     fun login(params: Map<String, Any>? = null) {
         request("login", params)
+    }
+
+    fun login(
+        loginProvider: Provider,
+        fastLogin: Boolean? = null,
+        relogin: Boolean? = null, skipTKey: Boolean? = null, getWalletKey: Boolean? = null,
+        extraLoginOptions: Map<String, Any>? = null
+    ) {
+        val params = mutableMapOf<String, Any>(
+            "loginProvider" to loginProvider.name.toLowerCase(Locale.ROOT),
+        )
+        if (fastLogin != null) params["fastLogin"] = fastLogin
+        if (relogin != null) params["relogin"] = relogin
+        if (skipTKey != null) params["skipTKey"] = skipTKey
+        if (getWalletKey != null) params["getWalletKey"] = getWalletKey
+        if (extraLoginOptions != null) params["extraLoginOptions"] = extraLoginOptions
+        login(params)
     }
 
     fun logout(params: Map<String, Any>? = null) {
