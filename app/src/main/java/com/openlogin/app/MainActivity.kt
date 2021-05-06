@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
-        val key = openlogin.state["privKey"]
+        val key = openlogin.state.privKey
         if (key is String && key.isNotEmpty()) {
             contentTextView.text = key
             contentTextView.visibility = View.VISIBLE
