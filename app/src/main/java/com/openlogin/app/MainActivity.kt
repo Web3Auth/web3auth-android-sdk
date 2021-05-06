@@ -60,4 +60,9 @@ class MainActivity : AppCompatActivity() {
 
         reRender()
     }
+
+    override fun onStart() {
+        super.onStart()
+        openlogin.warmup()
+    }
 }

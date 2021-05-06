@@ -1,9 +1,11 @@
 package com.openlogin.core
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
+import android.util.Log
+import androidx.browser.customtabs.*
 import com.google.gson.Gson
 import java.util.*
 
@@ -31,6 +33,8 @@ class OpenLogin(
     )
 
     private val gson = Gson()
+    private var customTabsConnection: CustomTabsServiceConnection? = null
+    private var customTabsSession: CustomTabsSession? = null
 
     private val sdkUrl = Uri.parse(sdkUrl)
     private val initParams: Map<String, Any>
@@ -72,13 +76,45 @@ class OpenLogin(
             .fragment(hash)
             .build()
 
-        val customTabsPackages = context.getCustomTabsPackages()
-        if (customTabsPackages.isNotEmpty()) {
-            val customTabs = CustomTabsIntent.Builder().build()
+        val customTabsConnection = this.customTabsConnection
+        val customTabsSession = this.customTabsSession
+        if (customTabsConnection != null && customTabsSession != null) {
+            val customTabs = CustomTabsIntent.Builder()
+                .setSession(customTabsSession)
+                .build()
             customTabs.launchUrl(context, url)
         } else {
             context.startActivity(Intent(Intent.ACTION_VIEW, url))
         }
+    }
+
+    fun warmup() {
+        if (customTabsConnection != null) return; // Already connecting/connected
+
+        val customTabsPackages = context.getCustomTabsPackages()
+        if (customTabsPackages.isEmpty()) return; // Custom Tabs is not available
+
+        // Pick a browser (TODO: Allow user to pick his/her preferred browser)
+        val browser = customTabsPackages.first()
+
+        // Connect Custom Tabs service
+        val connection = object : CustomTabsServiceConnection() {
+            override fun onCustomTabsServiceConnected(
+                name: ComponentName,
+                client: CustomTabsClient
+            ) {
+                if (!client.warmup(0)) Log.e(javaClass.name, "Failed to warmup Custom Tabs client")
+                customTabsSession = client.newSession(CustomTabsCallback())
+            }
+
+            override fun onServiceDisconnected(name: ComponentName?) {
+                customTabsConnection = null
+                customTabsSession = null
+            }
+        }
+        if (CustomTabsClient.bindCustomTabsService(context, browser, connection)) {
+            customTabsConnection = connection
+        } else Log.e(javaClass.name, "Failed to connect Custom Tabs service")
     }
 
     fun login(params: Map<String, Any>? = null) {
