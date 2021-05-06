@@ -22,13 +22,20 @@ class OpenLogin(
         GOOGLE, FACEBOOK, REDDIT, DISCORD, TWITCH, APPLE, LINE, GITHUB, KAKAO, LINKEDIN, TWITTER, WEIBO, WECHAT, EMAIL_PASSWORDLESS, WEBAUTHN
     }
 
+    data class State(
+        val privKey: String? = null,
+        val walletKey: String? = null,
+        val tKey: String? = null,
+        val oAuthPrivateKey: String? = null
+    )
+
     private val gson = Gson()
 
     private val sdkUrl = Uri.parse(sdkUrl)
     private val initParams: Map<String, Any>
 
-    private var _state: Map<String, Any> = emptyMap()
-    val state: Map<String, Any>
+    private var _state = State()
+    val state
         get() = _state
 
     init {
@@ -43,9 +50,9 @@ class OpenLogin(
         // Parse result hash
         val hash = resultUrl?.fragment
         if (hash != null) {
-            _state = gson.fromJson<Map<String, Any>>(
+            _state = gson.fromJson(
                 decodeBase64URLString(hash).toString(Charsets.UTF_8),
-                Map::class.java
+                State::class.java
             )
         }
     }
