@@ -3,6 +3,7 @@ package com.openlogin.core
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
 import java.util.*
 
@@ -70,7 +71,14 @@ class OpenLogin(
             .appendPath(path)
             .fragment(hash)
             .build()
-        context.startActivity(Intent(Intent.ACTION_VIEW, url))
+
+        val customTabsPackages = context.getCustomTabsPackages()
+        if (customTabsPackages.isNotEmpty()) {
+            val customTabs = CustomTabsIntent.Builder().build()
+            customTabs.launchUrl(context, url)
+        } else {
+            context.startActivity(Intent(Intent.ACTION_VIEW, url))
+        }
     }
 
     fun login(params: Map<String, Any>? = null) {
