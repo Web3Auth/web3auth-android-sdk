@@ -1,5 +1,6 @@
 package com.openlogin.app
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -44,11 +45,9 @@ class MainActivity : AppCompatActivity() {
         // Configure OpenLogin
         openlogin = OpenLogin(
             this,
-            params = mapOf(
-                "clientId" to getString(R.string.openlogin_project_id),
-                "network" to "mainnet",
-                "redirectUrl" to "http://localhost/app-links/auth"
-            ),
+            clientId = getString(R.string.openlogin_project_id),
+            network = OpenLogin.Network.MAINNET,
+            redirectUrl = Uri.parse("http://localhost/app-links/auth"),
             resultUrl = intent.data
         )
 
