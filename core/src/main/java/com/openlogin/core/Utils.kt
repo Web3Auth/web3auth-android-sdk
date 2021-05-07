@@ -21,7 +21,7 @@ val ALLOWED_CUSTOM_TABS_PACKAGES =
     )
 
 fun Context.doesDefaultBrowserSupportCustomTabs(): Boolean {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://customauth.io"));
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://openlogin.com"));
     val `package` = packageManager.resolveActivity(
         intent,
         PackageManager.MATCH_DEFAULT_ONLY
