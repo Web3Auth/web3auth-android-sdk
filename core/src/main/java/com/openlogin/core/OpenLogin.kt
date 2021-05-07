@@ -63,7 +63,7 @@ class OpenLogin(
             .build()
 
         if (context.doesDefaultBrowserSupportCustomTabs()) {
-            // Open in Custom Tabs
+            // Only use Custom Tabs if Custom Tabs is allowed for default browser
             val customTabs = CustomTabsIntent.Builder().build()
             customTabs.launchUrl(context, url)
         } else {

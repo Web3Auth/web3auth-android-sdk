@@ -14,10 +14,15 @@ fun decodeBase64URLString(src: String): ByteArray = Base64.decode(src, BASE64_UR
 
 val ALLOWED_CUSTOM_TABS_PACKAGES =
     arrayOf(
-        "com.android.chrome",
-        "com.chrome.beta",
-        "com.chrome.dev",
-        "com.google.android.apps.chrome"
+        "com.android.chrome", // Chrome stable
+        "com.google.android.apps.chrome", // Chrome system
+        "com.chrome.beta",// Chrome beta
+        "com.microsoft.emmx", // Edge stable
+        "com.brave.browser", // Brave stable
+        "com.brave.browser_beta", // Brave beta
+        "com.opera.browser", // Opera stable
+        "com.opera.browser.beta", // Opera beta
+        "com.vivaldi.browser" // Vivaldi
     )
 
 fun Context.doesDefaultBrowserSupportCustomTabs(): Boolean {
