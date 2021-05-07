@@ -1,5 +1,6 @@
 package com.openlogin.app
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -48,8 +49,8 @@ class MainActivity : AppCompatActivity() {
             clientId = getString(R.string.openlogin_project_id),
             network = OpenLogin.Network.MAINNET,
             redirectUrl = Uri.parse("http://localhost/app-links/auth"),
-            resultUrl = intent.data
         )
+        openlogin.setResultUrl(intent.data)
 
         // Setup UI and event handlers
         val signInButton = findViewById<Button>(R.id.signInButton)
@@ -57,6 +58,13 @@ class MainActivity : AppCompatActivity() {
 
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         signOutButton.setOnClickListener { signOut() }
+
+        reRender()
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        openlogin.setResultUrl(intent?.data)
 
         reRender()
     }
