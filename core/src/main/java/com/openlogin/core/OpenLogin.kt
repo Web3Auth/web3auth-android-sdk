@@ -89,10 +89,10 @@ class OpenLogin(
     }
 
     fun warmup() {
-        if (customTabsConnection != null) return; // Already connecting/connected
+        if (customTabsConnection != null) return // Already connecting/connected
 
         val customTabsPackages = context.getCustomTabsPackages()
-        if (customTabsPackages.isEmpty()) return; // Custom Tabs is not available
+        if (customTabsPackages.isEmpty()) return // Custom Tabs is not available
 
         // Pick a browser (TODO: Allow user to pick his/her preferred browser)
         val browser = customTabsPackages.first()
