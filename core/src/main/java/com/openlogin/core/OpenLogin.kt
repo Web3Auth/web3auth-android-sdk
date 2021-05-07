@@ -81,6 +81,7 @@ class OpenLogin(
         if (customTabsConnection != null && customTabsSession != null) {
             val customTabs = CustomTabsIntent.Builder()
                 .setSession(customTabsSession)
+                .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
                 .build()
             customTabs.launchUrl(context, url)
         } else {
