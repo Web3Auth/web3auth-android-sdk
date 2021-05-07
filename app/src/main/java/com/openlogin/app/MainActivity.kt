@@ -12,7 +12,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
 
     private fun signIn() {
-        openlogin.login()
+        openlogin.login(OpenLogin.Provider.GOOGLE)
     }
 
     private fun signOut() {
@@ -59,10 +59,5 @@ class MainActivity : AppCompatActivity() {
         signOutButton.setOnClickListener { signOut() }
 
         reRender()
-    }
-
-    override fun onStart() {
-        super.onStart()
-        openlogin.warmup()
     }
 }
