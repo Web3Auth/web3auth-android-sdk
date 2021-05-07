@@ -16,7 +16,7 @@ class OpenLogin(
     sdkUrl: String = "https://sdk.openlogin.com",
 ) {
     enum class Network {
-        TESTNET, MAINNET
+        MAINNET, TESTNET
     }
 
     enum class Provider {
