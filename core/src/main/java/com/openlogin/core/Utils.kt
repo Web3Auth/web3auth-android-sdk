@@ -17,6 +17,7 @@ val ALLOWED_CUSTOM_TABS_PACKAGES =
         "com.android.chrome", // Chrome stable
         "com.google.android.apps.chrome", // Chrome system
         "com.chrome.beta",// Chrome beta
+        "com.chrome.dev" // Chrome dev
     )
 
 fun Context.doesDefaultBrowserSupportCustomTabs(): Boolean {
