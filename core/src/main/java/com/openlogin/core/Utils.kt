@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Base64
+import androidx.browser.customtabs.CustomTabsService
 
 const val BASE64_URL_FLAGS = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
 
@@ -21,10 +22,16 @@ val ALLOWED_CUSTOM_TABS_PACKAGES =
     )
 
 fun Context.doesDefaultBrowserSupportCustomTabs(): Boolean {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://openlogin.com"));
+    val defaultBrowserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://openlogin.com"));
+
     val `package` = packageManager.resolveActivity(
-        intent,
+        defaultBrowserIntent,
         PackageManager.MATCH_DEFAULT_ONLY
-    )?.activityInfo?.packageName;
-    return `package` != null && ALLOWED_CUSTOM_TABS_PACKAGES.contains(`package`)
+    )?.activityInfo?.packageName ?: return false;
+    if (!ALLOWED_CUSTOM_TABS_PACKAGES.contains(`package`)) return false;
+
+    val customTabsIntent = Intent()
+    customTabsIntent.action = CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION
+    customTabsIntent.`package` = `package`
+    return packageManager.resolveService(customTabsIntent, 0) != null
 }
