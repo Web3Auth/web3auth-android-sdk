@@ -3,6 +3,7 @@ package com.openlogin.core
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
 import java.util.*
 
@@ -11,11 +12,10 @@ class OpenLogin(
     clientId: String,
     network: Network,
     redirectUrl: Uri? = null,
-    resultUrl: Uri? = null,
     sdkUrl: String = "https://sdk.openlogin.com",
 ) {
     enum class Network {
-        TESTNET, MAINNET
+        MAINNET, TESTNET
     }
 
     enum class Provider {
@@ -46,15 +46,6 @@ class OpenLogin(
         )
         if (redirectUrl != null) initParams["redirectUrl"] = redirectUrl.toString()
         this.initParams = initParams
-
-        // Parse result hash
-        val hash = resultUrl?.fragment
-        if (hash != null) {
-            _state = gson.fromJson(
-                decodeBase64URLString(hash).toString(Charsets.UTF_8),
-                State::class.java
-            )
-        }
     }
 
     private fun request(path: String, params: Map<String, Any>?) {
@@ -70,7 +61,27 @@ class OpenLogin(
             .appendPath(path)
             .fragment(hash)
             .build()
-        context.startActivity(Intent(Intent.ACTION_VIEW, url))
+
+        if (context.doesDefaultBrowserSupportCustomTabs()) {
+            // Only use Custom Tabs if Custom Tabs is allowed for default browser
+            val customTabs = CustomTabsIntent.Builder().build()
+            customTabs.launchUrl(context, url)
+        } else {
+            // Open in browser externally
+            context.startActivity(Intent(Intent.ACTION_VIEW, url))
+        }
+    }
+
+    fun setResultUrl(uri: Uri?) {
+        val hash = uri?.fragment
+        if (hash == null) {
+            _state = State()
+            return
+        }
+        _state = gson.fromJson(
+            decodeBase64URLString(hash).toString(Charsets.UTF_8),
+            State::class.java
+        )
     }
 
     fun login(params: Map<String, Any>? = null) {

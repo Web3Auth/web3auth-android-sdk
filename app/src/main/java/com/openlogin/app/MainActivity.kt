@@ -1,5 +1,6 @@
 package com.openlogin.app
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -12,7 +13,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
 
     private fun signIn() {
-        openlogin.login()
+        openlogin.login(OpenLogin.Provider.GOOGLE)
     }
 
     private fun signOut() {
@@ -24,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
-        val key = openlogin.state["privKey"]
+        val key = openlogin.state.privKey
         if (key is String && key.isNotEmpty()) {
             contentTextView.text = key
             contentTextView.visibility = View.VISIBLE
@@ -48,8 +49,8 @@ class MainActivity : AppCompatActivity() {
             clientId = getString(R.string.openlogin_project_id),
             network = OpenLogin.Network.MAINNET,
             redirectUrl = Uri.parse("http://localhost/app-links/auth"),
-            resultUrl = intent.data
         )
+        openlogin.setResultUrl(intent.data)
 
         // Setup UI and event handlers
         val signInButton = findViewById<Button>(R.id.signInButton)
@@ -57,6 +58,13 @@ class MainActivity : AppCompatActivity() {
 
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         signOutButton.setOnClickListener { signOut() }
+
+        reRender()
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        openlogin.setResultUrl(intent?.data)
 
         reRender()
     }
