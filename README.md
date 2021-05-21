@@ -2,6 +2,8 @@
 
 Torus OpenLogin SDK for Android applications.
 
+`openlogin-android-sdk` is a client-side library you can use with your Android app to authenticate users using [OpenLogin](https://openlogin.com).
+
 ## Requirements
 
 Android API version 21 or newer is required.
@@ -49,11 +51,11 @@ Go to [Developer Dashboard](https://developer.tor.us), create or select an OpenL
 
 - Add `{YOUR_APP_PACKAGE_NAME}://auth` to **Whitelist URLs**.
 
-- Copy the project ID for usage later.
+- Copy the Project ID for usage later.
 
 ### Configure Deep Link 
 
-Open your app's `AndroidManifest.xml` file and add the following permission to your sign-in activity:
+Open your app's `AndroidManifest.xml` file and add the following deep link intent filter to your sign-in activity:
 
 ```xml
 <intent-filter>
