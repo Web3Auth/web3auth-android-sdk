@@ -1,30 +1,18 @@
 # openlogin-android-sdk
 
-Torus OpenLogin SDK for Android applications
+Torus OpenLogin SDK for Android applications.
 
-## Start integrating
+`openlogin-android-sdk` is a client-side library you can use with your Android app to authenticate users using [OpenLogin](https://openlogin.com).
 
-Before you can start integrating OpenLogin in your own app, you must configure a OpenLogin project
-in [Developer Dashboard](https://developer.tor.us) and set up your Android Studio project. The steps
-on this page do just that. The next steps then describe how to integrate OpenLogin into your app.
+## Requirements
 
-### Prerequisites
+Android API version 21 or newer is required.
 
-OpenLogin for Android has the following requirements:
+## Installation
 
-- A compatible Android device that runs Android 7.0 or newer or an emulator with an AVD that runs
-based on Android 7.0 or newer.
+### Add OpenLogin to Gradle
 
-- The latest version of the Android SDK, including the SDK Tools component. The SDK is available
-from the Android SDK Manager in Android Studio.
-
-- A project configured to compile against Android 7.0 (API level 24) or newer.
-
-This guide is written for users of Android Studio, which is the recommended development environment.
-
-### Add Jitpack repository
-
-In your project's top-level `build.gradle` file, ensure that Google's Maven repository is included:
+In your project-level `build.gradle` file, add JitPack repository:
 
 ```groovy
 allprojects {
@@ -35,34 +23,88 @@ allprojects {
 }
 ```
 
-Then, in your app-level `build.gradle` file, declare OpenLogin as a dependency:
+Then, in your app-level `build.gradle` dependencies section, add the following:
 
 ```groovy
-plugins {
-    id 'com.android.application'
-}
-
-// ...
-
 dependencies {
-    implementation 'com.openlogin:core:1.0.0'
+    // ...
+    implementation 'org.torusresearch:openlogin-android-sdk:-SNAPSHOT'
 }
 ```
 
+**Note**: This SDK is currently in beta, using `-SNAPSHOT` to make sure you receive latest updates 
+and be aware that there may be breaking changes.
+
+### Permissions
+
+Open your app's `AndroidManifest.xml` file and add the following permission:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+## Integrating
+
 ### Configure an OpenLogin project
 
-Go to [Developer Dashboard](https://developer.tor.us) and create an OpenLogin project.
+Go to [Developer Dashboard](https://developer.tor.us), create or select an OpenLogin project:
 
-## Add Sign-In
+- Add `{YOUR_APP_PACKAGE_NAME}://auth` to **Whitelist URLs**.
 
-Add Sign-In button(s) to your app's layout that starts different sign-in flows that's appropriate
-for your app.
+- Copy the Project ID for usage later.
 
-## Create an OpenLogin client
+### Configure Deep Link 
 
-In your sign-in activity's `onCreate` method, create an `OpenLogin` object with your OpenLogin
-project's configurations.
+Open your app's `AndroidManifest.xml` file and add the following deep link intent filter to your sign-in activity:
+
+```xml
+<intent-filter>
+    <action android:name="android.intent.action.VIEW" />
+
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+
+    <!-- Accept URIs: {YOUR_APP_PACKAGE_NAME}://* -->
+    <data android:scheme="{YOUR_APP_PACKAGE_NAME}" />
+</intent-filter>
+```
+
+### Initialize OpenLogin
+
+In your sign-in activity', create an `OpenLogin` instance with your OpenLogin project's configurations and 
+configure it like this:
 
 ```kotlin
-openlogin = OpenLogin(this, "YOUR CLIENT ID")
+class MainActivity : AppCompatActivity() {
+    // ...
+    lateinit var openlogin: OpenLogin
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        openlogin = OpenLogin(
+            this,
+            clientId = getString(R.string.openlogin_client_id),
+            network = OpenLogin.Network.MAINNET,
+            redirectUrl = Uri.parse("{YOUR_APP_PACKAGE_NAME}://auth"),
+        )
+
+        // Handle user signing in when app is not alive
+        openlogin.setResultUrl(intent?.data)
+        
+        // ...
+    }
+    
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+
+        // Handle user signing in when app is active
+        openlogin.setResultUrl(intent?.data)
+
+        // ...
+    }
+    
+    //...
+}
 ```
