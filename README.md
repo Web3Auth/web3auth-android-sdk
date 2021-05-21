@@ -104,7 +104,41 @@ class MainActivity : AppCompatActivity() {
 
         // ...
     }
+
+    private fun onClickLogin() {
+        openlogin.login()
+    }
     
     //...
 }
+```
+
+Make sure your sign-in activity `launchMode` is set to `singleTop` in your `AndroidManifest.xml`:
+
+```xml
+<activity
+    android:launchMode="singleTop"
+    android:name=".YourActivity">
+    // ...
+</activity>
+```
+
+## API Reference
+
+```kotlin
+class OpenLogin(
+    context: Context, // Android context to launch Web-based authentication, usually is the current activity
+    clientId: String, // Your OpenLogin project ID
+    network: Network, // Network to run OpenLogin, either MAINNET or TESTNET
+    redirectUrl: Uri? = null, // URL that OpenLogin will redirect API responses
+)
+    // Trigger login flow that shows a modal for user to select one of supported providers to login,
+    // e.g. Google, Facebook, Twitter, Passwordless, etc 
+    fun login() {} 
+    
+    // Trigger login flow using a specific provider
+    fun login(
+        loginProvider: Provider,
+    ) {}
+} 
 ```
