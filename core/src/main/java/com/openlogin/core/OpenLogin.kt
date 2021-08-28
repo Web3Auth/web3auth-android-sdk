@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
 import java.util.*
+import kotlin.collections.ArrayList
 
 class OpenLogin(
     private val context: Context,
@@ -33,6 +34,8 @@ class OpenLogin(
 
     private val sdkUrl = Uri.parse(sdkUrl)
     private val initParams: Map<String, Any>
+
+    private val authStateChangeListeners: ArrayList<AuthStateChangeListener> = ArrayList()
 
     private var _state = State()
     val state
@@ -82,6 +85,10 @@ class OpenLogin(
             decodeBase64URLString(hash).toString(Charsets.UTF_8),
             State::class.java
         )
+
+        for (listener in authStateChangeListeners) {
+            listener.onAuthStateChange(_state)
+        }
     }
 
     fun login(params: Map<String, Any>? = null) {
@@ -125,5 +132,13 @@ class OpenLogin(
         if (redirectUrl != null) params["redirectUrl"] = redirectUrl.toString()
         if (appState != null) params["appState"] = appState
         logout(params)
+    }
+
+    fun addAuthStateChangeListener(authStateChangeListener: AuthStateChangeListener) {
+        authStateChangeListeners.add(authStateChangeListener)
+    }
+
+    fun removeAuthStateChangeListener(authStateChangeListener: AuthStateChangeListener) {
+        authStateChangeListeners.remove(authStateChangeListener)
     }
 }
