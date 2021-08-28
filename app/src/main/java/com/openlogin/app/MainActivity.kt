@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.openlogin.core.AuthStateChangeListener
 import com.openlogin.core.OpenLogin
 
 class MainActivity : AppCompatActivity() {
@@ -51,6 +52,9 @@ class MainActivity : AppCompatActivity() {
             redirectUrl = Uri.parse("http://localhost/app-links/auth"),
         )
         openlogin.setResultUrl(intent.data)
+        openlogin.addAuthStateChangeListener(AuthStateChangeListener {
+            reRender()
+        })
 
         // Setup UI and event handlers
         val signInButton = findViewById<Button>(R.id.signInButton)
@@ -58,14 +62,10 @@ class MainActivity : AppCompatActivity() {
 
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         signOutButton.setOnClickListener { signOut() }
-
-        reRender()
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         openlogin.setResultUrl(intent?.data)
-
-        reRender()
     }
 }
