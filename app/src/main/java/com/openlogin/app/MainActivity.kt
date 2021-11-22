@@ -7,11 +7,14 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.Gson
 import com.openlogin.core.AuthStateChangeListener
 import com.openlogin.core.OpenLogin
 
 class MainActivity : AppCompatActivity() {
     private lateinit var openlogin: OpenLogin
+
+    private val gson = Gson()
 
     private fun signIn() {
         openlogin.login(OpenLogin.Provider.GOOGLE)
@@ -27,8 +30,9 @@ class MainActivity : AppCompatActivity() {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
 
         val key = openlogin.state.privKey
+        val userInfo = openlogin.state.userInfo
         if (key is String && key.isNotEmpty()) {
-            contentTextView.text = key
+            contentTextView.text = gson.toJson(openlogin.state)
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
@@ -49,7 +53,7 @@ class MainActivity : AppCompatActivity() {
             this,
             clientId = getString(R.string.openlogin_project_id),
             network = OpenLogin.Network.MAINNET,
-            redirectUrl = Uri.parse("http://localhost/app-links/auth"),
+            redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect"),
         )
         openlogin.setResultUrl(intent.data)
         openlogin.addAuthStateChangeListener(AuthStateChangeListener {

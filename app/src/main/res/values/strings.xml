@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Torus OpenLogin</string>
-    <string name="openlogin_project_id">BC01p_js5KUIjvqYYAzWlDKt6ft--5joV0TbZEKO7YbDTqnmU5v0sq_4wgkyh0QAfZZAi-v6nKD4kcxkAqPuj8U</string>
+    <string name="openlogin_project_id">BCtbnOamqh0cJFEUYA0NB5YkvBECZ3HLZsKfvSRBvew2EiiKW3UxpyQASSR0artjQkiUOCHeZ_ZeygXpYpxZjOs</string>
     <string name="sign_in">Sign in</string>
     <string name="not_logged_in">Not logged in</string>
     <string name="sign_out">Sign out</string>
