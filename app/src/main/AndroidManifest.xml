@@ -14,7 +14,8 @@
 
         <activity
             android:launchMode="singleTop"
-            android:name=".MainActivity">
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -26,11 +27,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <!-- Accept URIs: http://localhost[:*]/app-links/* -->
+                <!-- Accept URIs: http://localhost[:*]/redirect/* -->
                 <data
-                    android:host="localhost"
-                    android:pathPrefix="/app-links"
-                    android:scheme="http" />
+                    android:host="org.torusresearch.openloginexample"
+                    android:pathPrefix="/redirect"
+                    android:scheme="torusapp" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

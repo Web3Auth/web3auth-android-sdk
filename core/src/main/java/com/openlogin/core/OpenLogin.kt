@@ -20,14 +20,22 @@ class OpenLogin(
     }
 
     enum class Provider {
-        GOOGLE, FACEBOOK, REDDIT, DISCORD, TWITCH, APPLE, LINE, GITHUB, KAKAO, LINKEDIN, TWITTER, WEIBO, WECHAT, EMAIL_PASSWORDLESS, WEBAUTHN
+        GOOGLE, FACEBOOK, REDDIT, DISCORD, TWITCH, APPLE, LINE, GITHUB, KAKAO, LINKEDIN, TWITTER, WEIBO, WECHAT, EMAIL_PASSWORDLESS
+    }
+
+    class UserInfo {
+        var email: String = "";
+        var name: String = "";
+        var profileImage: String = "";
+        var aggregateVerifier: String = "";
+        var verifier: String = "";
+        var verifierId: String = "";
+        var typeOfLogin: String = "";
     }
 
     data class State(
         val privKey: String? = null,
-        val walletKey: String? = null,
-        val tKey: String? = null,
-        val oAuthPrivateKey: String? = null
+        val userInfo: UserInfo? = null,
     )
 
     private val gson = Gson()
@@ -100,7 +108,6 @@ class OpenLogin(
         fastLogin: Boolean? = null,
         relogin: Boolean? = null,
         skipTKey: Boolean? = null,
-        getWalletKey: Boolean? = null,
         extraLoginOptions: Map<String, Any>? = null,
         redirectUrl: Uri? = null,
         appState: String? = null,
@@ -111,7 +118,6 @@ class OpenLogin(
         if (fastLogin != null) params["fastLogin"] = fastLogin
         if (relogin != null) params["relogin"] = relogin
         if (skipTKey != null) params["skipTKey"] = skipTKey
-        if (getWalletKey != null) params["getWalletKey"] = getWalletKey
         if (extraLoginOptions != null) params["extraLoginOptions"] = extraLoginOptions
         if (redirectUrl != null) params["redirectUrl"] = redirectUrl.toString()
         if (appState != null) params["appState"] = appState
