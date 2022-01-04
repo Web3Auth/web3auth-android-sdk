@@ -73,9 +73,17 @@ class OpenLogin(
             .fragment(hash)
             .build()
 
-        if (context.doesDefaultBrowserSupportCustomTabs()) {
-            // Only use Custom Tabs if Custom Tabs is allowed for default browser
+
+        val defaultBrowser = context.getDefaultBrowser()
+        val customTabsBrowsers = context.getCustomTabsBrowsers()
+
+        if (customTabsBrowsers.contains(defaultBrowser)) {
             val customTabs = CustomTabsIntent.Builder().build()
+            customTabs.intent.setPackage(defaultBrowser)
+            customTabs.launchUrl(context, url)
+        } else if (customTabsBrowsers.isNotEmpty()) {
+            val customTabs = CustomTabsIntent.Builder().build()
+            customTabs.intent.setPackage(customTabsBrowsers[0])
             customTabs.launchUrl(context, url)
         } else {
             // Open in browser externally
