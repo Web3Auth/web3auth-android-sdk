@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Base64
+import android.util.Patterns
 import androidx.browser.customtabs.CustomTabsService
 import java.util.ArrayList
 
@@ -35,6 +36,10 @@ fun Context.doesDefaultBrowserSupportCustomTabs(): Boolean {
     customTabsIntent.action = CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION
     customTabsIntent.`package` = `package`
     return packageManager.resolveService(customTabsIntent, 0) != null
+}
+
+fun String.isEmailValid(): Boolean {
+    return Patterns.EMAIL_ADDRESS.matcher(this).matches()
 }
 
 fun Context.getDefaultBrowser(): String? {

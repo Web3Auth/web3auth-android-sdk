@@ -10,6 +10,10 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
 import com.openlogin.core.AuthStateChangeListener
 import com.openlogin.core.OpenLogin
+import com.openlogin.core.isEmailValid
+import com.openlogin.core.types.ExtraLoginOptions
+import com.openlogin.core.types.LoginParams
+import com.openlogin.core.types.OpenLoginOptions
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
     private lateinit var openlogin: OpenLogin
@@ -33,7 +37,18 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
     private val gson = Gson()
 
     private fun signIn() {
-        openlogin.login(selectedLoginProvider)
+        val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
+        var extraLoggingOptions : ExtraLoginOptions? = null
+        if (selectedLoginProvider == OpenLogin.Provider.EMAIL_PASSWORDLESS) {
+            val hintEmail = hintEmailEditText.text.toString()
+            if (hintEmail.isBlank() || !hintEmail.isEmailValid()) {
+                Toast.makeText(this, "Please enter a valid Email.", Toast.LENGTH_LONG).show()
+                return
+            }
+            extraLoggingOptions = ExtraLoginOptions(login_hint = hintEmail)
+        }
+
+        openlogin.login(LoginParams(selectedLoginProvider, extraLoginOptions = extraLoggingOptions))
     }
 
     private fun signOut() {
@@ -45,6 +60,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val spinner = findViewById<Spinner>(R.id.verifierList)
+        val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
 
         val key = openlogin.state.privKey
         val userInfo = openlogin.state.userInfo
@@ -54,6 +70,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
             spinner.visibility = View.GONE
+            hintEmailEditText.visibility = View.GONE
         } else {
             contentTextView.text = getString(R.string.not_logged_in)
             contentTextView.visibility = View.GONE
@@ -68,12 +85,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
         setContentView(R.layout.activity_main)
 
         // Configure OpenLogin
-        openlogin = OpenLogin(
-            this,
+        openlogin = OpenLogin(OpenLoginOptions(context = this,
             clientId = getString(R.string.openlogin_project_id),
             network = OpenLogin.Network.MAINNET,
-            redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect"),
-        )
+            redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect")))
+
         openlogin.setResultUrl(intent.data)
         openlogin.addAuthStateChangeListener(AuthStateChangeListener {
             reRender()
@@ -103,6 +119,13 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
 
     override fun onItemSelected(adapterView: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
         selectedLoginProvider = verifierList[p2].loginProvider
+
+        val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
+        if (selectedLoginProvider == OpenLogin.Provider.EMAIL_PASSWORDLESS) {
+            hintEmailEditText.visibility = View.VISIBLE
+        } else {
+            hintEmailEditText.visibility = View.GONE
+        }
     }
 
     override fun onNothingSelected(p0: AdapterView<*>?) {

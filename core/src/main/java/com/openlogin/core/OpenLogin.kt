@@ -5,16 +5,12 @@ import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
+import com.openlogin.core.types.LoginParams
+import com.openlogin.core.types.OpenLoginOptions
 import java.util.*
 import kotlin.collections.ArrayList
 
-class OpenLogin(
-    private val context: Context,
-    clientId: String,
-    network: Network,
-    redirectUrl: Uri? = null,
-    sdkUrl: String = "https://sdk.openlogin.com",
-) {
+class OpenLogin(openLoginOptions: OpenLoginOptions) {
     enum class Network {
         MAINNET, TESTNET
     }
@@ -40,8 +36,9 @@ class OpenLogin(
 
     private val gson = Gson()
 
-    private val sdkUrl = Uri.parse(sdkUrl)
+    private val sdkUrl = Uri.parse(openLoginOptions.sdkUrl)
     private val initParams: Map<String, Any>
+    private val context : Context
 
     private val authStateChangeListeners: ArrayList<AuthStateChangeListener> = ArrayList()
 
@@ -52,11 +49,12 @@ class OpenLogin(
     init {
         // Build init params
         val initParams = mutableMapOf(
-            "clientId" to clientId,
-            "network" to network.name.toLowerCase(Locale.ROOT)
+            "clientId" to openLoginOptions.clientId,
+            "network" to openLoginOptions.network.name.toLowerCase(Locale.ROOT)
         )
-        if (redirectUrl != null) initParams["redirectUrl"] = redirectUrl.toString()
+        if (openLoginOptions.redirectUrl != null) initParams["redirectUrl"] = openLoginOptions.redirectUrl.toString()
         this.initParams = initParams
+        this.context = openLoginOptions.context
     }
 
     private fun request(path: String, params: Map<String, Any>?) {
@@ -111,24 +109,15 @@ class OpenLogin(
         request("login", params)
     }
 
-    fun login(
-        loginProvider: Provider,
-        fastLogin: Boolean? = null,
-        relogin: Boolean? = null,
-        skipTKey: Boolean? = null,
-        extraLoginOptions: Map<String, Any>? = null,
-        redirectUrl: Uri? = null,
-        appState: String? = null,
-    ) {
+    fun login(loginParams: LoginParams) {
         val params = mutableMapOf<String, Any>(
-            "loginProvider" to loginProvider.name.toLowerCase(Locale.ROOT),
+            "loginProvider" to loginParams.loginProvider.name.toLowerCase(Locale.ROOT),
         )
-        if (fastLogin != null) params["fastLogin"] = fastLogin
-        if (relogin != null) params["relogin"] = relogin
-        if (skipTKey != null) params["skipTKey"] = skipTKey
-        if (extraLoginOptions != null) params["extraLoginOptions"] = extraLoginOptions
-        if (redirectUrl != null) params["redirectUrl"] = redirectUrl.toString()
-        if (appState != null) params["appState"] = appState
+        if (loginParams.reLogin != null) params["relogin"] = loginParams.reLogin
+        if (loginParams.skipTKey != null) params["skipTKey"] = loginParams.skipTKey
+        if (loginParams.extraLoginOptions != null) params["extraLoginOptions"] = loginParams.extraLoginOptions
+        if (loginParams.redirectUrl != null) params["redirectUrl"] = loginParams.redirectUrl.toString()
+        if (loginParams.appState != null) params["appState"] = loginParams.appState
         login(params)
     }
 
