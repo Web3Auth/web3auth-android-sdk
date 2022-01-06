@@ -4,6 +4,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        release {
+            storeFile file('/Users/tanuj/Desktop/Torus/open login/open_login')
+            storePassword 'torus123'
+            keyAlias 'key0'
+            keyPassword 'torus123'
+        }
+    }
     compileSdkVersion 31
     buildToolsVersion "30.0.3"
 
@@ -19,8 +27,9 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
