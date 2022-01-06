@@ -3,7 +3,6 @@ package com.openlogin.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -38,17 +37,17 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
 
     private fun signIn() {
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
-        var extraLoggingOptions : ExtraLoginOptions? = null
+        var extraLoginOptions : ExtraLoginOptions? = null
         if (selectedLoginProvider == OpenLogin.Provider.EMAIL_PASSWORDLESS) {
             val hintEmail = hintEmailEditText.text.toString()
             if (hintEmail.isBlank() || !hintEmail.isEmailValid()) {
                 Toast.makeText(this, "Please enter a valid Email.", Toast.LENGTH_LONG).show()
                 return
             }
-            extraLoggingOptions = ExtraLoginOptions(login_hint = hintEmail)
+            extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
 
-        openlogin.login(LoginParams(selectedLoginProvider, extraLoginOptions = extraLoggingOptions))
+        openlogin.login(LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions))
     }
 
     private fun signOut() {

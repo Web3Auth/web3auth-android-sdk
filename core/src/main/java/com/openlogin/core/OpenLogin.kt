@@ -126,12 +126,10 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
     }
 
     fun logout(
-        fastLogin: Boolean? = null,
         redirectUrl: Uri? = null,
         appState: String? = null
     ) {
         val params = mutableMapOf<String, Any>()
-        if (fastLogin != null) params["fastLogin"] = fastLogin
         if (redirectUrl != null) params["redirectUrl"] = redirectUrl.toString()
         if (appState != null) params["appState"] = appState
         logout(params)
