@@ -2,36 +2,6 @@
 -keep class com.openlogin.core.** {*;}
 -keepclassmembers class com.openlogin.core.**
 
-# Web3j rules  https://github.com/web3j/web3j/wiki/Android-ProGuard-rules-for-web3j-android
--dontwarn java8.util.**
--dontwarn jnr.posix.**
--dontwarn com.kenai.**
-
--keep class org.bouncycastle.**
--dontwarn org.bouncycastle.jce.provider.X509LDAPCertStoreSpi
--dontwarn org.bouncycastle.x509.util.LDAPStoreHelper
-
--keepclassmembers class org.web3j.protocol.** { *; }
--keepclassmembers class org.web3j.crypto.* { *; }
-
--keep class * extends org.web3j.abi.TypeReference
--keep class * extends org.web3j.abi.datatypes.Type
-
--dontwarn java.lang.SafeVarargs
--dontwarn org.slf4j.**
-
--dontwarn com.fasterxml.jackson.databind.**
--keep class org.** {*;}
--keep class com.fasterxml.jackson.core.** {*;}
--keep public class * extends com.fasterxml.jackson.core.*
--keep class com.fasterxml.jackson.databind.introspect.VisibilityChecker$Std.*
--keep class com.fasterxml.jackson.databind.ObjectMapper.*
--keep class com.fasterxml.jackson.databind.** {*;}
--keep public class * extends com.fasterxml.jackson.databind.*
--keep class com.fasterxml.jackson.annotation.** {*;}
--keep interface com.fasterxml.jackson.annotation.** {*;}
-#########################################################
-
 ##### okhttp3
 # okHttp3
 -dontwarn javax.annotation.Nullable

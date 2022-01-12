@@ -3,16 +3,18 @@ package com.openlogin.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
-import com.openlogin.core.AuthStateChangeListener
 import com.openlogin.core.OpenLogin
 import com.openlogin.core.isEmailValid
 import com.openlogin.core.types.ExtraLoginOptions
 import com.openlogin.core.types.LoginParams
 import com.openlogin.core.types.OpenLoginOptions
+import com.openlogin.core.types.State
+import java8.util.concurrent.CompletableFuture
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
     private lateinit var openlogin: OpenLogin
@@ -47,24 +49,35 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
 
-        openlogin.login(LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions))
+        val loginCompletableFuture: CompletableFuture<State> = openlogin.login(LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions))
+        loginCompletableFuture.whenComplete { state, error ->
+            if (error == null) {
+                reRender(state)
+            } else {
+                Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong" )
+            }
+
+        }
     }
 
     private fun signOut() {
-        openlogin.logout()
+        val logoutCompletableFuture =  openlogin.logout()
+        logoutCompletableFuture.whenComplete { state, error ->
+            reRender(State())
+        }
     }
 
-    private fun reRender() {
+    private fun reRender(state: State) {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val spinner = findViewById<Spinner>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
 
-        val key = openlogin.state.privKey
-        val userInfo = openlogin.state.userInfo
+        val key = state.privKey
+        val userInfo = state.userInfo
         if (key is String && key.isNotEmpty()) {
-            contentTextView.text = gson.toJson(openlogin.state)
+            contentTextView.text = gson.toJson(state)
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
@@ -90,9 +103,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
             redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect")))
 
         openlogin.setResultUrl(intent.data)
-        openlogin.addAuthStateChangeListener(AuthStateChangeListener {
-            reRender()
-        })
 
         // Setup UI and event handlers
         val signInButton = findViewById<Button>(R.id.signInButton)

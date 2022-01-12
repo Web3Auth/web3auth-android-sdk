@@ -7,8 +7,10 @@ import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
 import com.openlogin.core.types.LoginParams
 import com.openlogin.core.types.OpenLoginOptions
+import com.openlogin.core.types.State
+import com.openlogin.core.types.UserCancelledException
 import java.util.*
-import kotlin.collections.ArrayList
+import java8.util.concurrent.CompletableFuture
 
 class OpenLogin(openLoginOptions: OpenLoginOptions) {
     enum class Network {
@@ -19,32 +21,15 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         GOOGLE, FACEBOOK, REDDIT, DISCORD, TWITCH, APPLE, LINE, GITHUB, KAKAO, LINKEDIN, TWITTER, WEIBO, WECHAT, EMAIL_PASSWORDLESS
     }
 
-    class UserInfo {
-        var email: String = "";
-        var name: String = "";
-        var profileImage: String = "";
-        var aggregateVerifier: String = "";
-        var verifier: String = "";
-        var verifierId: String = "";
-        var typeOfLogin: String = "";
-    }
-
-    data class State(
-        val privKey: String? = null,
-        val userInfo: UserInfo? = null,
-    )
-
     private val gson = Gson()
 
     private val sdkUrl = Uri.parse(openLoginOptions.sdkUrl)
     private val initParams: Map<String, Any>
     private val context : Context
 
-    private val authStateChangeListeners: ArrayList<AuthStateChangeListener> = ArrayList()
+    private var loginCompletableFuture: CompletableFuture<State> = CompletableFuture()
 
     private var _state = State()
-    val state
-        get() = _state
 
     init {
         // Build init params
@@ -92,7 +77,7 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
     fun setResultUrl(uri: Uri?) {
         val hash = uri?.fragment
         if (hash == null) {
-            _state = State()
+            loginCompletableFuture.completeExceptionally(UserCancelledException())
             return
         }
         _state = gson.fromJson(
@@ -100,16 +85,14 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
             State::class.java
         )
 
-        for (listener in authStateChangeListeners) {
-            listener.onAuthStateChange(_state)
-        }
+        loginCompletableFuture.complete(_state)
     }
 
-    fun login(params: Map<String, Any>? = null) {
+    private fun login(params: Map<String, Any>? = null) {
         request("login", params)
     }
 
-    fun login(loginParams: LoginParams) {
+    fun login(loginParams: LoginParams) : CompletableFuture<State> {
         val params = mutableMapOf<String, Any>(
             "loginProvider" to loginParams.loginProvider.name.toLowerCase(Locale.ROOT),
         )
@@ -119,10 +102,16 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         if (loginParams.redirectUrl != null) params["redirectUrl"] = loginParams.redirectUrl.toString()
         if (loginParams.appState != null) params["appState"] = loginParams.appState
         login(params)
+
+        loginCompletableFuture = CompletableFuture()
+        return loginCompletableFuture
     }
 
-    fun logout(params: Map<String, Any>? = null) {
+    fun logout(params: Map<String, Any>? = null) : CompletableFuture<State>{
         request("logout", params)
+
+        loginCompletableFuture = CompletableFuture()
+        return loginCompletableFuture
     }
 
     fun logout(
@@ -133,13 +122,5 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         if (redirectUrl != null) params["redirectUrl"] = redirectUrl.toString()
         if (appState != null) params["appState"] = appState
         logout(params)
-    }
-
-    fun addAuthStateChangeListener(authStateChangeListener: AuthStateChangeListener) {
-        authStateChangeListeners.add(authStateChangeListener)
-    }
-
-    fun removeAuthStateChangeListener(authStateChangeListener: AuthStateChangeListener) {
-        authStateChangeListeners.remove(authStateChangeListener)
     }
 }

@@ -13,7 +13,6 @@ android {
         }
     }
     compileSdkVersion 31
-    buildToolsVersion "30.0.3"
 
     defaultConfig {
         applicationId "com.openlogin.app"
@@ -48,6 +47,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.4.0'
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
+
+    // Completable Futures support
+    implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.4'
 
     // Encoding
     implementation 'com.google.code.gson:gson:2.8.9'
