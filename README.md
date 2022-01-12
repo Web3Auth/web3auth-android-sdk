@@ -6,7 +6,7 @@ Torus OpenLogin SDK for Android applications.
 
 ## Requirements
 
-Android API version 24 or newer is required.
+Android API version 21 or newer is required.
 
 ## Installation
 
@@ -105,7 +105,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun onClickLogin() {
         val selectedLoginProvider = OpenLogin.Provider.GOOGLE   // Can be Google, Facebook, Twitch etc
-        openlogin.login(LoginParams(selectedLoginProvider))
+        val loginCompletableFuture: CompletableFuture<State> = openlogin.login(LoginParams(selectedLoginProvider))
+        
+        loginCompletableFuture.whenComplete { state, error ->
+            if (error == null) {
+                // render logged in UI
+            } else {
+                // render login error UI
+            }
+
+        }
     }
     
     //...
