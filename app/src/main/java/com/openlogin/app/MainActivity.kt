@@ -13,7 +13,7 @@ import com.openlogin.core.isEmailValid
 import com.openlogin.core.types.ExtraLoginOptions
 import com.openlogin.core.types.LoginParams
 import com.openlogin.core.types.OpenLoginOptions
-import com.openlogin.core.types.State
+import com.openlogin.core.types.OpenLoginResponse
 import java8.util.concurrent.CompletableFuture
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
 
-        val loginCompletableFuture: CompletableFuture<State> = openlogin.login(LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions))
+        val loginCompletableFuture: CompletableFuture<OpenLoginResponse> = openlogin.login(LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions))
         loginCompletableFuture.whenComplete { state, error ->
             if (error == null) {
                 reRender(state)
@@ -63,21 +63,21 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
     private fun signOut() {
         val logoutCompletableFuture =  openlogin.logout()
         logoutCompletableFuture.whenComplete { state, error ->
-            reRender(State())
+            reRender(OpenLoginResponse())
         }
     }
 
-    private fun reRender(state: State) {
+    private fun reRender(openLoginResponse: OpenLoginResponse) {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val spinner = findViewById<Spinner>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
 
-        val key = state.privKey
-        val userInfo = state.userInfo
+        val key = openLoginResponse.privKey
+        val userInfo = openLoginResponse.userInfo
         if (key is String && key.isNotEmpty()) {
-            contentTextView.text = gson.toJson(state)
+            contentTextView.text = gson.toJson(openLoginResponse)
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
