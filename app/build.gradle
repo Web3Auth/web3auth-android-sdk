@@ -20,6 +20,11 @@ android {
         targetSdkVersion 31
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [
+                'torusRedirectScheme'    : 'torusapp',
+                'torusRedirectHost'      : 'org.torusresearch.openloginexample',
+                'torusRedirectPathPrefix': '/redirect'
+        ]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -27,11 +27,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <!-- Accept URIs: http://localhost[:*]/redirect/* -->
                 <data
-                    android:host="org.torusresearch.openloginexample"
-                    android:pathPrefix="/redirect"
-                    android:scheme="torusapp" />
+                    android:host="${torusRedirectHost}"
+                    android:pathPattern="/*"
+                    android:pathPrefix="${torusRedirectPathPrefix}"
+                    android:scheme="${torusRedirectScheme}" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

@@ -32,6 +32,7 @@
         android:id="@+id/etEmailHint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:hint="Enter Email"
         android:layout_margin="32dp"
         android:minHeight="48dp"
         android:visibility="gone"

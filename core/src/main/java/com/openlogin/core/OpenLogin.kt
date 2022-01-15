@@ -113,7 +113,7 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         return loginCompletableFuture
     }
 
-    fun logout(params: Map<String, Any>? = null) : CompletableFuture<Void>{
+    fun logout(params: Map<String, Any>? = null) : CompletableFuture<Void> {
         request("logout", params)
 
         logoutCompletableFuture = CompletableFuture()
