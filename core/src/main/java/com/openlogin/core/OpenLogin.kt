@@ -5,10 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
-import com.openlogin.core.types.LoginParams
-import com.openlogin.core.types.OpenLoginOptions
-import com.openlogin.core.types.OpenLoginResponse
-import com.openlogin.core.types.UserCancelledException
+import com.openlogin.core.types.*
 import java.util.*
 import java8.util.concurrent.CompletableFuture
 
@@ -28,6 +25,7 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
     private val context : Context
 
     private var loginCompletableFuture: CompletableFuture<OpenLoginResponse> = CompletableFuture()
+    private var logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
 
     private var openLoginResponse = OpenLoginResponse()
 
@@ -75,17 +73,27 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
     }
 
     fun setResultUrl(uri: Uri?) {
-        // uri can contain query with error parameter
-        // uri can contain hash with error parameter
         val hash = uri?.fragment
         if (hash == null) {
             loginCompletableFuture.completeExceptionally(UserCancelledException())
             return
         }
+        val error = uri.getQueryParameter("error")
+        if (error != null) {
+            loginCompletableFuture.completeExceptionally(UnKnownException(error))
+        }
+
         openLoginResponse = gson.fromJson(
             decodeBase64URLString(hash).toString(Charsets.UTF_8),
             OpenLoginResponse::class.java
         )
+        if (openLoginResponse.error?.isNotBlank() == true ) {
+            loginCompletableFuture.completeExceptionally(UnKnownException(openLoginResponse.error ?: "Something went wrong"))
+        }
+
+        if (openLoginResponse.privKey.isNullOrBlank()) {
+            logoutCompletableFuture.complete(null)
+        }
 
         loginCompletableFuture.complete(openLoginResponse)
     }
@@ -105,11 +113,11 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         return loginCompletableFuture
     }
 
-    fun logout(params: Map<String, Any>? = null) : CompletableFuture<OpenLoginResponse>{
+    fun logout(params: Map<String, Any>? = null) : CompletableFuture<Void>{
         request("logout", params)
 
-        loginCompletableFuture = CompletableFuture()
-        return loginCompletableFuture
+        logoutCompletableFuture = CompletableFuture()
+        return logoutCompletableFuture
     }
 
     fun logout(

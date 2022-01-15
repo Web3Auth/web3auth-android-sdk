@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
 import com.openlogin.core.OpenLogin
 import com.openlogin.core.isEmailValid
@@ -16,7 +17,7 @@ import com.openlogin.core.types.OpenLoginOptions
 import com.openlogin.core.types.OpenLoginResponse
 import java8.util.concurrent.CompletableFuture
 
-class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
+class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var openlogin: OpenLogin
 
     private val verifierList : List<LoginVerifier> = listOf(
@@ -50,9 +51,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
         }
 
         val loginCompletableFuture: CompletableFuture<OpenLoginResponse> = openlogin.login(LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions))
-        loginCompletableFuture.whenComplete { state, error ->
+        loginCompletableFuture.whenComplete { loginResponse, error ->
             if (error == null) {
-                reRender(state)
+                reRender(loginResponse)
             } else {
                 Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong" )
             }
@@ -62,8 +63,12 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
 
     private fun signOut() {
         val logoutCompletableFuture =  openlogin.logout()
-        logoutCompletableFuture.whenComplete { state, error ->
-            reRender(OpenLoginResponse())
+        logoutCompletableFuture.whenComplete { _, error ->
+            if (error == null) {
+                reRender(OpenLoginResponse())
+            } else {
+                Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong" )
+            }
         }
     }
 
@@ -71,7 +76,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
-        val spinner = findViewById<Spinner>(R.id.verifierList)
+        val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
 
         val key = openLoginResponse.privKey
@@ -111,14 +116,14 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         signOutButton.setOnClickListener { signOut() }
 
-        val spinner = findViewById<Spinner>(R.id.verifierList)
+        val spinner = findViewById<AutoCompleteTextView>(R.id.spinnerTextView)
         val loginVerifierList: List<String> = verifierList.map {
             item -> item.name
         }
         val adapter: ArrayAdapter<String> =
-            ArrayAdapter(this, android.R.layout.simple_spinner_item, loginVerifierList)
-        spinner.adapter = adapter
-        spinner.onItemSelectedListener = this
+            ArrayAdapter(this, R.layout.item_dropdown, loginVerifierList)
+        spinner.setAdapter(adapter)
+        spinner.onItemClickListener = this
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -126,7 +131,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
         openlogin.setResultUrl(intent?.data)
     }
 
-    override fun onItemSelected(adapterView: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+    override fun onItemClick(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
         selectedLoginProvider = verifierList[p2].loginProvider
 
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
@@ -135,9 +140,5 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
         } else {
             hintEmailEditText.visibility = View.GONE
         }
-    }
-
-    override fun onNothingSelected(p0: AdapterView<*>?) {
-
     }
 }

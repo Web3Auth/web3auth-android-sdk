@@ -6,4 +6,5 @@ import androidx.annotation.Keep
 data class OpenLoginResponse(
     val privKey: String? = null,
     val userInfo: UserInfo? = null,
+    val error: String? = null
 )
