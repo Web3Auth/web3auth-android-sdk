@@ -5,16 +5,11 @@ import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
+import com.openlogin.core.types.*
 import java.util.*
-import kotlin.collections.ArrayList
+import java8.util.concurrent.CompletableFuture
 
-class OpenLogin(
-    private val context: Context,
-    clientId: String,
-    network: Network,
-    redirectUrl: Uri? = null,
-    sdkUrl: String = "https://sdk.openlogin.com",
-) {
+class OpenLogin(openLoginOptions: OpenLoginOptions) {
     enum class Network {
         MAINNET, TESTNET
     }
@@ -23,40 +18,26 @@ class OpenLogin(
         GOOGLE, FACEBOOK, REDDIT, DISCORD, TWITCH, APPLE, LINE, GITHUB, KAKAO, LINKEDIN, TWITTER, WEIBO, WECHAT, EMAIL_PASSWORDLESS
     }
 
-    class UserInfo {
-        var email: String = "";
-        var name: String = "";
-        var profileImage: String = "";
-        var aggregateVerifier: String = "";
-        var verifier: String = "";
-        var verifierId: String = "";
-        var typeOfLogin: String = "";
-    }
-
-    data class State(
-        val privKey: String? = null,
-        val userInfo: UserInfo? = null,
-    )
-
     private val gson = Gson()
 
-    private val sdkUrl = Uri.parse(sdkUrl)
+    private val sdkUrl = Uri.parse(openLoginOptions.sdkUrl)
     private val initParams: Map<String, Any>
+    private val context : Context
 
-    private val authStateChangeListeners: ArrayList<AuthStateChangeListener> = ArrayList()
+    private var loginCompletableFuture: CompletableFuture<OpenLoginResponse> = CompletableFuture()
+    private var logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
 
-    private var _state = State()
-    val state
-        get() = _state
+    private var openLoginResponse = OpenLoginResponse()
 
     init {
         // Build init params
         val initParams = mutableMapOf(
-            "clientId" to clientId,
-            "network" to network.name.toLowerCase(Locale.ROOT)
+            "clientId" to openLoginOptions.clientId,
+            "network" to openLoginOptions.network.name.lowercase(Locale.ROOT)
         )
-        if (redirectUrl != null) initParams["redirectUrl"] = redirectUrl.toString()
+        if (openLoginOptions.redirectUrl != null) initParams["redirectUrl"] = openLoginOptions.redirectUrl.toString()
         this.initParams = initParams
+        this.context = openLoginOptions.context
     }
 
     private fun request(path: String, params: Map<String, Any>?) {
@@ -73,9 +54,17 @@ class OpenLogin(
             .fragment(hash)
             .build()
 
-        if (context.doesDefaultBrowserSupportCustomTabs()) {
-            // Only use Custom Tabs if Custom Tabs is allowed for default browser
+
+        val defaultBrowser = context.getDefaultBrowser()
+        val customTabsBrowsers = context.getCustomTabsBrowsers()
+
+        if (customTabsBrowsers.contains(defaultBrowser)) {
             val customTabs = CustomTabsIntent.Builder().build()
+            customTabs.intent.setPackage(defaultBrowser)
+            customTabs.launchUrl(context, url)
+        } else if (customTabsBrowsers.isNotEmpty()) {
+            val customTabs = CustomTabsIntent.Builder().build()
+            customTabs.intent.setPackage(customTabsBrowsers[0])
             customTabs.launchUrl(context, url)
         } else {
             // Open in browser externally
@@ -86,65 +75,58 @@ class OpenLogin(
     fun setResultUrl(uri: Uri?) {
         val hash = uri?.fragment
         if (hash == null) {
-            _state = State()
+            loginCompletableFuture.completeExceptionally(UserCancelledException())
             return
         }
-        _state = gson.fromJson(
-            decodeBase64URLString(hash).toString(Charsets.UTF_8),
-            State::class.java
-        )
-
-        for (listener in authStateChangeListeners) {
-            listener.onAuthStateChange(_state)
+        val error = uri.getQueryParameter("error")
+        if (error != null) {
+            loginCompletableFuture.completeExceptionally(UnKnownException(error))
         }
-    }
 
-    fun login(params: Map<String, Any>? = null) {
-        request("login", params)
-    }
-
-    fun login(
-        loginProvider: Provider,
-        fastLogin: Boolean? = null,
-        relogin: Boolean? = null,
-        skipTKey: Boolean? = null,
-        extraLoginOptions: Map<String, Any>? = null,
-        redirectUrl: Uri? = null,
-        appState: String? = null,
-    ) {
-        val params = mutableMapOf<String, Any>(
-            "loginProvider" to loginProvider.name.toLowerCase(Locale.ROOT),
+        openLoginResponse = gson.fromJson(
+            decodeBase64URLString(hash).toString(Charsets.UTF_8),
+            OpenLoginResponse::class.java
         )
-        if (fastLogin != null) params["fastLogin"] = fastLogin
-        if (relogin != null) params["relogin"] = relogin
-        if (skipTKey != null) params["skipTKey"] = skipTKey
-        if (extraLoginOptions != null) params["extraLoginOptions"] = extraLoginOptions
-        if (redirectUrl != null) params["redirectUrl"] = redirectUrl.toString()
-        if (appState != null) params["appState"] = appState
-        login(params)
+        if (openLoginResponse.error?.isNotBlank() == true ) {
+            loginCompletableFuture.completeExceptionally(UnKnownException(openLoginResponse.error ?: "Something went wrong"))
+        }
+
+        if (openLoginResponse.privKey.isNullOrBlank()) {
+            logoutCompletableFuture.complete(null)
+        }
+
+        loginCompletableFuture.complete(openLoginResponse)
     }
 
-    fun logout(params: Map<String, Any>? = null) {
+    fun login(loginParams: LoginParams) : CompletableFuture<OpenLoginResponse> {
+        val params = mutableMapOf<String, Any>(
+            "loginProvider" to loginParams.loginProvider.name.lowercase(Locale.ROOT),
+        )
+        if (loginParams.reLogin != null) params["relogin"] = loginParams.reLogin
+        if (loginParams.skipTKey != null) params["skipTKey"] = loginParams.skipTKey
+        if (loginParams.extraLoginOptions != null) params["extraLoginOptions"] = loginParams.extraLoginOptions
+        if (loginParams.redirectUrl != null) params["redirectUrl"] = loginParams.redirectUrl.toString()
+        if (loginParams.appState != null) params["appState"] = loginParams.appState
+        request("login", params)
+
+        loginCompletableFuture = CompletableFuture()
+        return loginCompletableFuture
+    }
+
+    fun logout(params: Map<String, Any>? = null) : CompletableFuture<Void> {
         request("logout", params)
+
+        logoutCompletableFuture = CompletableFuture()
+        return logoutCompletableFuture
     }
 
     fun logout(
-        fastLogin: Boolean? = null,
         redirectUrl: Uri? = null,
         appState: String? = null
     ) {
         val params = mutableMapOf<String, Any>()
-        if (fastLogin != null) params["fastLogin"] = fastLogin
         if (redirectUrl != null) params["redirectUrl"] = redirectUrl.toString()
         if (appState != null) params["appState"] = appState
         logout(params)
-    }
-
-    fun addAuthStateChangeListener(authStateChangeListener: AuthStateChangeListener) {
-        authStateChangeListeners.add(authStateChangeListener)
-    }
-
-    fun removeAuthStateChangeListener(authStateChangeListener: AuthStateChangeListener) {
-        authStateChangeListeners.remove(authStateChangeListener)
     }
 }

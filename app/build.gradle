@@ -4,8 +4,15 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        release {
+            storeFile file('/Users/tanuj/Desktop/Torus/open login/open_login')
+            storePassword 'torus123'
+            keyAlias 'key0'
+            keyPassword 'torus123'
+        }
+    }
     compileSdkVersion 31
-    buildToolsVersion "30.0.3"
 
     defaultConfig {
         applicationId "com.openlogin.app"
@@ -13,14 +20,20 @@ android {
         targetSdkVersion 31
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [
+                'torusRedirectScheme'    : 'torusapp',
+                'torusRedirectHost'      : 'org.torusresearch.openloginexample',
+                'torusRedirectPathPrefix': '/redirect'
+        ]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
@@ -39,6 +52,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.4.0'
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
+
+    // Completable Futures support
+    implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.4'
 
     // Encoding
     implementation 'com.google.code.gson:gson:2.8.9'

@@ -83,12 +83,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        openlogin = OpenLogin(
-            this,
+        openlogin = OpenLogin(OpenLoginOptions(context = this,
             clientId = getString(R.string.openlogin_client_id),
             network = OpenLogin.Network.MAINNET,
-            redirectUrl = Uri.parse("{YOUR_APP_PACKAGE_NAME}://auth"),
-        )
+            redirectUrl = Uri.parse("{YOUR_APP_PACKAGE_NAME}://auth")))
 
         // Handle user signing in when app is not alive
         openlogin.setResultUrl(intent?.data)
@@ -106,7 +104,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onClickLogin() {
-        openlogin.login()
+        val selectedLoginProvider = OpenLogin.Provider.GOOGLE   // Can be Google, Facebook, Twitch etc
+        val loginCompletableFuture: CompletableFuture<State> = openlogin.login(LoginParams(selectedLoginProvider))
+        
+        loginCompletableFuture.whenComplete { state, error ->
+            if (error == null) {
+                // render logged in UI
+            } else {
+                // render login error UI
+            }
+
+        }
     }
     
     //...
@@ -127,18 +135,32 @@ Make sure your sign-in activity `launchMode` is set to `singleTop` in your `Andr
 
 ```kotlin
 class OpenLogin(
+    var openLoginOptions : OpenLoginOptions
+) {
+    // Trigger login flow that shows a modal for user to select one of supported providers to login,
+    // e.g. Google, Facebook, Twitter, Passwordless, etc 
+    fun login() {} 
+    
+    // Trigger login flow using login params. Specific Login Provider can be set through Login Params
+    fun login(
+        loginParams: LoginParams,
+    ) {}
+} 
+
+data class OpenLoginOptions(
     context: Context, // Android context to launch Web-based authentication, usually is the current activity
     clientId: String, // Your OpenLogin project ID
     network: Network, // Network to run OpenLogin, either MAINNET or TESTNET
     redirectUrl: Uri? = null, // URL that OpenLogin will redirect API responses
 )
-    // Trigger login flow that shows a modal for user to select one of supported providers to login,
-    // e.g. Google, Facebook, Twitter, Passwordless, etc 
-    fun login() {} 
-    
-    // Trigger login flow using a specific provider
-    fun login(
-        loginProvider: Provider,
-    ) {}
-} 
+
+data class LoginParams(
+    val loginProvider: OpenLogin.Provider,
+    val reLogin: Boolean? = null,
+    val skipTKey: Boolean? = null,
+    val extraLoginOptions: ExtraLoginOptions? = null,
+    val redirectUrl: Uri? = null,
+    val appState: String? = null
+)
+
 ```

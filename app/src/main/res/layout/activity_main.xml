@@ -6,6 +6,42 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/verifierList"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="32dp"
+        android:hint="Login Type"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <AutoCompleteTextView
+            android:id="@+id/spinnerTextView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="Google"
+            android:inputType="none" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <EditText
+        style="@style/Widget.AppCompat.EditText"
+        android:id="@+id/etEmailHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Email"
+        android:layout_margin="32dp"
+        android:minHeight="48dp"
+        android:visibility="gone"
+        android:backgroundTint="@color/black"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/verifierList" />
+
+
     <TextView
         android:id="@+id/contentTextView"
         android:layout_width="wrap_content"
