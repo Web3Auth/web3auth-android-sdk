@@ -105,8 +105,8 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         if (loginParams.reLogin != null) params["relogin"] = loginParams.reLogin
         if (loginParams.skipTKey != null) params["skipTKey"] = loginParams.skipTKey
         if (loginParams.extraLoginOptions != null) params["extraLoginOptions"] = loginParams.extraLoginOptions
-        if (loginParams.redirectUrl != null) params["redirectUrl"] = loginParams.redirectUrl.toString()
-        if (loginParams.appState != null) params["appState"] = loginParams.appState
+        if (loginParams.baseRedirectParams?.redirectUrl != null) params["redirectUrl"] = loginParams.baseRedirectParams.redirectUrl.toString()
+        if (loginParams.baseRedirectParams?.appState != null) params["appState"] = loginParams.baseRedirectParams.appState
         request("login", params)
 
         loginCompletableFuture = CompletableFuture()

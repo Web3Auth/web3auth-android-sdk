@@ -1,6 +1,5 @@
 package com.openlogin.core.types
 
-import android.net.Uri
 import com.openlogin.core.OpenLogin
 
 data class LoginParams (
@@ -8,6 +7,5 @@ data class LoginParams (
     val reLogin: Boolean? = null,
     val skipTKey: Boolean? = null,
     val extraLoginOptions: ExtraLoginOptions? = null,
-    val redirectUrl: Uri? = null,
-    val appState: String? = null
+    val baseRedirectParams: BaseRedirectParams? = null
 )
