@@ -102,11 +102,11 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         val params = mutableMapOf<String, Any>(
             "loginProvider" to loginParams.loginProvider.name.lowercase(Locale.ROOT),
         )
-        if (loginParams.reLogin != null) params["relogin"] = loginParams.reLogin
+        if (loginParams.relogin != null) params["relogin"] = loginParams.relogin
         if (loginParams.skipTKey != null) params["skipTKey"] = loginParams.skipTKey
         if (loginParams.extraLoginOptions != null) params["extraLoginOptions"] = loginParams.extraLoginOptions
-        if (loginParams.baseRedirectParams?.redirectUrl != null) params["redirectUrl"] = loginParams.baseRedirectParams.redirectUrl.toString()
-        if (loginParams.baseRedirectParams?.appState != null) params["appState"] = loginParams.baseRedirectParams.appState
+        if (loginParams.redirectUrl != null) params["redirectUrl"] = loginParams.redirectUrl.toString()
+        if (loginParams.appState != null) params["appState"] = loginParams.appState
         request("login", params)
 
         loginCompletableFuture = CompletableFuture()
