@@ -1,5 +1,7 @@
 # openlogin-android-sdk
 
+[![](https://jitpack.io/v/org.torusresearch/openlogin-android-sdk.svg)](https://jitpack.io/#org.torusresearch/openlogin-android-sdk)
+
 Torus OpenLogin SDK for Android applications.
 
 `openlogin-android-sdk` is a client-side library you can use with your Android app to authenticate users using [OpenLogin](https://openlogin.com).
