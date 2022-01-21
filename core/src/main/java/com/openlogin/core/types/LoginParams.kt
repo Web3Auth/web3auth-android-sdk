@@ -5,7 +5,7 @@ import com.openlogin.core.OpenLogin
 
 data class LoginParams (
     val loginProvider: OpenLogin.Provider,
-    val reLogin: Boolean? = null,
+    val relogin: Boolean? = null,
     val skipTKey: Boolean? = null,
     val extraLoginOptions: ExtraLoginOptions? = null,
     val redirectUrl: Uri? = null,

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import com.openlogin.core.types.*
 import java.util.*
 import java8.util.concurrent.CompletableFuture
@@ -15,7 +16,20 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
     }
 
     enum class Provider {
-        GOOGLE, FACEBOOK, REDDIT, DISCORD, TWITCH, APPLE, LINE, GITHUB, KAKAO, LINKEDIN, TWITTER, WEIBO, WECHAT, EMAIL_PASSWORDLESS
+        @SerializedName("google")GOOGLE,
+        @SerializedName("facebook")FACEBOOK,
+        @SerializedName("reddit")REDDIT,
+        @SerializedName("discord")DISCORD,
+        @SerializedName("twitch")TWITCH,
+        @SerializedName("apple")APPLE,
+        @SerializedName("line")LINE,
+        @SerializedName("github")GITHUB,
+        @SerializedName("kakao")KAKAO,
+        @SerializedName("linkedin")LINKEDIN,
+        @SerializedName("twitter")TWITTER,
+        @SerializedName("weibo")WEIBO,
+        @SerializedName("wechat")WECHAT,
+        @SerializedName("email_passwordless")EMAIL_PASSWORDLESS
     }
 
     private val gson = Gson()
@@ -40,13 +54,15 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         this.context = openLoginOptions.context
     }
 
-    private fun request(path: String, params: Map<String, Any>?) {
-        val hash = gson.toJson(
-            mapOf(
-                "init" to initParams,
-                "params" to params
-            )
-        ).toByteArray(Charsets.UTF_8).toBase64URLString()
+    private fun request(path: String, params: LoginParams? = null, extraParams: Map<String, Any>? = null) {
+        val paramMap = mapOf(
+            "init" to initParams,
+            "params" to params
+        )
+        extraParams?.let{ paramMap.plus("params" to extraParams) }
+
+        val hash = gson.toJson(paramMap).toByteArray(Charsets.UTF_8).toBase64URLString()
+
         val url = Uri.Builder().scheme(sdkUrl.scheme)
             .encodedAuthority(sdkUrl.encodedAuthority)
             .encodedPath(sdkUrl.encodedPath)
@@ -99,22 +115,14 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
     }
 
     fun login(loginParams: LoginParams) : CompletableFuture<OpenLoginResponse> {
-        val params = mutableMapOf<String, Any>(
-            "loginProvider" to loginParams.loginProvider.name.lowercase(Locale.ROOT),
-        )
-        if (loginParams.reLogin != null) params["relogin"] = loginParams.reLogin
-        if (loginParams.skipTKey != null) params["skipTKey"] = loginParams.skipTKey
-        if (loginParams.extraLoginOptions != null) params["extraLoginOptions"] = loginParams.extraLoginOptions
-        if (loginParams.redirectUrl != null) params["redirectUrl"] = loginParams.redirectUrl.toString()
-        if (loginParams.appState != null) params["appState"] = loginParams.appState
-        request("login", params)
+        request("login", loginParams)
 
         loginCompletableFuture = CompletableFuture()
         return loginCompletableFuture
     }
 
     fun logout(params: Map<String, Any>? = null) : CompletableFuture<Void> {
-        request("logout", params)
+        request("logout", extraParams = params)
 
         logoutCompletableFuture = CompletableFuture()
         return logoutCompletableFuture
