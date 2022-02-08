@@ -1,8 +1,8 @@
-package com.openlogin.core.types
+package com.web3auth.core.types
 
 import android.content.Context
 import android.net.Uri
-import com.openlogin.core.OpenLogin
+import com.web3auth.core.OpenLogin
 
 data class OpenLoginOptions (
     val context: Context,

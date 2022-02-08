@@ -1,4 +1,4 @@
-package com.openlogin.core
+package com.web3auth.core
 
 import android.content.Context
 import android.content.Intent

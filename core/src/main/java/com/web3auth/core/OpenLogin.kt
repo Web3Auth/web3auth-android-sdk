@@ -1,4 +1,4 @@
-package com.openlogin.core
+package com.web3auth.core
 
 import android.content.Context
 import android.content.Intent
@@ -6,7 +6,7 @@ import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
-import com.openlogin.core.types.*
+import com.web3auth.core.types.*
 import java.util.*
 import java8.util.concurrent.CompletableFuture
 
