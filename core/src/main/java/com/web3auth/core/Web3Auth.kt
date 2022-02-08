@@ -10,7 +10,7 @@ import com.web3auth.core.types.*
 import java.util.*
 import java8.util.concurrent.CompletableFuture
 
-class OpenLogin(openLoginOptions: OpenLoginOptions) {
+class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     enum class Network {
         MAINNET, TESTNET
     }
@@ -34,24 +34,24 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
 
     private val gson = Gson()
 
-    private val sdkUrl = Uri.parse(openLoginOptions.sdkUrl)
+    private val sdkUrl = Uri.parse(web3AuthOptions.sdkUrl)
     private val initParams: Map<String, Any>
     private val context : Context
 
-    private var loginCompletableFuture: CompletableFuture<OpenLoginResponse> = CompletableFuture()
+    private var loginCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
     private var logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
 
-    private var openLoginResponse = OpenLoginResponse()
+    private var web3AuthResponse = Web3AuthResponse()
 
     init {
         // Build init params
         val initParams = mutableMapOf(
-            "clientId" to openLoginOptions.clientId,
-            "network" to openLoginOptions.network.name.lowercase(Locale.ROOT)
+            "clientId" to web3AuthOptions.clientId,
+            "network" to web3AuthOptions.network.name.lowercase(Locale.ROOT)
         )
-        if (openLoginOptions.redirectUrl != null) initParams["redirectUrl"] = openLoginOptions.redirectUrl.toString()
+        if (web3AuthOptions.redirectUrl != null) initParams["redirectUrl"] = web3AuthOptions.redirectUrl.toString()
         this.initParams = initParams
-        this.context = openLoginOptions.context
+        this.context = web3AuthOptions.context
     }
 
     private fun request(path: String, params: LoginParams? = null, extraParams: Map<String, Any>? = null) {
@@ -99,22 +99,22 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
             loginCompletableFuture.completeExceptionally(UnKnownException(error))
         }
 
-        openLoginResponse = gson.fromJson(
+        web3AuthResponse = gson.fromJson(
             decodeBase64URLString(hash).toString(Charsets.UTF_8),
-            OpenLoginResponse::class.java
+            Web3AuthResponse::class.java
         )
-        if (openLoginResponse.error?.isNotBlank() == true ) {
-            loginCompletableFuture.completeExceptionally(UnKnownException(openLoginResponse.error ?: "Something went wrong"))
+        if (web3AuthResponse.error?.isNotBlank() == true ) {
+            loginCompletableFuture.completeExceptionally(UnKnownException(web3AuthResponse.error ?: "Something went wrong"))
         }
 
-        if (openLoginResponse.privKey.isNullOrBlank()) {
+        if (web3AuthResponse.privKey.isNullOrBlank()) {
             logoutCompletableFuture.complete(null)
         }
 
-        loginCompletableFuture.complete(openLoginResponse)
+        loginCompletableFuture.complete(web3AuthResponse)
     }
 
-    fun login(loginParams: LoginParams) : CompletableFuture<OpenLoginResponse> {
+    fun login(loginParams: LoginParams) : CompletableFuture<Web3AuthResponse> {
         request("login", loginParams)
 
         loginCompletableFuture = CompletableFuture()

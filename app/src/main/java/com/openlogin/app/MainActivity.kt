@@ -9,39 +9,39 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
-import com.web3auth.core.OpenLogin
+import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
 import com.web3auth.core.types.ExtraLoginOptions
 import com.web3auth.core.types.LoginParams
-import com.web3auth.core.types.OpenLoginOptions
-import com.web3auth.core.types.OpenLoginResponse
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
 import java8.util.concurrent.CompletableFuture
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
-    private lateinit var openlogin: OpenLogin
+    private lateinit var openlogin: Web3Auth
 
     private val verifierList : List<LoginVerifier> = listOf(
-        LoginVerifier("Google", OpenLogin.Provider.GOOGLE),
-        LoginVerifier("Facebook", OpenLogin.Provider.FACEBOOK),
-        LoginVerifier("Twitch", OpenLogin.Provider.TWITCH),
-        LoginVerifier("Discord", OpenLogin.Provider.DISCORD),
-        LoginVerifier("Reddit", OpenLogin.Provider.REDDIT),
-        LoginVerifier("Apple", OpenLogin.Provider.APPLE),
-        LoginVerifier("Github", OpenLogin.Provider.GITHUB),
-        LoginVerifier("LinkedIn", OpenLogin.Provider.LINKEDIN),
-        LoginVerifier("Twitter", OpenLogin.Provider.TWITTER),
-        LoginVerifier("Line", OpenLogin.Provider.LINE),
-        LoginVerifier("Hosted Email Passwordless", OpenLogin.Provider.EMAIL_PASSWORDLESS)
+        LoginVerifier("Google", Web3Auth.Provider.GOOGLE),
+        LoginVerifier("Facebook", Web3Auth.Provider.FACEBOOK),
+        LoginVerifier("Twitch", Web3Auth.Provider.TWITCH),
+        LoginVerifier("Discord", Web3Auth.Provider.DISCORD),
+        LoginVerifier("Reddit", Web3Auth.Provider.REDDIT),
+        LoginVerifier("Apple", Web3Auth.Provider.APPLE),
+        LoginVerifier("Github", Web3Auth.Provider.GITHUB),
+        LoginVerifier("LinkedIn", Web3Auth.Provider.LINKEDIN),
+        LoginVerifier("Twitter", Web3Auth.Provider.TWITTER),
+        LoginVerifier("Line", Web3Auth.Provider.LINE),
+        LoginVerifier("Hosted Email Passwordless", Web3Auth.Provider.EMAIL_PASSWORDLESS)
     )
 
-    private var selectedLoginProvider: OpenLogin.Provider = OpenLogin.Provider.GOOGLE
+    private var selectedLoginProvider: Web3Auth.Provider = Web3Auth.Provider.GOOGLE
 
     private val gson = Gson()
 
     private fun signIn() {
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
         var extraLoginOptions : ExtraLoginOptions? = null
-        if (selectedLoginProvider == OpenLogin.Provider.EMAIL_PASSWORDLESS) {
+        if (selectedLoginProvider == Web3Auth.Provider.EMAIL_PASSWORDLESS) {
             val hintEmail = hintEmailEditText.text.toString()
             if (hintEmail.isBlank() || !hintEmail.isEmailValid()) {
                 Toast.makeText(this, "Please enter a valid Email.", Toast.LENGTH_LONG).show()
@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
 
-        val loginCompletableFuture: CompletableFuture<OpenLoginResponse> = openlogin.login(
+        val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = openlogin.login(
             LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions)
         )
         loginCompletableFuture.whenComplete { loginResponse, error ->
@@ -67,24 +67,24 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val logoutCompletableFuture =  openlogin.logout()
         logoutCompletableFuture.whenComplete { _, error ->
             if (error == null) {
-                reRender(OpenLoginResponse())
+                reRender(Web3AuthResponse())
             } else {
                 Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong" )
             }
         }
     }
 
-    private fun reRender(openLoginResponse: OpenLoginResponse) {
+    private fun reRender(web3AuthResponse: Web3AuthResponse) {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
 
-        val key = openLoginResponse.privKey
-        val userInfo = openLoginResponse.userInfo
+        val key = web3AuthResponse.privKey
+        val userInfo = web3AuthResponse.userInfo
         if (key is String && key.isNotEmpty()) {
-            contentTextView.text = gson.toJson(openLoginResponse)
+            contentTextView.text = gson.toJson(web3AuthResponse)
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
@@ -104,10 +104,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         setContentView(R.layout.activity_main)
 
         // Configure OpenLogin
-        openlogin = OpenLogin(
-            OpenLoginOptions(context = this,
+        openlogin = Web3Auth(
+            Web3AuthOptions(context = this,
             clientId = getString(R.string.openlogin_project_id),
-            network = OpenLogin.Network.MAINNET,
+            network = Web3Auth.Network.MAINNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect"))
         )
 
@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         selectedLoginProvider = verifierList[p2].loginProvider
 
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
-        if (selectedLoginProvider == OpenLogin.Provider.EMAIL_PASSWORDLESS) {
+        if (selectedLoginProvider == Web3Auth.Provider.EMAIL_PASSWORDLESS) {
             hintEmailEditText.visibility = View.VISIBLE
         } else {
             hintEmailEditText.visibility = View.GONE
