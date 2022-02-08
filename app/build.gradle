@@ -15,7 +15,7 @@ android {
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.openlogin.app"
+        applicationId "com.web3auth.app"
         minSdkVersion 21
         targetSdkVersion 31
         versionCode 1
@@ -59,7 +59,7 @@ dependencies {
     // Encoding
     implementation 'com.google.code.gson:gson:2.8.9'
 
-    // OpenLogin
+    // Web3Auth
     implementation project(":core")
 
     // Test

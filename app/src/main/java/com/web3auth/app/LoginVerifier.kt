@@ -1,4 +1,4 @@
-package com.openlogin.app
+package com.web3auth.app
 
 import com.web3auth.core.Web3Auth
 
