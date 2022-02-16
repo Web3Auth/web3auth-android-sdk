@@ -50,6 +50,8 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
             "network" to openLoginOptions.network.name.lowercase(Locale.ROOT)
         )
         if (openLoginOptions.redirectUrl != null) initParams["redirectUrl"] = openLoginOptions.redirectUrl.toString()
+        if (openLoginOptions.whiteLabel != null) initParams["whiteLabel"] = openLoginOptions.whiteLabel.toString()
+
         this.initParams = initParams
         this.context = openLoginOptions.context
     }
