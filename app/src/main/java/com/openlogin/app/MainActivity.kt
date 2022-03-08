@@ -11,10 +11,7 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
 import com.openlogin.core.OpenLogin
 import com.openlogin.core.isEmailValid
-import com.openlogin.core.types.ExtraLoginOptions
-import com.openlogin.core.types.LoginParams
-import com.openlogin.core.types.OpenLoginOptions
-import com.openlogin.core.types.OpenLoginResponse
+import com.openlogin.core.types.*
 import java8.util.concurrent.CompletableFuture
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {

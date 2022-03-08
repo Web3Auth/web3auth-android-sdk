@@ -3,6 +3,7 @@ package com.openlogin.core
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
@@ -50,7 +51,7 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
             "network" to openLoginOptions.network.name.lowercase(Locale.ROOT)
         )
         if (openLoginOptions.redirectUrl != null) initParams["redirectUrl"] = openLoginOptions.redirectUrl.toString()
-        if (openLoginOptions.whiteLabel != null) initParams["whiteLabel"] = openLoginOptions.whiteLabel.toString()
+        if (openLoginOptions.whiteLabel != null) initParams["whiteLabel"] = gson.toJson(openLoginOptions.whiteLabel)
 
         this.initParams = initParams
         this.context = openLoginOptions.context
