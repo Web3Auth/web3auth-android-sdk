@@ -3,6 +3,7 @@ package com.openlogin.core
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
@@ -12,24 +13,7 @@ import java8.util.concurrent.CompletableFuture
 
 class OpenLogin(openLoginOptions: OpenLoginOptions) {
     enum class Network {
-        MAINNET, TESTNET
-    }
-
-    enum class Provider {
-        @SerializedName("google")GOOGLE,
-        @SerializedName("facebook")FACEBOOK,
-        @SerializedName("reddit")REDDIT,
-        @SerializedName("discord")DISCORD,
-        @SerializedName("twitch")TWITCH,
-        @SerializedName("apple")APPLE,
-        @SerializedName("line")LINE,
-        @SerializedName("github")GITHUB,
-        @SerializedName("kakao")KAKAO,
-        @SerializedName("linkedin")LINKEDIN,
-        @SerializedName("twitter")TWITTER,
-        @SerializedName("weibo")WEIBO,
-        @SerializedName("wechat")WECHAT,
-        @SerializedName("email_passwordless")EMAIL_PASSWORDLESS
+        MAINNET, TESTNET, CYAN
     }
 
     private val gson = Gson()
@@ -51,7 +35,9 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         )
         if (openLoginOptions.redirectUrl != null) initParams["redirectUrl"] = openLoginOptions.redirectUrl.toString()
         if (openLoginOptions.whiteLabel != null) initParams["whiteLabel"] = gson.toJson(openLoginOptions.whiteLabel)
+        if (openLoginOptions.loginConfig != null) initParams["loginConfig"] = gson.toJson(openLoginOptions.loginConfig)
 
+        Log.d("whitelabel", initParams.toString())
         this.initParams = initParams
         this.context = openLoginOptions.context
     }
@@ -64,6 +50,8 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         extraParams?.let{ paramMap.plus("params" to extraParams) }
 
         val hash = gson.toJson(paramMap).toByteArray(Charsets.UTF_8).toBase64URLString()
+
+        Log.d("hash", hash.toString())
 
         val url = Uri.Builder().scheme(sdkUrl.scheme)
             .encodedAuthority(sdkUrl.encodedAuthority)

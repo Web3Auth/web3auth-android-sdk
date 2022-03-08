@@ -17,28 +17,28 @@ import java8.util.concurrent.CompletableFuture
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var openlogin: OpenLogin
 
-    private val verifierList : List<LoginVerifier> = listOf(
-        LoginVerifier("Google", OpenLogin.Provider.GOOGLE),
-        LoginVerifier("Facebook", OpenLogin.Provider.FACEBOOK),
-        LoginVerifier("Twitch", OpenLogin.Provider.TWITCH),
-        LoginVerifier("Discord", OpenLogin.Provider.DISCORD),
-        LoginVerifier("Reddit", OpenLogin.Provider.REDDIT),
-        LoginVerifier("Apple", OpenLogin.Provider.APPLE),
-        LoginVerifier("Github", OpenLogin.Provider.GITHUB),
-        LoginVerifier("LinkedIn", OpenLogin.Provider.LINKEDIN),
-        LoginVerifier("Twitter", OpenLogin.Provider.TWITTER),
-        LoginVerifier("Line", OpenLogin.Provider.LINE),
-        LoginVerifier("Hosted Email Passwordless", OpenLogin.Provider.EMAIL_PASSWORDLESS)
+    private val verifierList: List<LoginVerifier> = listOf(
+        LoginVerifier("Google", Provider.GOOGLE),
+        LoginVerifier("Facebook", Provider.FACEBOOK),
+        LoginVerifier("Twitch", Provider.TWITCH),
+        LoginVerifier("Discord", Provider.DISCORD),
+        LoginVerifier("Reddit", Provider.REDDIT),
+        LoginVerifier("Apple", Provider.APPLE),
+        LoginVerifier("Github", Provider.GITHUB),
+        LoginVerifier("LinkedIn", Provider.LINKEDIN),
+        LoginVerifier("Twitter", Provider.TWITTER),
+        LoginVerifier("Line", Provider.LINE),
+        LoginVerifier("Hosted Email Passwordless", Provider.EMAIL_PASSWORDLESS)
     )
 
-    private var selectedLoginProvider: OpenLogin.Provider = OpenLogin.Provider.GOOGLE
+    private var selectedLoginProvider: Provider = Provider.GOOGLE
 
     private val gson = Gson()
 
     private fun signIn() {
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
-        var extraLoginOptions : ExtraLoginOptions? = null
-        if (selectedLoginProvider == OpenLogin.Provider.EMAIL_PASSWORDLESS) {
+        var extraLoginOptions: ExtraLoginOptions? = null
+        if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS) {
             val hintEmail = hintEmailEditText.text.toString()
             if (hintEmail.isBlank() || !hintEmail.isEmailValid()) {
                 Toast.makeText(this, "Please enter a valid Email.", Toast.LENGTH_LONG).show()
@@ -47,24 +47,29 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
 
-        val loginCompletableFuture: CompletableFuture<OpenLoginResponse> = openlogin.login(LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions))
+        val loginCompletableFuture: CompletableFuture<OpenLoginResponse> = openlogin.login(
+            LoginParams(
+                selectedLoginProvider,
+                extraLoginOptions = extraLoginOptions
+            )
+        )
         loginCompletableFuture.whenComplete { loginResponse, error ->
             if (error == null) {
                 reRender(loginResponse)
             } else {
-                Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong" )
+                Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong")
             }
 
         }
     }
 
     private fun signOut() {
-        val logoutCompletableFuture =  openlogin.logout()
+        val logoutCompletableFuture = openlogin.logout()
         logoutCompletableFuture.whenComplete { _, error ->
             if (error == null) {
                 reRender(OpenLoginResponse())
             } else {
-                Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong" )
+                Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong")
             }
         }
     }
@@ -99,12 +104,20 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         setContentView(R.layout.activity_main)
 
         // Configure OpenLogin
-        openlogin = OpenLogin(OpenLoginOptions(context = this,
-            clientId = getString(R.string.openlogin_project_id),
-            network = OpenLogin.Network.MAINNET,
-            redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect"),
-            whiteLabel = WhiteLabelData("Web3Auth Sample App", null, null, "en", true, null)
-            ))
+        openlogin = OpenLogin(
+            OpenLoginOptions(
+                context = this,
+                clientId = getString(R.string.openlogin_project_id),
+                network = OpenLogin.Network.MAINNET,
+                redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect"),
+                whiteLabel = WhiteLabelData(
+                    "Web3Auth Sample App", null, null, "en", true,
+                    hashMapOf(
+                        "primary" to "#123456"
+                    )
+                )
+            )
+        )
 
         openlogin.setResultUrl(intent.data)
 
@@ -116,8 +129,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         signOutButton.setOnClickListener { signOut() }
 
         val spinner = findViewById<AutoCompleteTextView>(R.id.spinnerTextView)
-        val loginVerifierList: List<String> = verifierList.map {
-            item -> item.name
+        val loginVerifierList: List<String> = verifierList.map { item ->
+            item.name
         }
         val adapter: ArrayAdapter<String> =
             ArrayAdapter(this, R.layout.item_dropdown, loginVerifierList)
@@ -134,7 +147,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         selectedLoginProvider = verifierList[p2].loginProvider
 
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
-        if (selectedLoginProvider == OpenLogin.Provider.EMAIL_PASSWORDLESS) {
+        if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS) {
             hintEmailEditText.visibility = View.VISIBLE
         } else {
             hintEmailEditText.visibility = View.GONE
