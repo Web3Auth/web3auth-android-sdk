@@ -11,4 +11,5 @@ data class OpenLoginOptions (
     val redirectUrl: Uri? = null,
     val sdkUrl: String = "https://sdk.openlogin.com",
     val whiteLabel: WhiteLabelData? = null,
+    val loginConfig: HashMap<String, LoginConfigItem>? = null,
 )

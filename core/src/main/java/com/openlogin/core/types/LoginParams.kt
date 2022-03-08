@@ -4,7 +4,7 @@ import android.net.Uri
 import com.openlogin.core.OpenLogin
 
 data class LoginParams (
-    val loginProvider: OpenLogin.Provider,
+    val loginProvider: Provider,
     val relogin: Boolean? = null,
     val skipTKey: Boolean? = null,
     val extraLoginOptions: ExtraLoginOptions? = null,
