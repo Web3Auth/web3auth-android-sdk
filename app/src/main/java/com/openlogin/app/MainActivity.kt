@@ -102,7 +102,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         openlogin = OpenLogin(OpenLoginOptions(context = this,
             clientId = getString(R.string.openlogin_project_id),
             network = OpenLogin.Network.MAINNET,
-            redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect")))
+            redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect"),
+            whiteLabel = WhiteLabelData("Web3Auth Sample App", null, null, "en", true, null)
+            ))
 
         openlogin.setResultUrl(intent.data)
 
