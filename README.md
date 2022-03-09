@@ -1,10 +1,10 @@
-# openlogin-android-sdk
+# web3auth-android-sdk
 
 [![](https://jitpack.io/v/org.torusresearch/openlogin-android-sdk.svg)](https://jitpack.io/#org.torusresearch/openlogin-android-sdk)
 
-Torus OpenLogin SDK for Android applications.
+Torus Web3Auth SDK for Android applications.
 
-`openlogin-android-sdk` is a client-side library you can use with your Android app to authenticate users using [OpenLogin](https://openlogin.com).
+`web3auth-android-sdk` is a client-side library you can use with your Android app to authenticate users using [Web3Auth](https://web3auth.io/).
 
 ## Requirements
 
@@ -12,7 +12,7 @@ Android API version 21 or newer is required.
 
 ## Installation
 
-### Add OpenLogin to Gradle
+### Add Web3Auth to Gradle
 
 In your project-level `build.gradle` file, add JitPack repository:
 
@@ -34,9 +34,6 @@ dependencies {
 }
 ```
 
-**Note**: This SDK is currently in beta, using `-SNAPSHOT` to make sure you receive latest updates 
-and be aware that there may be breaking changes.
-
 ### Permissions
 
 Open your app's `AndroidManifest.xml` file and add the following permission:
@@ -47,9 +44,9 @@ Open your app's `AndroidManifest.xml` file and add the following permission:
 
 ## Integrating
 
-### Configure an OpenLogin project
+### Configure an Web3Auth project
 
-Go to [Developer Dashboard](https://developer.tor.us), create or select an OpenLogin project:
+Go to [Developer Dashboard](https://dashboard.web3auth.io/), create or select an Web3Auth project:
 
 - Add `{YOUR_APP_PACKAGE_NAME}://auth` to **Whitelist URLs**.
 
@@ -71,27 +68,36 @@ Open your app's `AndroidManifest.xml` file and add the following deep link inten
 </intent-filter>
 ```
 
-### Initialize OpenLogin
+### Initialize Web3Auth
 
-In your sign-in activity', create an `OpenLogin` instance with your OpenLogin project's configurations and 
+In your sign-in activity', create an `Web3Auth` instance with your Web3Auth project's configurations and 
 configure it like this:
 
 ```kotlin
 class MainActivity : AppCompatActivity() {
     // ...
-    lateinit var openlogin: OpenLogin
+    private lateinit var web3Auth: Web3Auth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        openlogin = OpenLogin(OpenLoginOptions(context = this,
-            clientId = getString(R.string.openlogin_client_id),
-            network = OpenLogin.Network.MAINNET,
-            redirectUrl = Uri.parse("{YOUR_APP_PACKAGE_NAME}://auth")))
+        web3Auth = Web3Auth(
+            Web3AuthOptions(context = this,
+                clientId = getString(R.string.openlogin_project_id),
+                network = Web3Auth.Network.MAINNET,
+                redirectUrl = Uri.parse("{YOUR_APP_PACKAGE_NAME}://auth"),
+                whiteLabel = WhiteLabelData(  // Optional param
+                    "Web3Auth Sample App", null, null, "en", true,
+                    hashMapOf(
+                        "primary" to "#123456"
+                    )
+                )
+            )
+        )
 
         // Handle user signing in when app is not alive
-        openlogin.setResultUrl(intent?.data)
+        web3Auth.setResultUrl(intent?.data)
         
         // ...
     }
@@ -100,14 +106,14 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
 
         // Handle user signing in when app is active
-        openlogin.setResultUrl(intent?.data)
+        web3Auth.setResultUrl(intent?.data)
 
         // ...
     }
 
     private fun onClickLogin() {
-        val selectedLoginProvider = OpenLogin.Provider.GOOGLE   // Can be Google, Facebook, Twitch etc
-        val loginCompletableFuture: CompletableFuture<State> = openlogin.login(LoginParams(selectedLoginProvider))
+        val selectedLoginProvider = Provider.GOOGLE   // Can be Google, Facebook, Twitch etc
+        val loginCompletableFuture: CompletableFuture<State> = web3Auth.login(LoginParams(selectedLoginProvider))
         
         loginCompletableFuture.whenComplete { state, error ->
             if (error == null) {
@@ -136,8 +142,8 @@ Make sure your sign-in activity `launchMode` is set to `singleTop` in your `Andr
 ## API Reference
 
 ```kotlin
-class OpenLogin(
-    var openLoginOptions : OpenLoginOptions
+class Web3Auth(
+    var web3AuthOptions: Web3AuthOptions
 ) {
     // Trigger login flow that shows a modal for user to select one of supported providers to login,
     // e.g. Google, Facebook, Twitter, Passwordless, etc 
@@ -149,15 +155,17 @@ class OpenLogin(
     ) {}
 } 
 
-data class OpenLoginOptions(
+data class Web3AuthOptions(
     context: Context, // Android context to launch Web-based authentication, usually is the current activity
-    clientId: String, // Your OpenLogin project ID
-    network: Network, // Network to run OpenLogin, either MAINNET or TESTNET
-    redirectUrl: Uri? = null, // URL that OpenLogin will redirect API responses
+    clientId: String, // Your Web3Auth project ID
+    network: Network, // Network to run Web3Auth, either MAINNET or TESTNET
+    redirectUrl: Uri? = null, // URL that Web3Auth will redirect API responses
+    whiteLabel: WhiteLabelData? = null,  // Optional param to configure look and feel of web3uth login page
+    loginConfig: HashMap<String, LoginConfigItem>? = null, // Optional
 )
 
 data class LoginParams(
-    val loginProvider: OpenLogin.Provider,
+    val loginProvider: Provider,
     val reLogin: Boolean? = null,
     val skipTKey: Boolean? = null,
     val extraLoginOptions: ExtraLoginOptions? = null,
