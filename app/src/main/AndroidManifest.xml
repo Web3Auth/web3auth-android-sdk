@@ -10,7 +10,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Openlogin">
+        android:theme="@style/Theme.Web3Auth">
 
         <activity
             android:launchMode="singleTop"
@@ -39,8 +39,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <!-- Accept URIs: openlogin://* -->
-                <data android:scheme="openlogin" />
+                <data android:scheme="web3auth" />
             </intent-filter>
         </activity>
 
