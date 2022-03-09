@@ -37,7 +37,6 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
         if (openLoginOptions.whiteLabel != null) initParams["whiteLabel"] = gson.toJson(openLoginOptions.whiteLabel)
         if (openLoginOptions.loginConfig != null) initParams["loginConfig"] = gson.toJson(openLoginOptions.loginConfig)
 
-        Log.d("whitelabel", initParams.toString())
         this.initParams = initParams
         this.context = openLoginOptions.context
     }
@@ -51,15 +50,12 @@ class OpenLogin(openLoginOptions: OpenLoginOptions) {
 
         val hash = gson.toJson(paramMap).toByteArray(Charsets.UTF_8).toBase64URLString()
 
-        Log.d("hash", hash.toString())
-
         val url = Uri.Builder().scheme(sdkUrl.scheme)
             .encodedAuthority(sdkUrl.encodedAuthority)
             .encodedPath(sdkUrl.encodedPath)
             .appendPath(path)
             .fragment(hash)
             .build()
-
 
         val defaultBrowser = context.getDefaultBrowser()
         val customTabsBrowsers = context.getCustomTabsBrowsers()
