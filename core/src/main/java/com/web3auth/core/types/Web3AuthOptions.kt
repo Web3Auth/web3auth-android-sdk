@@ -10,4 +10,6 @@ data class Web3AuthOptions (
     val network: Web3Auth.Network,
     val redirectUrl: Uri? = null,
     val sdkUrl: String = "https://sdk.openlogin.com",
+    val whiteLabel: WhiteLabelData? = null,
+    val loginConfig: HashMap<String, LoginConfigItem>? = null,
 )

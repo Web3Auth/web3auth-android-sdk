@@ -12,24 +12,7 @@ import java8.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     enum class Network {
-        MAINNET, TESTNET
-    }
-
-    enum class Provider {
-        @SerializedName("google")GOOGLE,
-        @SerializedName("facebook")FACEBOOK,
-        @SerializedName("reddit")REDDIT,
-        @SerializedName("discord")DISCORD,
-        @SerializedName("twitch")TWITCH,
-        @SerializedName("apple")APPLE,
-        @SerializedName("line")LINE,
-        @SerializedName("github")GITHUB,
-        @SerializedName("kakao")KAKAO,
-        @SerializedName("linkedin")LINKEDIN,
-        @SerializedName("twitter")TWITTER,
-        @SerializedName("weibo")WEIBO,
-        @SerializedName("wechat")WECHAT,
-        @SerializedName("email_passwordless")EMAIL_PASSWORDLESS
+        MAINNET, TESTNET, CYAN
     }
 
     private val gson = Gson()
@@ -49,7 +32,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             "clientId" to web3AuthOptions.clientId,
             "network" to web3AuthOptions.network.name.lowercase(Locale.ROOT)
         )
-        if (web3AuthOptions.redirectUrl != null) initParams["redirectUrl"] = web3AuthOptions.redirectUrl.toString()
+        if (web3AuthOptions.redirectUrl != null) initParams["redirectUrl"] = openLoginOptions.redirectUrl.toString()
+        if (web3AuthOptions.whiteLabel != null) initParams["whiteLabel"] = gson.toJson(openLoginOptions.whiteLabel)
+        if (web3AuthOptions.loginConfig != null) initParams["loginConfig"] = gson.toJson(openLoginOptions.loginConfig)
+
+        Log.d("whitelabel", initParams.toString())
         this.initParams = initParams
         this.context = web3AuthOptions.context
     }
