@@ -19,5 +19,6 @@ data class ExtraLoginOptions(
     private var connection : String? = null,
     private var state : String? = null,
     private var response_type : String? = null,
-    private var nonce : String? = null
+    private var nonce : String? = null,
+    private var redirect_uri : String? = null
 )

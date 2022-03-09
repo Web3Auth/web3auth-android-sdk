@@ -55,7 +55,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             .fragment(hash)
             .build()
 
-
         val defaultBrowser = context.getDefaultBrowser()
         val customTabsBrowsers = context.getCustomTabsBrowsers()
 
