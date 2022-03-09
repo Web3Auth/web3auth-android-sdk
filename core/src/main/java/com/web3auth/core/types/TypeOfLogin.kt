@@ -1,8 +1,8 @@
-package com.openlogin.core.types
+package com.web3auth.core.types
 
 import com.google.gson.annotations.SerializedName
 
-enum class Provider {
+enum class TypeOfLogin {
     @SerializedName("google")GOOGLE,
     @SerializedName("facebook")FACEBOOK,
     @SerializedName("reddit")REDDIT,
@@ -16,5 +16,7 @@ enum class Provider {
     @SerializedName("twitter")TWITTER,
     @SerializedName("weibo")WEIBO,
     @SerializedName("wechat")WECHAT,
-    @SerializedName("email_passwordless")EMAIL_PASSWORDLESS
+    @SerializedName("email_passwordless")EMAIL_PASSWORDLESS,
+    @SerializedName("email_password")EMAIL_PASSWORD,
+    @SerializedName("jwt")JWT
 }

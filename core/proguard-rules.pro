@@ -1,6 +1,6 @@
--keep class com.openlogin.core.* {*;}
--keep class com.openlogin.core.** {*;}
--keepclassmembers class com.openlogin.core.**
+-keep class com.web3auth.core.* {*;}
+-keep class com.web3auth.core.** {*;}
+-keepclassmembers class com.web3auth.core.**
 
 ##### okhttp3
 # okHttp3

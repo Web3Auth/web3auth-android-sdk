@@ -1,6 +1,6 @@
-package com.openlogin.app
+package com.web3auth.app
 
-import com.openlogin.core.types.Provider
+import com.web3auth.core.types.Provider
 
 data class LoginVerifier (
     val name : String,

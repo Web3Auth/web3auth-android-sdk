@@ -1,7 +1,7 @@
-package com.openlogin.core.types
+package com.web3auth.core.types
 
 import android.net.Uri
-import com.openlogin.core.OpenLogin
+import com.web3auth.core.Web3Auth
 
 data class LoginParams (
     val loginProvider: Provider,

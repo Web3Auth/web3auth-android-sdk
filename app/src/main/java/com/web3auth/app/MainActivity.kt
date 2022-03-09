@@ -1,4 +1,4 @@
-package com.openlogin.app
+package com.web3auth.app
 
 import android.content.Intent
 import android.net.Uri
@@ -9,13 +9,18 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
-import com.openlogin.core.OpenLogin
-import com.openlogin.core.isEmailValid
-import com.openlogin.core.types.*
+import com.web3auth.core.types.WhiteLabelData
+import com.web3auth.core.types.Provider
+import com.web3auth.core.Web3Auth
+import com.web3auth.core.isEmailValid
+import com.web3auth.core.types.ExtraLoginOptions
+import com.web3auth.core.types.LoginParams
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
 import java8.util.concurrent.CompletableFuture
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
-    private lateinit var openlogin: OpenLogin
+    private lateinit var web3Auth: Web3Auth
 
     private val verifierList: List<LoginVerifier> = listOf(
         LoginVerifier("Google", Provider.GOOGLE),
@@ -47,44 +52,41 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
 
-        val loginCompletableFuture: CompletableFuture<OpenLoginResponse> = openlogin.login(
-            LoginParams(
-                selectedLoginProvider,
-                extraLoginOptions = extraLoginOptions
-            )
+        val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(
+            LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions)
         )
         loginCompletableFuture.whenComplete { loginResponse, error ->
             if (error == null) {
                 reRender(loginResponse)
             } else {
-                Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong")
+                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong" )
             }
 
         }
     }
 
     private fun signOut() {
-        val logoutCompletableFuture = openlogin.logout()
+        val logoutCompletableFuture =  web3Auth.logout()
         logoutCompletableFuture.whenComplete { _, error ->
             if (error == null) {
-                reRender(OpenLoginResponse())
+                reRender(Web3AuthResponse())
             } else {
-                Log.d("MainActivity_OpenLogin", error.message ?: "Something went wrong")
+                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong" )
             }
         }
     }
 
-    private fun reRender(openLoginResponse: OpenLoginResponse) {
+    private fun reRender(web3AuthResponse: Web3AuthResponse) {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
 
-        val key = openLoginResponse.privKey
-        val userInfo = openLoginResponse.userInfo
+        val key = web3AuthResponse.privKey
+        val userInfo = web3AuthResponse.userInfo
         if (key is String && key.isNotEmpty()) {
-            contentTextView.text = gson.toJson(openLoginResponse)
+            contentTextView.text = gson.toJson(web3AuthResponse)
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
@@ -103,13 +105,12 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Configure OpenLogin
-        openlogin = OpenLogin(
-            OpenLoginOptions(
-                context = this,
-                clientId = getString(R.string.openlogin_project_id),
-                network = OpenLogin.Network.MAINNET,
-                redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect"),
+        // Configure Web3Auth
+        web3Auth = Web3Auth(
+            Web3AuthOptions(context = this,
+            clientId = getString(R.string.openlogin_project_id),
+            network = Web3Auth.Network.MAINNET,
+            redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect"),
                 whiteLabel = WhiteLabelData(
                     "Web3Auth Sample App", null, null, "en", true,
                     hashMapOf(
@@ -119,7 +120,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             )
         )
 
-        openlogin.setResultUrl(intent.data)
+        web3Auth.setResultUrl(intent.data)
 
         // Setup UI and event handlers
         val signInButton = findViewById<Button>(R.id.signInButton)
@@ -140,7 +141,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        openlogin.setResultUrl(intent?.data)
+        web3Auth.setResultUrl(intent?.data)
     }
 
     override fun onItemClick(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {

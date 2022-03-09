@@ -1,4 +1,4 @@
-package com.openlogin.core.types
+package com.web3auth.core.types
 
 data class LoginConfigItem(
     private var verifier: String,
