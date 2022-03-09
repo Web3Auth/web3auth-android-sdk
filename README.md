@@ -1,6 +1,6 @@
 # web3auth-android-sdk
 
-[![](https://jitpack.io/v/org.torusresearch/openlogin-android-sdk.svg)](https://jitpack.io/#org.torusresearch/openlogin-android-sdk)
+[![](https://jitpack.io/v/org.torusresearch/web3auth-android-sdk.svg)](https://jitpack.io/#org.torusresearch/web3auth-android-sdk)
 
 Torus Web3Auth SDK for Android applications.
 
@@ -30,7 +30,7 @@ Then, in your app-level `build.gradle` dependencies section, add the following:
 ```groovy
 dependencies {
     // ...
-    implementation 'org.torusresearch:openlogin-android-sdk:-SNAPSHOT'
+    implementation 'org.torusresearch:web3auth-android-sdk:-SNAPSHOT'
 }
 ```
 
