@@ -1,4 +1,4 @@
-package com.openlogin.app
+package com.web3auth.app
 
 import android.content.Intent
 import android.net.Uri
@@ -9,6 +9,8 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
+import com.web3auth.core.types.WhiteLabelData
+import com.web3auth.core.types.Provider
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
 import com.web3auth.core.types.ExtraLoginOptions
@@ -114,7 +116,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     hashMapOf(
                         "primary" to "#123456"
                     )
-                ))
+                )
+            )
         )
 
         web3Auth.setResultUrl(intent.data)

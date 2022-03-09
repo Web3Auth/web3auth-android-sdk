@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
 import com.web3auth.core.types.*
 import java.util.*
 import java8.util.concurrent.CompletableFuture
@@ -32,11 +31,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             "clientId" to web3AuthOptions.clientId,
             "network" to web3AuthOptions.network.name.lowercase(Locale.ROOT)
         )
-        if (web3AuthOptions.redirectUrl != null) initParams["redirectUrl"] = openLoginOptions.redirectUrl.toString()
-        if (web3AuthOptions.whiteLabel != null) initParams["whiteLabel"] = gson.toJson(openLoginOptions.whiteLabel)
-        if (web3AuthOptions.loginConfig != null) initParams["loginConfig"] = gson.toJson(openLoginOptions.loginConfig)
+        if (web3AuthOptions.redirectUrl != null) initParams["redirectUrl"] = web3AuthOptions.redirectUrl.toString()
+        if (web3AuthOptions.whiteLabel != null) initParams["whiteLabel"] = gson.toJson(web3AuthOptions.whiteLabel)
+        if (web3AuthOptions.loginConfig != null) initParams["loginConfig"] = gson.toJson(web3AuthOptions.loginConfig)
 
-        Log.d("whitelabel", initParams.toString())
         this.initParams = initParams
         this.context = web3AuthOptions.context
     }

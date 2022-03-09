@@ -1,4 +1,4 @@
-package com.openlogin.core
+package com.web3auth.core
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

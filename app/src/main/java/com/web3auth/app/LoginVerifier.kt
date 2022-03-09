@@ -1,8 +1,8 @@
 package com.web3auth.app
 
-import com.web3auth.core.Web3Auth
+import com.web3auth.core.types.Provider
 
 data class LoginVerifier (
     val name : String,
-    val loginProvider : Web3Auth.Provider
+    val loginProvider : Provider
     )
