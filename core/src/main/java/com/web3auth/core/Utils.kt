@@ -24,7 +24,7 @@ val ALLOWED_CUSTOM_TABS_PACKAGES =
     )
 
 fun Context.doesDefaultBrowserSupportCustomTabs(): Boolean {
-    val defaultBrowserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://openlogin.com"));
+    val defaultBrowserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://web3auth.io"));
 
     val `package` = packageManager.resolveActivity(
         defaultBrowserIntent,
@@ -43,7 +43,7 @@ fun String.isEmailValid(): Boolean {
 }
 
 fun Context.getDefaultBrowser(): String? {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://openlogin.com"))
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://web3auth.io"))
     val resolveInfo = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
         ?: return null
     val activityInfo = resolveInfo.activityInfo ?: return null
