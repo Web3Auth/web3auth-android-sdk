@@ -108,9 +108,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         // Configure Web3Auth
         web3Auth = Web3Auth(
             Web3AuthOptions(context = this,
-            clientId = getString(R.string.openlogin_project_id),
+            clientId = getString(R.string.web3auth_project_id),
             network = Web3Auth.Network.MAINNET,
-            redirectUrl = Uri.parse("torusapp://org.torusresearch.openloginexample/redirect"),
+            redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample/redirect"),
                 whiteLabel = WhiteLabelData(
                     "Web3Auth Sample App", null, null, "en", true,
                     hashMapOf(

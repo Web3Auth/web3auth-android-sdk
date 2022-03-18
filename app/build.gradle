@@ -22,7 +22,7 @@ android {
         versionName "1.0"
         manifestPlaceholders = [
                 'torusRedirectScheme'    : 'torusapp',
-                'torusRedirectHost'      : 'org.torusresearch.openloginexample',
+                'torusRedirectHost'      : 'org.torusresearch.web3authexample',
                 'torusRedirectPathPrefix': '/redirect'
         ]
 
