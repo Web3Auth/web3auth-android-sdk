@@ -9,5 +9,6 @@ data class UserInfo (var email: String = "",
     var aggregateVerifier: String = "",
     var verifier: String = "",
     var verifierId: String = "",
-    var typeOfLogin: String = ""
+    var typeOfLogin: String = "",
+    var dappShare: String = ""
 )
