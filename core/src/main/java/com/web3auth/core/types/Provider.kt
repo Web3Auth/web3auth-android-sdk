@@ -16,5 +16,6 @@ enum class Provider {
     @SerializedName("twitter")TWITTER,
     @SerializedName("weibo")WEIBO,
     @SerializedName("wechat")WECHAT,
-    @SerializedName("email_passwordless")EMAIL_PASSWORDLESS
+    @SerializedName("email_passwordless")EMAIL_PASSWORDLESS,
+    @SerializedName("jwt")JWT
 }
