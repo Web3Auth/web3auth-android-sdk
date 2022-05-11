@@ -9,5 +9,6 @@ data class LoginParams (
     val dappShare: String? = null,
     val extraLoginOptions: ExtraLoginOptions? = null,
     val redirectUrl: Uri? = null,
-    val appState: String? = null
+    val appState: String? = null,
+    val mfaLevel: MFALevel? = null
 )
