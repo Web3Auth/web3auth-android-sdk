@@ -1,0 +1,9 @@
+<dependencies>
+
+  <!-- Android dependencies are specified under the "androidPackages" element.
+       Each "androidPackage" element contains the attributes of an Android
+       dependency (e.g AAR, JAR reference). -->
+  <androidPackages>
+    <androidPackage spec="androidx.browser:browser:1.4.0"/>
+  </androidPackages>
+</dependencies>

@@ -1,0 +1,33 @@
+<dependencies>
+  <packages>
+    <package>androidx.browser:browser:1.4.0</package>
+  </packages>
+  <files>
+    <file>Assets/Plugins/Android/androidx.annotation.annotation-1.1.0.jar</file>
+    <file>Assets/Plugins/Android/androidx.arch.core.core-common-2.0.0.jar</file>
+    <file>Assets/Plugins/Android/androidx.browser.browser-1.4.0.aar</file>
+    <file>Assets/Plugins/Android/androidx.collection.collection-1.1.0.jar</file>
+    <file>Assets/Plugins/Android/androidx.concurrent.concurrent-futures-1.0.0.jar</file>
+    <file>Assets/Plugins/Android/androidx.core.core-1.1.0.aar</file>
+    <file>Assets/Plugins/Android/androidx.interpolator.interpolator-1.0.0.aar</file>
+    <file>Assets/Plugins/Android/androidx.lifecycle.lifecycle-common-2.0.0.jar</file>
+    <file>Assets/Plugins/Android/androidx.lifecycle.lifecycle-runtime-2.0.0.aar</file>
+    <file>Assets/Plugins/Android/androidx.versionedparcelable.versionedparcelable-1.1.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.guava.listenablefuture-1.0.jar</file>
+  </files>
+  <settings>
+    <setting name="androidAbis" value="armeabi-v7a" />
+    <setting name="bundleId" value="com.torus.Web3AuthUnity" />
+    <setting name="explodeAars" value="True" />
+    <setting name="gradleBuildEnabled" value="True" />
+    <setting name="gradlePropertiesTemplateEnabled" value="False" />
+    <setting name="gradleTemplateEnabled" value="False" />
+    <setting name="installAndroidPackages" value="True" />
+    <setting name="localMavenRepoDir" value="Assets/GeneratedLocalRepo" />
+    <setting name="packageDir" value="Assets/Plugins/Android" />
+    <setting name="patchAndroidManifest" value="True" />
+    <setting name="patchMainTemplateGradle" value="True" />
+    <setting name="projectExportEnabled" value="False" />
+    <setting name="useJetifier" value="True" />
+  </settings>
+</dependencies>
