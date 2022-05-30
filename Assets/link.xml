@@ -1,0 +1,3 @@
+<assembly fullname="Microsoft.Win32.Registry">
+  <namespace fullname="Microsoft.Win32.Registry" preserve="all"/>
+</assembly>
