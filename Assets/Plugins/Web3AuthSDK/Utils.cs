@@ -5,6 +5,15 @@ using UnityEngine;
 
 public static class Utils
 {
+    //https://qiita.com/lucifuges/items/b17d602417a9a249689f
+#if UNITY_IOS
+    [DllImport("__Internal")]
+    extern static void launchUrl(string url);
+    [DllImport("__Internal")]
+    extern static void dismiss();
+#endif
+
+
     public static void LaunchUrl(string url)
     {
 #if UNITY_EDITOR || UNITY_STANDALONE_WIN
@@ -19,8 +28,20 @@ public static class Utils
         {
             intent.Call("launchUrl", activity, uri);
         }
+
+#elif UNITY_IOS
+    launchUrl(url);;
 #endif
     }
+
+
+    public static void Dismiss()
+    {
+#if UNITY_IOS
+    dismiss();
+#endif
+    }
+
 
     public static byte[] DecodeBase64(string text)
     {
