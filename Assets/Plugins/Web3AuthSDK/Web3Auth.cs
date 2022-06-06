@@ -179,6 +179,10 @@ public class Web3Auth
             this.onLogout?.Invoke();
         else
             this.onLogin?.Invoke(this.web3AuthResponse);
+
+#if UNITY_IOS
+        Utils.Dismiss();
+#endif
     }
 
     public void login(LoginParams loginParams)

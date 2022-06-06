@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public static class Utils
@@ -37,7 +38,7 @@ public static class Utils
 
     public static void Dismiss()
     {
-#if UNITY_IOS
+#if UNITY_IOS && !UNITY_EDITOR
     dismiss();
 #endif
     }
