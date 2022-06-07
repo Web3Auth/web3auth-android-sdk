@@ -4,8 +4,5 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes:
-  - enabled: 1
-    path: Assets/Plugins/Web3AuthSDK/Samples/Web3AuthSample.unity
-    guid: 07c37e41d2dee1e4cb956fd5f9d9bac1
+  m_Scenes: []
   m_configObjects: {}

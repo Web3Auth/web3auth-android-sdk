@@ -79,6 +79,7 @@ public class Web3AuthSample : MonoBehaviour
 
             loginButton.gameObject.SetActive(false);
             verifierDropdown.gameObject.SetActive(false);
+            emailAddressField.gameObject.SetActive(false);
             logoutButton.gameObject.SetActive(true);
         });
     }

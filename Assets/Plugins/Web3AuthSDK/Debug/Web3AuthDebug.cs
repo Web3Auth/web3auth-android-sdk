@@ -15,7 +15,7 @@ namespace Web3AuthSDK.Editor
 
         [SerializeField] public int index;
 
-        [MenuItem("Window/Deep Linking Debug")]
+        [MenuItem("Window/Web3Auth/Deep Linking Debug")]
         public static void ShowExample()
         {
             Web3AuthDebug wnd = GetWindow<Web3AuthDebug>();
