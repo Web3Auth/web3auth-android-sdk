@@ -3,10 +3,6 @@
 
 Torus Web3Auth SDK for Unity3D game engine which supports Android, iOS, and Windows. `web3auth-unity-sdk` is a client-side library which allows you to authenticate users using
 [Web3Auth](https://web3auth.io/) on Unity3D game engine.
-## Requirements
-- Unity Editor 2019.4.9f1 or greater
-- Android SDK min 18
-- .Net Framework 4.x
 ## Installation
 Download [.unitypackage](https://github.com/Web3Auth/web3auth-unity-sdk/releases/tag/Web3Auth-Unity-SDK) and import the package file into your existing Unity3D project. 
 > You may encounter errors when importing this package into your existing project. 
