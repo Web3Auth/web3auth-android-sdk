@@ -7,15 +7,9 @@ using System.Linq;
 using UnityEngine;
 using System.Web;
 using System.Net;
-using System.Threading;
-using System.IO;
-using Web3AuthSDK.Windows;
-/*
-https://docs.unity3d.com/2021.2/Documentation/Manual/deep-linking-ios.html
-https://docs.unity3d.com/Manual/deep-linking-android.html
-*/
+using System.Collections;
 
-public class Web3Auth
+public class Web3Auth: MonoBehaviour
 {
     public enum Network
     {
@@ -27,22 +21,46 @@ public class Web3Auth
 
     private Web3AuthResponse web3AuthResponse;
 
-#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-    private static event Action<Uri> onUriRecieved;
-#endif
-
     public event Action<Web3AuthResponse> onLogin;
     public event Action onLogout;
 
-    public Web3Auth(Web3AuthOptions web3AuthOptions)
+    [SerializeField]
+    private string clientId;
+
+    [SerializeField]
+    private string redirectUri;
+
+    [SerializeField]
+    private Web3Auth.Network network;
+
+    private static readonly Queue<Action> _executionQueue = new Queue<Action>();
+
+    public void Awake()
+    {
+        this.initParams = new Dictionary<string, object>();
+
+        this.initParams["clientId"] = clientId;
+        this.initParams["network"] = network.ToString().ToLower();
+
+        if (!string.IsNullOrEmpty(redirectUri))
+            this.initParams["redirectUrl"] = redirectUri;
+
+        Application.deepLinkActivated += onDeepLinkActivated;
+        if (!string.IsNullOrEmpty(Application.absoluteURL))
+            onDeepLinkActivated(Application.absoluteURL);
+
+#if UNITY_EDITOR
+        Web3AuthSDK.Editor.Web3AuthDebug.onURLRecieved += (Uri url) =>
+        {
+            this.setResultUrl(url);
+        };
+#endif
+    }
+
+    public void setOptions(Web3AuthOptions web3AuthOptions)
     {
 
         this.web3AuthOptions = web3AuthOptions;
-
-        this.initParams = new Dictionary<string, object>();
-
-        this.initParams["clientId"] = this.web3AuthOptions.clientId;
-        this.initParams["network"] = this.web3AuthOptions.network.ToString().ToLower();
 
         if (this.web3AuthOptions.redirectUrl != null)
             this.initParams["redirectUrl"] = this.web3AuthOptions.redirectUrl;
@@ -52,30 +70,7 @@ public class Web3Auth
 
         if (this.web3AuthOptions.loginConfig != null)
             this.initParams["loginConfig"] = JsonConvert.SerializeObject(this.web3AuthOptions.loginConfig);
-
-
-        Application.deepLinkActivated += onDeepLinkActivated;
-        if (!string.IsNullOrEmpty(Application.absoluteURL))
-            onDeepLinkActivated(Application.absoluteURL);
-
-#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-        onUriRecieved += (Uri url) =>
-        {
-            this.setResultUrl(url);
-        };
-
-        var buildPath = System.IO.Path.GetDirectoryName(
-            System.IO.Path.GetDirectoryName(Application.dataPath + "/file.example")
-        );
-
-        Protocol.RegisterURL(web3AuthOptions.redirectUrl.Scheme, buildPath + "\\" + Application.productName + ".exe");
-#endif
-#if UNITY_EDITOR
-        Web3AuthSDK.Editor.Web3AuthDebug.onURLRecieved += (Uri url) =>
-        {
-            this.setResultUrl(url);
-        };
-#endif
+        
     }
 
     private void onDeepLinkActivated(string url)
@@ -83,58 +78,121 @@ public class Web3Auth
         this.setResultUrl(new Uri(url));
     }
 
-#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
-    static void OnBeforeSplashScreen()
+#if UNITY_STANDALONE || UNITY_EDITOR
+    private string StartLocalWebserver()
     {
-        Debug.LogError("Debug Session");
-        Uri uri = null;
+        HttpListener httpListener = new HttpListener();
 
-        try
+        var redirectUrl = $"http://localhost:{Utils.GetRandomUnusedPort()}";
+
+        httpListener.Prefixes.Add($"{redirectUrl}/complete/");
+        httpListener.Prefixes.Add($"{redirectUrl}/auth/");
+        httpListener.Start();
+        httpListener.BeginGetContext(new AsyncCallback(IncomingHttpRequest), httpListener);
+
+        return redirectUrl + "/complete/";
+    }
+
+    private void IncomingHttpRequest(IAsyncResult result)
+    {
+
+        // get back the reference to our http listener
+        HttpListener httpListener = (HttpListener)result.AsyncState;
+
+        // fetch the context object
+        HttpListenerContext httpContext = httpListener.EndGetContext(result);
+
+        // if we'd like the HTTP listener to accept more incoming requests, we'd just restart the "get context" here:
+        // httpListener.BeginGetContext(new AsyncCallback(IncomingHttpRequest),httpListener);
+        // however, since we only want/expect the one, single auth redirect, we don't need/want this, now.
+        // but this is what you would do if you'd want to implement more (simple) "webserver" functionality
+        // in your project.
+
+        // the context object has the request object for us, that holds details about the incoming request
+        HttpListenerRequest httpRequest = httpContext.Request;
+        HttpListenerResponse httpResponse = httpContext.Response;
+
+        if (httpRequest.Url.LocalPath == "/complete/")
         {
-            if (Environment.GetCommandLineArgs().Length > 1)
-                uri = new Uri(Environment.GetCommandLineArgs()[1].Trim());
+
+            httpListener.BeginGetContext(new AsyncCallback(IncomingHttpRequest), httpListener);
+
+            var responseString = @"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset=""utf-8"">
+                  <meta name=""viewport"" content=""width=device-width"">
+                  <title>Web3Auth</title>
+                  <link href=""https://fonts.googleapis.com/css2?family=DM+Sans:wght@500&display=swap"" rel=""stylesheet"">
+                </head>
+                <body style=""padding:0;margin:0;font-size:10pt;font-family: 'DM Sans', sans-serif;"">
+                  <div style=""display:flex;align-items:center;justify-content:center;height:100vh;display: none;"" id=""success"">
+                    <div style=""text-align:center"">
+                       <h2 style=""margin-bottom:0""> Authenticated successfully</h2>
+                       <p> You can close this tab/window now </p>
+                    </div>
+                  </div>
+                  <div style=""display:flex;align-items:center;justify-content:center;height:100vh;display: none;"" id=""error"">
+                    <div style=""text-align:center"">
+                       <h2 style=""margin-bottom:0""> Authentication failed</h2>
+                       <p> Please try again </p>
+                    </div>
+                  </div>
+                  <script>
+                    if (window.location.hash.trim() == """") {
+                        document.querySelector(""#error"").style.display=""flex"";
+                    } else {
+                        fetch(`http://${window.location.host}/auth/?code=${window.location.hash.slice(1,window.location.hash.length)}`).then(function(response) {
+                          console.log(response);
+                          document.querySelector(""#success"").style.display=""flex"";
+                        }).catch(function(error) {
+                          console.log(error);
+                          document.querySelector(""#error"").style.display=""flex"";
+                        });
+                    }
+                    
+                  </script>
+                </body>
+                </html>
+            ";
+
+            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+
+            httpResponse.ContentLength64 = buffer.Length;
+            System.IO.Stream output = httpResponse.OutputStream;
+            output.Write(buffer, 0, buffer.Length);
+            output.Close();
+
         }
-        catch { }
 
-        string filename = Path.Combine(Path.GetTempPath(), "_.webauth");
-
-        if (uri != null)
+        if (httpRequest.Url.LocalPath == "/auth/")
         {
-            var processes = System.Diagnostics.Process.GetProcesses().Where(process => process.ProcessName == Application.productName).ToList();
-            if (processes.Count() > 1)
+            var responseString = @"ok";
+
+            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+
+            httpResponse.ContentLength64 = buffer.Length;
+            System.IO.Stream output = httpResponse.OutputStream;
+            output.Write(buffer, 0, buffer.Length);
+            output.Close();
+
+            string code = httpRequest.QueryString.Get("code");
+            if (!string.IsNullOrEmpty(code))
             {
-                Debug.Log("Already Running");
-
-                File.WriteAllText(filename, uri.ToString());
-                ProcessWindow.Focus(processes[1].ProcessName);
-
-                Application.Quit();
+                this.setResultUrl(new Uri($"http://localhost#{code}"));
             }
+
+            httpListener.Close();
         }
-
-        var watcher = new FileSystemWatcher();
-        watcher.Path = Path.GetTempPath();
-        watcher.Filter = "_.webauth";
-        watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime;
-        watcher.Changed += (object sender, FileSystemEventArgs e) =>
-        {
-            try
-            {
-                onUriRecieved(new Uri(File.ReadAllText(e.FullPath)));
-            }
-            catch(Exception ex)
-            {
-                Debug.LogError(ex.Message);
-            }
-        };
-        watcher.EnableRaisingEvents = true;
     }
 #endif
 
     private void request(string  path, LoginParams loginParams = null, Dictionary<string, object> extraParams = null)
     {
-
+#if UNITY_STANDALONE || UNITY_EDITOR
+        this.initParams["redirectUrl"] = StartLocalWebserver();
+#endif
         Dictionary<string, object> paramMap = new Dictionary<string, object>();
         paramMap["init"] = this.initParams;
         paramMap["params"] = loginParams == null ? (object)new Dictionary<string, object>() : (object)loginParams;
@@ -176,9 +234,9 @@ public class Web3Auth
             throw new UnKnownException(web3AuthResponse.error);
 
         if (string.IsNullOrEmpty(this.web3AuthResponse.privKey) || string.IsNullOrEmpty(this.web3AuthResponse.privKey.Trim('0')))
-            this.onLogout?.Invoke();
+            this.Enqueue(() => this.onLogout?.Invoke());
         else
-            this.onLogin?.Invoke(this.web3AuthResponse);
+            this.Enqueue(() => this.onLogin?.Invoke(this.web3AuthResponse));
 
 #if UNITY_IOS
         Utils.Dismiss();
@@ -207,5 +265,30 @@ public class Web3Auth
         logout(extraParams);
     }
 
+    public void Update()
+    {
+        lock (_executionQueue)
+        {
+            while (_executionQueue.Count > 0)
+            {
+                _executionQueue.Dequeue().Invoke();
+            }
+        }
+    }
 
+    private void Enqueue(Action action)
+    {
+        lock (_executionQueue)
+        {
+            _executionQueue.Enqueue(() => {
+                StartCoroutine(ActionWrapper(action));
+            });
+        }
+    }
+
+    private IEnumerator ActionWrapper(Action a)
+    {
+        a();
+        yield return null;
+    }
 }

@@ -40,11 +40,9 @@ public class Web3AuthSample : MonoBehaviour
 
     void Start()
     {
-        web3Auth = new Web3Auth(new Web3AuthOptions()
+        web3Auth = GetComponent<Web3Auth>();
+        web3Auth.setOptions(new Web3AuthOptions()
         {
-            redirectUrl = new Uri("torusapp://com.torus.Web3AuthUnity/auth"),
-            clientId = "BAwFgL-r7wzQKmtcdiz2uHJKNZdK7gzEf2q-m55xfzSZOw8jLOyIi4AVvvzaEQO5nv2dFLEmf9LBkF8kaq3aErg",
-            network = Web3Auth.Network.TESTNET,
             whiteLabel = new WhiteLabelData()
             {
                 name = "Web3Auth Sample App",
@@ -73,27 +71,21 @@ public class Web3AuthSample : MonoBehaviour
 
     private void onLogin(Web3AuthResponse response)
     {
-        Dispatcher.Instance().Enqueue(() =>
-        {
-            loginResponseText.text = JsonConvert.SerializeObject(response, Formatting.Indented);
+        loginResponseText.text = JsonConvert.SerializeObject(response, Formatting.Indented);
 
-            loginButton.gameObject.SetActive(false);
-            verifierDropdown.gameObject.SetActive(false);
-            emailAddressField.gameObject.SetActive(false);
-            logoutButton.gameObject.SetActive(true);
-        });
+        loginButton.gameObject.SetActive(false);
+        verifierDropdown.gameObject.SetActive(false);
+        emailAddressField.gameObject.SetActive(false);
+        logoutButton.gameObject.SetActive(true);
     }
 
     private void onLogout()
     {
-        Dispatcher.Instance().Enqueue(() =>
-        {
-            loginButton.gameObject.SetActive(true);
-            verifierDropdown.gameObject.SetActive(true);
-            logoutButton.gameObject.SetActive(false);
+        loginButton.gameObject.SetActive(true);
+        verifierDropdown.gameObject.SetActive(true);
+        logoutButton.gameObject.SetActive(false);
 
-            loginResponseText.text = "";
-        });
+        loginResponseText.text = "";
     }
 
 
