@@ -1,7 +1,7 @@
 # web3auth-unity-sdk
 [![](https://jitpack.io/v/org.torusresearch/web3auth-unity-sdk.svg)](https://jitpack.io/#org.torusresearch/web3auth-unity-sdk)
 
-Torus Web3Auth SDK for Unity3D game engine which supports Android, iOS, and Windows. `web3auth-unity-sdk` is a client-side library which allows you to authenticate users using
+Web3Auth SDK for Unity3D game engine which supports Android, iOS, and Windows. `web3auth-unity-sdk` is a client-side library which allows you to authenticate users using
 [Web3Auth](https://web3auth.io/) on Unity3D game engine.
 
 ## Requirements
