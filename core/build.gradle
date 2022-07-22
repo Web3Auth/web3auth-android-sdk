@@ -34,8 +34,8 @@ android {
 dependencies {
     // Default
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'androidx.core:core-ktx:1.8.0'
+    implementation 'androidx.appcompat:appcompat:1.4.2'
 
     // Completable Futures support
     implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.4'
@@ -44,7 +44,7 @@ dependencies {
     implementation 'androidx.browser:browser:1.4.0'
 
     // Encoding
-    implementation 'com.google.code.gson:gson:2.8.9'
+    implementation 'com.google.code.gson:gson:2.9.0'
 
     // Test
     testImplementation 'junit:junit:4.+'
