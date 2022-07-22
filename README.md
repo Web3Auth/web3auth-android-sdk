@@ -166,7 +166,6 @@ data class Web3AuthOptions(
 
 data class LoginParams(
     val loginProvider: Provider,
-    val reLogin: Boolean? = null,
     val skipTKey: Boolean? = null,
     val extraLoginOptions: ExtraLoginOptions? = null,
     val redirectUrl: Uri? = null,
