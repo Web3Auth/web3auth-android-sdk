@@ -7,7 +7,7 @@ import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
 import com.web3auth.core.types.*
 import java.util.*
-import java8.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     enum class Network {

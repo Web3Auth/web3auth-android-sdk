@@ -17,7 +17,7 @@ import com.web3auth.core.types.ExtraLoginOptions
 import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.Web3AuthOptions
 import com.web3auth.core.types.Web3AuthResponse
-import java8.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletableFuture
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
