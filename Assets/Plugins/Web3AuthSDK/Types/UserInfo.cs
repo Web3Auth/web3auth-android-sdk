@@ -7,4 +7,6 @@
     public string verifierId { get; set; }
     public string typeOfLogin { get; set; }
     public string dappShare { get; set; }
+    public string idToken { get; set; }
+    public string oAuthIdToken { get; set; }
 }
