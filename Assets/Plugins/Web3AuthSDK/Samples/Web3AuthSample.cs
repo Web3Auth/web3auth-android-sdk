@@ -72,7 +72,7 @@ public class Web3AuthSample : MonoBehaviour
     private void onLogin(Web3AuthResponse response)
     {
         loginResponseText.text = JsonConvert.SerializeObject(response, Formatting.Indented);
-
+        // Debug.Log(loginResponseText.text);
         loginButton.gameObject.SetActive(false);
         verifierDropdown.gameObject.SetActive(false);
         emailAddressField.gameObject.SetActive(false);
