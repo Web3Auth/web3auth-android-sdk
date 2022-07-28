@@ -72,3 +72,6 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 /UIElementsSchema
+ios-build/*
+web3auth-android-build_*/
+TestBuild_BackUpThisFolder_ButDontShipItWithYourGame/*
