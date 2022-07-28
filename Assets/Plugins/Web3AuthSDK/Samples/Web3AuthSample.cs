@@ -63,11 +63,14 @@ public class Web3AuthSample : MonoBehaviour
                     { "primary", "#123456" }
                 }
             }
+            // If using your own custom verifier, uncomment this code. 
+            /*
             ,
             loginConfig = new Dictionary<string, LoginConfigItem>
             {
                 {"CUSTOM_VERIFIER", loginConfigItem}
             }
+            */
         });
         web3Auth.onLogin += onLogin;
         web3Auth.onLogout += onLogout;
