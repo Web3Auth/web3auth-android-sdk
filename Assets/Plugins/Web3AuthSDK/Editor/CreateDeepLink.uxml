@@ -7,7 +7,7 @@
 >
     <engine:VisualElement name="container">
         <engine:Label text="Enter the redirect uri" name="title" />
-        <engine:TextField name="uri" text="torusapp://com.torus.Web3AuthUnity/auth"/>
+        <engine:TextField name="uri" text="torusapp://org.torusresearch.web3authunity/auth"/>
         <engine:Button text="Generate" name="generateButton"/>
     </engine:VisualElement>
 </engine:UXML>
