@@ -24,19 +24,15 @@ public static class Utils
 #elif UNITY_ANDROID
         using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
         using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-        using (var intentBuilder = new AndroidJavaObject("androidx.browser.customtabs.CustomTabsIntent$Builder"))
-        using (var intent = intentBuilder.Call<AndroidJavaObject>("build"))
-        using (var uriClass = new AndroidJavaClass("android.net.Uri"))
-        using (var uri = uriClass.CallStatic<AndroidJavaObject>("parse", url))
+        using (var browserView = new AndroidJavaObject("com.web3auth.unity.android.BrowserView"))
         {
-            intent.Call("launchUrl", activity, uri);
+            browserView.CallStatic("launchUrl", activity, url);
         }
 
 #elif UNITY_IOS
     launchUrl(url);;
 #endif
     }
-
 
     public static void Dismiss()
     {
