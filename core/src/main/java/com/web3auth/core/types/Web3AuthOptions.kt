@@ -9,7 +9,7 @@ data class Web3AuthOptions (
     val clientId: String,
     val network: Web3Auth.Network,
     @Transient var redirectUrl: Uri? = null,
-    val sdkUrl: String = "https://sdk.openlogin.com",
+    var sdkUrl: String = "https://sdk.openlogin.com",
     val whiteLabel: WhiteLabelData? = null,
     val loginConfig: HashMap<String, LoginConfigItem>? = null,
 )
