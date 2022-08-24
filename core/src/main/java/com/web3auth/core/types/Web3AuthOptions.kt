@@ -5,7 +5,7 @@ import android.net.Uri
 import com.web3auth.core.Web3Auth
 
 data class Web3AuthOptions (
-    val context: Context,
+    var context: Context,
     val clientId: String,
     val network: Web3Auth.Network,
     @Transient var redirectUrl: Uri? = null,
