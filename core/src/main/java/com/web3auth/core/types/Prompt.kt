@@ -1,10 +1,11 @@
 package com.web3auth.core.types
 
-import java.util.HashMap
-
 
 enum class Prompt(private val label: String) {
-    NONE("none"), LOGIN("login"), CONSENT("consent"), SELECT_ACCOUNT("select_account");
+    NONE("none"),
+    LOGIN("login"),
+    CONSENT("consent"),
+    SELECT_ACCOUNT("select_account");
 
     companion object {
         private val BY_LABEL: MutableMap<String, Prompt> = HashMap()

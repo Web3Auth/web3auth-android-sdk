@@ -5,13 +5,19 @@ import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import com.web3auth.core.types.*
 import java.util.*
 import java8.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     enum class Network {
-        MAINNET, TESTNET, CYAN
+        @SerializedName("mainnet")
+        MAINNET,
+        @SerializedName("testnet")
+        TESTNET,
+        @SerializedName("cyan")
+        CYAN
     }
 
     private val gson = Gson()
