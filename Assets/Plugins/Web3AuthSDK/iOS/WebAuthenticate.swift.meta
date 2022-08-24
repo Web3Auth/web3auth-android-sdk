@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 479ad344f7cb5a04986633402c05e956
+guid: e3a8a70f6834e44ab811a595edf18f9a
 PluginImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -47,7 +47,7 @@ PluginImporter:
     second:
       enabled: 0
       settings:
-        CPU: x86_64
+        CPU: AnyCPU
   - first:
       Standalone: OSXUniversal
     second:
@@ -74,7 +74,12 @@ PluginImporter:
         AddToEmbeddedBinaries: false
         CPU: AnyCPU
         CompileFlags: 
-        FrameworkDependencies: SafariServices;
+        FrameworkDependencies: AuthenticationServices;SafariServices;
+  - first:
+      tvOS: tvOS
+    second:
+      enabled: 1
+      settings: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 

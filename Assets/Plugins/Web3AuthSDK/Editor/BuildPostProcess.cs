@@ -13,7 +13,7 @@ public class BuildPostProcess
     public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
     {
 #if UNITY_IOS
-
+        
         Uri uri = null;
         
         try
@@ -39,6 +39,7 @@ public class BuildPostProcess
         urlSchemes.AddString(uri.Scheme);
 
         infoPlist.WriteToFile(infoPlistPath);
+        
 
 #endif
     }
