@@ -51,8 +51,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             "params" to params
         )
         extraParams?.let{ paramMap.plus("params" to extraParams) }
+        val validParams = paramMap.filterValues { it != null }
 
-        val hash = gson.toJson(paramMap).toByteArray(Charsets.UTF_8).toBase64URLString()
+        val hash = gson.toJson(validParams).toByteArray(Charsets.UTF_8).toBase64URLString()
 
         val url = Uri.Builder().scheme(sdkUrl.scheme)
             .encodedAuthority(sdkUrl.encodedAuthority)
