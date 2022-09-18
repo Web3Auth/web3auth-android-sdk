@@ -1,16 +1,30 @@
-# web3auth-android-sdk
+# Web3Auth Android SDK
 
 [![](https://jitpack.io/v/org.torusresearch/web3auth-android-sdk.svg)](https://jitpack.io/#org.torusresearch/web3auth-android-sdk)
 
-Web3Auth's Android SDK for applications.
+Web3Auth is where passwordless auth meets non-custodial key infrastructure for Web3 apps and wallets. By aggregating OAuth (Google, Twitter, Discord) logins, different wallets and innovative Multi Party Computation (MPC) - Web3Auth provides a seamless login experience to every user on your application.
 
-`web3auth-android-sdk` is a client-side library you can use with your Android app to authenticate users using [Web3Auth](https://web3auth.io/).
+## 📖 Documentation
 
-## Requirements
+Checkout the official [Web3Auth Documentation](https://web3auth.io/docs) and [SDK Reference](https://web3auth.io/docs/sdk/android/) to get started!
 
-Android API version 21 or newer is required.
+## 💡 Features
+- Plug and Play, OAuth based Web3 Authentication Service
+- Fully decentralized, non-custodial key infrastructure
+- End to end Whitelabelable solution
+- Threshold Cryptography based Key Reconstruction
+- Multi Factor Authentication Setup & Recovery (Includes password, backup phrase, device factor editing/deletion etc)
+- Support for WebAuthn & Passwordless Login
+- Support for connecting to multiple wallets
+- DApp Active Session Management
 
-## Installation
+...and a lot more
+
+## ⏪ Requirements
+
+- Android API version 21 or newer is required.
+
+## ⚡ Installation
 
 ### Add Web3Auth to Gradle
 
@@ -43,12 +57,13 @@ Open your app's `AndroidManifest.xml` file and add the following permission:
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
 ```
+## 🌟 Configuration
 
-## Integrating
+### Configure your Web3Auth project
 
-### Configure an Web3Auth project
+Hop on to the [Web3Auth Dashboard](https://dashboard.web3auth.io/) and create a new project. Use the Client ID of the project to start your integration.
 
-Go to [Developer Dashboard](https://dashboard.web3auth.io/), create or select an Web3Auth project:
+![Web3Auth Dashboard](https://web3auth.io/docs/assets/images/project_plug_n_play-89c39ec42ad993107bb2485b1ce64b89.png)
 
 - Add `{YOUR_APP_PACKAGE_NAME}://auth` to **Whitelist URLs**.
 
@@ -80,7 +95,7 @@ Make sure your sign-in activity launchMode is set to **singleTop** in your `Andr
 </activity>
 ```
 
-### Initialize Web3Auth
+## 💥 Initialization & Usage
 
 In your sign-in activity', create an `Web3Auth` instance with your Web3Auth project's configurations and 
 configure it like this:
@@ -141,59 +156,18 @@ class MainActivity : AppCompatActivity() {
 }
 ```
 
-## API Reference
+## 🩹 Examples
 
-```kotlin
-class Web3Auth(
-    var web3AuthOptions: Web3AuthOptions
-) {    
-    // Trigger login flow using login params. Specific Login Provider can be set through Login Params
-    fun login(
-        loginParams: LoginParams,
-    ) {}
-} 
+Checkout the examples for your preferred blockchain and platform in our [examples repository](https://github.com/Web3Auth/examples/)
 
-data class Web3AuthOptions(
-    context: Context, // Android context to launch Web-based authentication, usually is the current activity
-    clientId: String, // Your Web3Auth project ID
-    network: Network, // Network to run Web3Auth, either MAINNET or TESTNET
-    redirectUrl: Uri? = null, // URL that Web3Auth will redirect API responses
-    whiteLabel: WhiteLabelData? = null,  // Optional param to configure look and feel of web3uth login page
-    loginConfig: HashMap<String, LoginConfigItem>? = null, // Optional
-)
+## 🌐 Demo
 
-data class LoginParams (
-    val loginProvider: Provider,
-    val dappShare: String? = null,
-    val extraLoginOptions: ExtraLoginOptions? = null,
-    val redirectUrl: Uri? = null,
-    val appState: String? = null,
-    val mfaLevel: MFALevel? = null,
-    val sessionTime: Int? = null,
-    val curve: Curve? = null
-)
+Checkout the [Web3Auth Demo](https://demo-app.web3auth.io/) to see how Web3Auth can be used in an application.
 
-enum class Provider {
-    @SerializedName("google")GOOGLE,
-    @SerializedName("facebook")FACEBOOK,
-    @SerializedName("reddit")REDDIT,
-    @SerializedName("discord")DISCORD,
-    @SerializedName("twitch")TWITCH,
-    @SerializedName("apple")APPLE,
-    @SerializedName("line")LINE,
-    @SerializedName("github")GITHUB,
-    @SerializedName("kakao")KAKAO,
-    @SerializedName("linkedin")LINKEDIN,
-    @SerializedName("twitter")TWITTER,
-    @SerializedName("weibo")WEIBO,
-    @SerializedName("wechat")WECHAT,
-    @SerializedName("email_passwordless")EMAIL_PASSWORDLESS,
-    @SerializedName("jwt")JWT
-}
-
-```
+Further checkout the [app folder](https://https://github.com/Web3Auth/web3auth-android-sdk/tree/master/app) within this repository, which contains a sample app.
 
 ## 💬 Troubleshooting and Discussions
 
 - Have a look at our [GitHub Discussions](https://github.com/Web3Auth/Web3Auth/discussions?discussions_q=sort%3Atop) to see if anyone has any questions or issues you might be having.
+- Checkout our [Troubleshooting Documentation Page](https://web3auth.io/docs/troubleshooting) to know the common issues and solutions
 - Join our [Discord](https://discord.gg/web3auth) to join our community and get private integration support or help with your integration.
