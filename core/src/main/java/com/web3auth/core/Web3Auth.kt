@@ -165,8 +165,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     messageObj,
                     ShareMetadata::class.java
                 )
-                KeyStoreManagerUtils.encryptData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key, shareMetadata.ephemPublicKey.toString())
-                KeyStoreManagerUtils.encryptData(KeyStoreManagerUtils.IV_KEY, shareMetadata.iv.toString())
+                KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key, shareMetadata.ephemPublicKey.toString())
+                KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.IV_KEY, shareMetadata.iv.toString())
                 val aes256cbc = AES256CBC(
                     sessionId?.let { KeyStoreManagerUtils.getPrivateKey(it) },
                     shareMetadata.ephemPublicKey,
@@ -188,12 +188,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     private fun sessionTimeOutAPI() {
+        val ephemKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key)
+        val ivKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.IV_KEY)
+
+        if(ephemKey?.isEmpty() == true && ivKey?.isEmpty() == true) return
+
         val aes256cbc = AES256CBC(
             sessionId?.let { KeyStoreManagerUtils.getPrivateKey(it) },
-            KeyStoreManagerUtils.decryptData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key),
-            KeyStoreManagerUtils.decryptData(KeyStoreManagerUtils.IV_KEY)
+            ephemKey,
+            ivKey.toString()
         )
-
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         val gson = Gson()
         val setDataString = gson.toJson(web3AuthResponse)
@@ -206,10 +210,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val finalSig = Base64.encodeBytesToBytes(sigBytes)?.let { String(it, StandardCharsets.UTF_8) }
 
         GlobalScope.launch {
-            web3AuthApi.logout(LogoutApiRequest(key = KeyStoreManagerUtils.getPubKey(sessionId.toString()) ,
+            web3AuthApi.logout(
+                LogoutApiRequest(key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString())) ,
                 data = aes256cbc.encrypt(web3AuthResponse.toString().toByteArray(StandardCharsets.UTF_8)),
                 signature = finalSig,
-                timeout = 0))
+                timeout = 0)
+            )
         }
     }
 
