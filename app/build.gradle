@@ -12,12 +12,12 @@ android {
             keyPassword 'torus123'
         }
     }
-    compileSdkVersion 31
+    compileSdkVersion 32
 
     defaultConfig {
         applicationId "com.web3auth.app"
-        minSdkVersion 21
-        targetSdkVersion 31
+        minSdkVersion 23
+        targetSdkVersion 32
         versionCode 1
         versionName "1.0"
         manifestPlaceholders = [
