@@ -174,13 +174,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     shareMetadata.iv.toString()
                 )
                 // Implementation specific oddity - hex string actually gets passed as a base64 string
-                TODO("Need to refractor code")
-                /*val encryptedShareBytes = AES256CBC.toByteArray(
-                    BigInteger(shareMetadata.ciphertext, 16)
-                )
-                val share = BigInteger(1, aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes)))*/
-                if (web3AuthResponse != null) {
-                    //loginCompletableFuture.complete(web3AuthResponse)
+                // TODO("Need to refractor code")
+                try {
+                    val encryptedShareBytes = AES256CBC.toByteArray(
+                        BigInteger(shareMetadata.ciphertext, 16))
+                    val share = BigInteger(1, aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes)))
+                    val json = JSONObject(share.toString()).toString()
+                    if (web3AuthResponse != null) {
+                        //loginCompletableFuture.complete(web3AuthResponse)
+                    }
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
                 }
             }
         }
