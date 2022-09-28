@@ -12,6 +12,6 @@ interface Web3AuthApi {
     @GET("/store/get")
     suspend fun authorizeSession(@Query("key") key: String) : Response<StoreApiResponse>
 
-    @POST("/store/get")
+    @POST("/store/set")
     suspend fun logout(@Body logoutApiRequest: LogoutApiRequest) : Response<JSONObject>
 }

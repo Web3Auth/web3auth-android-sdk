@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Handler
 import androidx.annotation.RequiresApi
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.Gson
@@ -165,19 +164,19 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     messageObj,
                     ShareMetadata::class.java
                 )
+
                 KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key, shareMetadata.ephemPublicKey.toString())
                 KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.IV_KEY, shareMetadata.iv.toString())
+
                 val aes256cbc = AES256CBC(
                     sessionId?.let { KeyStoreManagerUtils.getPrivateKey(it) },
                     shareMetadata.ephemPublicKey,
                     shareMetadata.iv.toString()
                 )
                 // Implementation specific oddity - hex string actually gets passed as a base64 string
-                /*val hexUTF8AsBase64: String = shareMetadata.ciphertext.toString()
-                val hexUTF8 = Base64.decode(hexUTF8AsBase64)
-                    ?.let { String(it, StandardCharsets.UTF_8) }
-                val encryptedShareBytes = AES256CBC.toByteArray(
-                    BigInteger(hexUTF8, 16)
+                TODO("Need to refractor code")
+                /*val encryptedShareBytes = AES256CBC.toByteArray(
+                    BigInteger(shareMetadata.ciphertext, 16)
                 )
                 val share = BigInteger(1, aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes)))*/
                 if (web3AuthResponse != null) {
@@ -200,7 +199,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         )
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         val gson = Gson()
-        val setDataString = gson.toJson(web3AuthResponse)
+        val setDataString = gson.toJson("")
         val hashedData = Hash.sha3(setDataString.toByteArray(StandardCharsets.UTF_8))
         val signature: ECDSASignature = derivedECKeyPair.sign(hashedData)
         val sig: String = KeyStoreManagerUtils.padLeft(signature.r.toString(16), '0', 64)+
@@ -211,10 +210,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
         GlobalScope.launch {
             web3AuthApi.logout(
-                LogoutApiRequest(key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString())) ,
+                LogoutApiRequest(
+                    key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString())) ,
                 data = aes256cbc.encrypt(web3AuthResponse.toString().toByteArray(StandardCharsets.UTF_8)),
                 signature = finalSig,
-                timeout = 0)
+                timeout = 0L)
             )
         }
     }

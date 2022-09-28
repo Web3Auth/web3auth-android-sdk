@@ -1,8 +1,8 @@
 package com.web3auth.core.api.models
 
-data class LogoutApiRequest (
+data class LogoutApiRequest(
     val key: String? = null,
     val data: String? = null,
     val signature: String? = null,
-    val timeout: Int = 0
+    val timeout: Long = 0L
 )

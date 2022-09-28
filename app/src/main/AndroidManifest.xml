@@ -42,7 +42,7 @@
                 <data android:scheme="web3auth" />
             </intent-filter>
         </activity>
-
+        //torusapp://org.torusresearch.web3authexample/redirect
     </application>
 
 </manifest>
