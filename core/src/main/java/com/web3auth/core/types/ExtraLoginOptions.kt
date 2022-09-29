@@ -11,6 +11,7 @@ data class ExtraLoginOptions(
     private var prompt : Prompt? = null,
     private var max_age : String? = null,
     private var ui_locales : String? = null,
+    private var id_token : String? = null,
     private var id_token_hint : String? = null,
     private var login_hint : String? = null,
     private var acr_values : String? = null,
