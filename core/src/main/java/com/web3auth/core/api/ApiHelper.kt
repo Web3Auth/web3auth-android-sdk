@@ -1,5 +1,6 @@
 package com.web3auth.core.api
 
+import com.web3auth.core.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,15 +10,18 @@ object ApiHelper {
 
     private const val baseUrl = "https://broadcast-server.tor.us"
 
+    private val okHttpClient = OkHttpClient().newBuilder()
+        .addInterceptor(HttpLoggingInterceptor().apply {
+            if(BuildConfig.DEBUG) {
+                level = HttpLoggingInterceptor.Level.BODY
+            }
+        })
+        .build()
+
     fun getInstance(): Retrofit {
         return Retrofit.Builder().baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
-
-            .client(
-                OkHttpClient().newBuilder()
-                    .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-                    .build()
-            )
+            .client(okHttpClient)
             .build()
     }
 }
