@@ -181,9 +181,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     //val hexUTF8 = String(Base64.decode(hexUTF8AsBase64)!!, StandardCharsets.UTF_8)
                     val encryptedShareBytes = AES256CBC.toByteArray(BigInteger(shareMetadata.ciphertext, 16))
                     val share = BigInteger(1, aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes)))
-                    var json = JSONObject(share.toString()).toString()
-                    json = json.replace("\"share\":","\"userInfo\":")
-                    web3AuthResponse = gson.fromJson(json, Web3AuthResponse::class.java)
+                    var tempJson = JSONObject(share.toString())
+                    tempJson.put("userInfo", tempJson.get("store"))
+                    tempJson.remove("store")
+                    web3AuthResponse = gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                     if (web3AuthResponse != null) {
                         //loginCompletableFuture.complete(web3AuthResponse)
                     }
