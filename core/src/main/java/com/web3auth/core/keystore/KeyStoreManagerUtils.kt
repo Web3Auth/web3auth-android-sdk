@@ -115,14 +115,4 @@ object KeyStoreManagerUtils {
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         return derivedECKeyPair.privateKey.toString(16)
     }
-
-    fun padLeft(inputString: String, padChar: Char?, length: Int): String {
-        if (inputString.length >= length) return inputString
-        val sb = StringBuilder()
-        while (sb.length < length - inputString.length) {
-            sb.append(padChar)
-        }
-        sb.append(inputString)
-        return sb.toString()
-    }
 }

@@ -61,7 +61,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             } else {
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong" )
             }
-
         }
     }
 

@@ -4,8 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.RequiresApi
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.os.postDelayed
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.web3auth.core.api.ApiHelper
@@ -53,12 +56,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         //initiate keyStore
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             initiateKeyStoreManager()
-        }
-
-        //authorize sessionId
-        sessionId = KeyStoreManagerUtils.decryptData(KeyStoreManagerUtils.SESSION_ID)
-        if(sessionId != null && sessionId?.isNotEmpty() == true) {
-            authorizeSession("04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString())))
         }
 
         // Build init params
@@ -141,7 +138,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     fun login(loginParams: LoginParams) : CompletableFuture<Web3AuthResponse> {
-        request("login", loginParams)
+        //authorize sessionId or login
+        authorizeSession(loginParams)
 
         loginCompletableFuture = CompletableFuture()
         return loginCompletableFuture
@@ -155,43 +153,60 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return logoutCompletableFuture
     }
 
-    private fun authorizeSession(pubKey: String) {
-        GlobalScope.launch {
-            val result = web3AuthApi.authorizeSession(pubKey)
-            if(result.isSuccessful && result.body() != null) {
-                val messageObj = JSONObject(result.body()?.message).toString()
-                shareMetadata = gson.fromJson(
-                    messageObj,
-                    ShareMetadata::class.java
-                )
+    private fun authorizeSession(loginParams: LoginParams) {
+        sessionId = KeyStoreManagerUtils.decryptData(KeyStoreManagerUtils.SESSION_ID)
+        if(sessionId != null && sessionId?.isNotEmpty() == true) {
+            var pubKey = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString()))
+            GlobalScope.launch {
+                val result = web3AuthApi.authorizeSession(pubKey)
+                if (result.isSuccessful && result.body() != null) {
+                    val messageObj = JSONObject(result.body()?.message).toString()
+                    shareMetadata = gson.fromJson(
+                        messageObj,
+                        ShareMetadata::class.java
+                    )
 
-                KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key, shareMetadata.ephemPublicKey.toString())
-                KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.IV_KEY, shareMetadata.iv.toString())
+                    KeyStoreManagerUtils.savePreferenceData(
+                        KeyStoreManagerUtils.EPHEM_PUBLIC_Key,
+                        shareMetadata.ephemPublicKey.toString()
+                    )
+                    KeyStoreManagerUtils.savePreferenceData(
+                        KeyStoreManagerUtils.IV_KEY,
+                        shareMetadata.iv.toString()
+                    )
 
-                val aes256cbc = AES256CBC(
-                    sessionId?.let { KeyStoreManagerUtils.getPrivateKey(it) },
-                    shareMetadata.ephemPublicKey,
-                    shareMetadata.iv.toString()
-                )
-                // Implementation specific oddity - hex string actually gets passed as a base64 string
-                // TODO("Need to refractor code")
-                try {
+                    val aes256cbc = AES256CBC(
+                        sessionId?.let { it },
+                        shareMetadata.ephemPublicKey,
+                        shareMetadata.iv.toString()
+                    )
+
                     // Implementation specific oddity - hex string actually gets passed as a base64 string
-                    //val hexUTF8AsBase64: String? = shareMetadata.ciphertext
-                    //val hexUTF8 = String(Base64.decode(hexUTF8AsBase64)!!, StandardCharsets.UTF_8)
-                    val encryptedShareBytes = AES256CBC.toByteArray(BigInteger(shareMetadata.ciphertext, 16))
-                    val share = BigInteger(1, aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes)))
-                    var tempJson = JSONObject(share.toString())
-                    tempJson.put("userInfo", tempJson.get("store"))
-                    tempJson.remove("store")
-                    web3AuthResponse = gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
-                    if (web3AuthResponse != null) {
-                        //loginCompletableFuture.complete(web3AuthResponse)
+                    try {
+                        val encryptedShareBytes =
+                            AES256CBC.toByteArray(BigInteger(shareMetadata.ciphertext, 16))
+                        val share = aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes))
+                        var tempJson = JSONObject(share.toString())
+                        tempJson.put("userInfo", tempJson.get("store"))
+                        tempJson.remove("store")
+                        web3AuthResponse =
+                            gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
+                        if (web3AuthResponse != null) {
+                            Handler(Looper.getMainLooper()).postDelayed(500) {
+                                loginCompletableFuture.complete(web3AuthResponse)
+                            }
+                        }
+                    } catch (ex: Exception) {
+                        ex.printStackTrace()
                     }
-                } catch (ex: Exception) {
-                    ex.printStackTrace()
+                } else {
+                    //login with Web3Auth
+                    request("login", loginParams)
                 }
             }
+        } else {
+            //login with Web3Auth
+            request("login", loginParams)
         }
     }
 
@@ -206,24 +221,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             ephemKey,
             ivKey.toString()
         )
-        val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
-        val gson = Gson()
-        val setDataString = gson.toJson("")
-        val hashedData = Hash.sha3(setDataString.toByteArray(StandardCharsets.UTF_8))
-        val signature: ECDSASignature = derivedECKeyPair.sign(hashedData)
-        val sig: String = KeyStoreManagerUtils.padLeft(signature.r.toString(16), '0', 64)+
-                KeyStoreManagerUtils.padLeft(signature.s.toString(16), '0', 64) +
-                KeyStoreManagerUtils.padLeft("", '0', 2)
-        val sigBytes = AES256CBC.toByteArray(BigInteger(sig, 16))
-        val finalSig = Base64.encodeBytesToBytes(sigBytes)?.let { String(it, StandardCharsets.UTF_8) }
+        var encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
 
         GlobalScope.launch {
             web3AuthApi.logout(
-                LogoutApiRequest(
-                    key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString())) ,
-                data = aes256cbc.encrypt(web3AuthResponse.toString().toByteArray(StandardCharsets.UTF_8)),
-                signature = finalSig,
-                timeout = 0L)
+                LogoutApiRequest(key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString())) ,
+                data = encryptedData,
+                signature = ECPointArithmetic.getECDSASignature(BigInteger(sessionId, 16), ""),
+                timeout = 0)
             )
         }
     }
