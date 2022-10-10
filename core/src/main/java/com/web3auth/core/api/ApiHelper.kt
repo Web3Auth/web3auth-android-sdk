@@ -1,5 +1,6 @@
 package com.web3auth.core.api
 
+import com.google.gson.GsonBuilder
 import com.web3auth.core.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -18,9 +19,11 @@ object ApiHelper {
         })
         .build()
 
+    private val builder = GsonBuilder().disableHtmlEscaping().create()
+
     fun getInstance(): Retrofit {
         return Retrofit.Builder().baseUrl(baseUrl)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(builder))
             .client(okHttpClient)
             .build()
     }

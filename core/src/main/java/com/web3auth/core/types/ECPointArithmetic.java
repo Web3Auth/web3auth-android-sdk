@@ -1,18 +1,6 @@
 package com.web3auth.core.types;
 
-import android.util.Log;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.bouncycastle.util.encoders.Hex;
-import org.web3j.crypto.ECDSASignature;
-import org.web3j.crypto.ECKeyPair;
-import org.web3j.crypto.Hash;
-import org.web3j.crypto.Sign;
-
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.spec.ECFieldFp;
 import java.security.spec.EllipticCurve;
 
@@ -206,29 +194,5 @@ public class ECPointArithmetic {
         }
 
         return R;
-    }
-
-    public static String getECDSASignature(BigInteger privateKey, String data) {
-        Gson gson = new Gson();
-        String setDataString = gson.toJson(data);
-        ECKeyPair derivedECKeyPair = ECKeyPair.create(privateKey);
-        byte[] hashedData = Hash.sha3("".getBytes(StandardCharsets.UTF_8));
-        ECDSASignature signature = derivedECKeyPair.sign(hashedData);
-        String sig = padLeft(signature.r.toString(16), '0', 64) +
-                        padLeft(signature.s.toString(16), '0', 64) +
-                            padLeft("", '0', 2);
-        byte[] sigBytes = AES256CBC.toByteArray(new BigInteger(sig, 16));
-        return new String(Base64.encodeBytesToBytes(sigBytes), StandardCharsets.UTF_8);
-    }
-
-
-    public static String padLeft(String inputString, Character padChar, int length) {
-        if (inputString.length() >= length) return inputString;
-        StringBuilder sb = new StringBuilder();
-        while (sb.length() < length - inputString.length()) {
-            sb.append(padChar);
-        }
-        sb.append(inputString);
-        return sb.toString();
     }
 }

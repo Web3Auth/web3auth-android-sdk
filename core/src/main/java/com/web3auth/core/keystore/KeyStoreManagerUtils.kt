@@ -56,12 +56,18 @@ object KeyStoreManagerUtils {
         keyGenerator.generateKey()
     }
 
+    /*
+    * Method to encrypt data with key
+    * */
     fun encryptData(key: String, data: String) {
         sharedPreferences?.edit()?.putString(key, data)?.apply()
         encryptedPairData = getEncryptedDataPair(data)
         encryptedPairData.second.toString(UTF_8)
     }
 
+    /*
+    * Key generator to encrypt/decrypt data
+    * */
     private fun getEncryptedDataPair(data: String): Pair<ByteArray, ByteArray> {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, getKey())
@@ -71,6 +77,9 @@ object KeyStoreManagerUtils {
         return Pair(iv, encryptedData)
     }
 
+    /*
+    * Method to decrypt data with key
+    * */
     fun decryptData(key: String): String {
         val encryptedPairData = sharedPreferences?.getString(key, "")?.let { getEncryptedDataPair(it) }
         val cipher = Cipher.getInstance(TRANSFORMATION)
