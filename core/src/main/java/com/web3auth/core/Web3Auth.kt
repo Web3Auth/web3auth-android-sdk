@@ -13,6 +13,7 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.api.Web3AuthApi
+import com.web3auth.core.api.models.LogoutApiRequest
 import com.web3auth.core.keystore.KeyStoreManagerUtils
 import com.web3auth.core.types.*
 import com.web3auth.core.types.Base64
@@ -20,7 +21,11 @@ import java8.util.concurrent.CompletableFuture
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import org.web3j.crypto.ECDSASignature
+import org.web3j.crypto.ECKeyPair
+import org.web3j.crypto.Hash
 import java.math.BigInteger
+import java.nio.charset.StandardCharsets
 import java.util.*
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
@@ -203,6 +208,30 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             request("login", loginParams)
         }
     }
+
+    private fun sessionTimeOutAPI() {
+        val ephemKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key)
+        val ivKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.IV_KEY)
+
+        if(ephemKey?.isEmpty() == true && ivKey?.isEmpty() == true) return
+
+        val aes256cbc = AES256CBC(
+            sessionId?.let { it },
+            ephemKey,
+            ivKey.toString()
+        )
+        var encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
+
+        GlobalScope.launch {
+            web3AuthApi.logout(
+                LogoutApiRequest(key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString())) ,
+                    data = encryptedData,
+                    signature = KeyStoreManagerUtils.getECDSASignature(BigInteger(sessionId, 16), encryptedData),
+                    timeout = 0)
+            )
+        }
+    }
+
 
     fun logout(
         redirectUrl: Uri? = null,

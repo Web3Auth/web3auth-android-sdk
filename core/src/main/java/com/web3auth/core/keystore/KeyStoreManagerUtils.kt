@@ -6,9 +6,18 @@ import android.security.keystore.KeyProperties
 import androidx.annotation.RequiresApi
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
+import com.google.gson.Gson
 import com.web3auth.core.Web3AuthApp
+import com.web3auth.core.types.AES256CBC
+import com.web3auth.core.types.Base64
+import org.bouncycastle.util.encoders.Hex
+import org.web3j.crypto.Credentials
 import org.web3j.crypto.ECKeyPair
+import org.web3j.crypto.Hash
+import org.web3j.crypto.Sign
+import org.web3j.utils.Numeric
 import java.math.BigInteger
+import java.nio.charset.StandardCharsets
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -78,7 +87,7 @@ object KeyStoreManagerUtils {
     }
 
     /*
-    * Method to decrypt data with key
+    * Method to encrypt data with key
     * */
     fun decryptData(key: String): String {
         val encryptedPairData = sharedPreferences?.getString(key, "")?.let { getEncryptedDataPair(it) }
@@ -124,4 +133,42 @@ object KeyStoreManagerUtils {
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         return derivedECKeyPair.privateKey.toString(16)
     }
+
+    fun getECDSASignature(privateKey: BigInteger?, data: String?): String? {
+        val gson = Gson()
+        val setDataString = gson.toJson(data)
+        val derivedECKeyPair = ECKeyPair.create(privateKey)
+        val hashedData = Hash.sha3(setDataString.toByteArray(StandardCharsets.UTF_8))
+        val signature = derivedECKeyPair.sign(hashedData)
+        val sig = padLeft(signature.r.toString(16), '0', 64) +
+                padLeft(signature.s.toString(16), '0', 64) +
+                padLeft("", '0', 2)
+        val sigBytes = AES256CBC.toByteArray(BigInteger(sig, 16))
+        return String(Base64.encodeBytesToBytes(sigBytes), StandardCharsets.UTF_8)
+    }
+
+    fun getSignature(privateKey: BigInteger?): String? {
+        val credentials = Credentials.create(ECKeyPair.create(privateKey))
+        val message = ""
+        val messageBytes = message.toByteArray(StandardCharsets.UTF_8)
+        val signature = Sign.signPrefixedMessage(messageBytes, credentials.ecKeyPair)
+        val sig = padLeft(Hex.toHexString(signature.r), '0', 64) +
+                padLeft(Hex.toHexString(signature.s), '0', 64) +
+                padLeft("", '0', 2)
+        val sigBytes = AES256CBC.toByteArray(BigInteger(sig, 16))
+        return Numeric.toHexString(sigBytes)
+    }
+
+    private fun padLeft(inputString: String, padChar: Char?, length: Int): String {
+        if (inputString.length >= length) return inputString
+        val sb = StringBuilder()
+        while (sb.length < length - inputString.length) {
+            sb.append(padChar)
+        }
+        sb.append(inputString)
+        return sb.toString()
+    }
+
+
+
 }
