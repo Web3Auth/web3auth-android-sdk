@@ -3,26 +3,25 @@ package com.web3auth.core.keystore
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.google.gson.Gson
 import com.web3auth.core.Web3AuthApp
 import com.web3auth.core.types.AES256CBC
-import com.web3auth.core.types.Base64
-import org.bouncycastle.asn1.ASN1Integer
-import org.bouncycastle.asn1.DERSequenceGenerator
+import org.bouncycastle.asn1.x9.ECNamedCurveTable
+import org.bouncycastle.asn1.x9.X9ECParameters
+import org.bouncycastle.jce.spec.ECNamedCurveSpec
 import org.bouncycastle.util.encoders.Hex
 import org.web3j.crypto.ECKeyPair
 import org.web3j.crypto.Hash
-import org.web3j.crypto.Sign
-import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
-import java.security.KeyStore
-import java.util.Base64.getEncoder
+import java.security.*
+import java.security.spec.ECParameterSpec
+import java.security.spec.ECPrivateKeySpec
+import java.security.spec.InvalidKeySpecException
+import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -150,8 +149,8 @@ object KeyStoreManagerUtils {
         val signature = derivedECKeyPair.sign(hashedData)
         System.out.printf(
             "ECDSASignature: [r = %s, s = %s]\n",
-            signature.r.toString(),
-            signature.s.toString()
+            signature.r.toString(16),
+            signature.s.toString(16)
         )
         val sig = padLeft(signature.r.toString(16), '0', 64) +
                 padLeft(signature.s.toString(16), '0', 64) +
@@ -159,13 +158,18 @@ object KeyStoreManagerUtils {
         println("Sig: $sig")
         val sigBytes = AES256CBC.toByteArray(BigInteger(sig, 16))
         println("sigBytes: $sigBytes")
-        Log.d("sample_signature", String(Base64.encodeBytesToBytes(sigBytes), StandardCharsets.UTF_8))
-        Log.d("sample_signa", String(Base64.encodeBytesToBytes(sigBytes), StandardCharsets.UTF_8))
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d("sample_signature_1", getEncoder().encodeToString(sigBytes))
+        println("Final_Sig" + convertByteToHexadecimal(sigBytes).lowercase(Locale.ROOT))
+        return convertByteToHexadecimal(sigBytes).lowercase(Locale.ROOT)
+    }
+
+    fun convertByteToHexadecimal(byteArray: ByteArray): String {
+        var hex = ""
+        // Iterating through each byte in the array
+        for (i in byteArray) {
+            hex += String.format("%02X", i)
         }
-        println("Final_Sig" + String(Base64.encodeBytesToBytes(sigBytes), StandardCharsets.UTF_8))
-        return String(Base64.encodeBytesToBytes(sigBytes), StandardCharsets.UTF_8)
+        print(hex)
+        return hex
     }
 
     private fun padLeft(inputString: String, padChar: Char?, length: Int): String {
@@ -179,44 +183,38 @@ object KeyStoreManagerUtils {
     }
 
     fun getSignature(privKey: BigInteger, data: String): String? {
-        val pubKey = Sign.publicKeyFromPrivate(privKey)
-        val keyPair = ECKeyPair(privKey, pubKey)
-        println("Private key: " + privKey.toString(16))
-        println("Public key: " + pubKey.toString(16))
-        println("Public key (compressed): " + compressPubKey(pubKey))
-        val msgHash = Hash.sha3(data.toByteArray())
-        val signature = Sign.signMessage(msgHash, keyPair, false)
-        println("Msg: $data")
-        println("Msg hash: " + Hex.toHexString(msgHash))
-        System.out.printf(
-            "Signature: [r = %s, s = %s]\n",
-            Hex.toHexString(signature.r),
-            Hex.toHexString(signature.s)
-        )
+        val privateKey: PrivateKey? = getPrivateKeyFromECBigIntAndCurve(privKey, "secp256k1")
+        val signature: Signature = Signature.getInstance("SHA256withECDSA")
+        signature.initSign(privateKey)
+        signature.update(data.toByteArray(StandardCharsets.UTF_8))
+        val signed: ByteArray = signature.sign()
+        println("signed: $signed")
+        var sign = Hex.toHexString(signed)
+        println("Signatureee: $sign")
+        return sign
+    }
 
-        val pubKeyRecovered = Sign.signedMessageToKey(data.toByteArray(), signature)
-        println("Recovered public key: " + pubKeyRecovered.toString(16))
-        val validSig = pubKey == pubKeyRecovered
-        println("Signature valid? $validSig")
-
-        val sig =
-            padLeft(Hex.toHexString(signature.r), '0', 32) +
-                    padLeft(Hex.toHexString(signature.s), '0', 32) +
-                    padLeft("", '0', 2)
-        /*val sig =
-            padLeft(Hex.toHexString(signature.r), '0', 32) +
-                    padLeft(Hex.toHexString(signature.s), '0', 32) +
-                    padLeft("", '0', 2)
-        println("Sigggggggggg: $sig")
-        val sigBytes = AES256CBC.toByteArray(BigInteger(sig, 16))
-        println("SiggggggggggBytes: $sigBytes")
-        val output = String(
-            Base64.encodeBytesToBytes(sigBytes),
-            StandardCharsets.UTF_8
+    private fun getPrivateKeyFromECBigIntAndCurve(s: BigInteger?, curveName: String): PrivateKey? {
+        val ecCurve: X9ECParameters = ECNamedCurveTable.getByName(curveName)
+        val ecParameterSpec: ECParameterSpec = ECNamedCurveSpec(
+            curveName,
+            ecCurve.curve,
+            ecCurve.g,
+            ecCurve.n,
+            ecCurve.h,
+            ecCurve.seed
         )
-        Log.d("outputSig", String(Base64.encodeBytesToBytes(sigBytes), StandardCharsets.UTF_8))*/
-        return StringBuilder().append("3045022100").append(Hex.toHexString(signature.r)).append("0220").append(Hex.toHexString(signature.s))
-            .toString()
+        val privateKeySpec = ECPrivateKeySpec(s, ecParameterSpec)
+        return try {
+            val keyFactory: KeyFactory = KeyFactory.getInstance("EC")
+            keyFactory.generatePrivate(privateKeySpec)
+        } catch (e: NoSuchAlgorithmException) {
+            e.printStackTrace()
+            null
+        } catch (e: InvalidKeySpecException) {
+            e.printStackTrace()
+            null
+        }
     }
 
     private fun compressPubKey(pubKey: BigInteger): String {

@@ -21,9 +21,6 @@ import java8.util.concurrent.CompletableFuture
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import org.web3j.crypto.ECDSASignature
-import org.web3j.crypto.ECKeyPair
-import org.web3j.crypto.Hash
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -228,21 +225,19 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             ephemKey,
             ivKey.toString()
         )
-        var encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
+        var encryptedData = aes256cbc.encrypt({}.toString().toByteArray(StandardCharsets.UTF_8))
         var encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac).toString()
-        //var testData = "{\"iv\":\"693407372626b11017d0ec30acd29e6a\",\"ciphertext\":\"koO5l8P9D5KQnK8hUSNxSA==\",\"ephemPublicKey\":\"0477e20c5d9e3281a4eca7d07c1c4cc9765522ea7966cd7ea8f552da42049778d4fcf44b35b59e84eddb1fa3266350e4f2d69d62da82819d51f107550e03852661\",\"mac\":\"96d358f46ef371982af600829c101e78f6c5d5f960bd96fdd2ca52763ee50f65\"}"
         GlobalScope.launch {
             val result = web3AuthApi.logout(
-                LogoutApiRequest(key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString())) ,
+                LogoutApiRequest(key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId = sessionId.toString())) ,
                     data = encryptedData,
-                    signature = KeyStoreManagerUtils.getECDSASignature(BigInteger(sessionId, 16), data = encryptedMetadata),
-                    timeout = 0))
+                    signature = KeyStoreManagerUtils.getSignature(BigInteger(sessionId, 16), encryptedMetadata),
+                    timeout = 1))
             if(result.isSuccessful) {
                 KeyStoreManagerUtils.deletePreferencesData()
             }
         }
     }
-
 
     fun logout(
         redirectUrl: Uri? = null,
