@@ -134,6 +134,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
 
         web3AuthResponse.sessionId?.let { KeyStoreManagerUtils.encryptData(KeyStoreManagerUtils.SESSION_ID, it) }
+        println("sessionId : " + web3AuthResponse.sessionId)
         loginCompletableFuture.complete(web3AuthResponse)
     }
 
@@ -146,6 +147,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     fun logout(params: Map<String, Any>? = null) : CompletableFuture<Void> {
+        sessionTimeOutAPI()
         request("logout", extraParams = params)
 
         logoutCompletableFuture = CompletableFuture()
@@ -164,6 +166,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         messageObj,
                         ShareMetadata::class.java
                     )
+                    println("shareMetadata$shareMetadata")
 
                     KeyStoreManagerUtils.savePreferenceData(
                         KeyStoreManagerUtils.EPHEM_PUBLIC_Key,
@@ -172,6 +175,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     KeyStoreManagerUtils.savePreferenceData(
                         KeyStoreManagerUtils.IV_KEY,
                         shareMetadata.iv.toString()
+                    )
+                    KeyStoreManagerUtils.savePreferenceData(
+                        KeyStoreManagerUtils.MAC,
+                        shareMetadata.mac.toString()
                     )
 
                     val aes256cbc = AES256CBC(
@@ -212,6 +219,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private fun sessionTimeOutAPI() {
         val ephemKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key)
         val ivKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.IV_KEY)
+        val mac = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.MAC)
 
         if(ephemKey?.isEmpty() == true && ivKey?.isEmpty() == true) return
 
@@ -221,14 +229,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             ivKey.toString()
         )
         var encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
-
+        var encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac).toString()
+        //var testData = "{\"iv\":\"693407372626b11017d0ec30acd29e6a\",\"ciphertext\":\"koO5l8P9D5KQnK8hUSNxSA==\",\"ephemPublicKey\":\"0477e20c5d9e3281a4eca7d07c1c4cc9765522ea7966cd7ea8f552da42049778d4fcf44b35b59e84eddb1fa3266350e4f2d69d62da82819d51f107550e03852661\",\"mac\":\"96d358f46ef371982af600829c101e78f6c5d5f960bd96fdd2ca52763ee50f65\"}"
         GlobalScope.launch {
-            web3AuthApi.logout(
+            val result = web3AuthApi.logout(
                 LogoutApiRequest(key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString())) ,
                     data = encryptedData,
-                    signature = KeyStoreManagerUtils.getECDSASignature(BigInteger(sessionId, 16), encryptedData),
-                    timeout = 0)
-            )
+                    signature = KeyStoreManagerUtils.getECDSASignature(BigInteger(sessionId, 16), data = encryptedMetadata),
+                    timeout = 0))
+            if(result.isSuccessful) {
+                KeyStoreManagerUtils.deletePreferencesData()
+            }
         }
     }
 
