@@ -6,7 +6,6 @@ import android.security.keystore.KeyProperties
 import androidx.annotation.RequiresApi
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
-import com.google.gson.Gson
 import com.web3auth.core.Web3AuthApp
 import org.bouncycastle.asn1.ASN1EncodableVector
 import org.bouncycastle.asn1.ASN1Integer
@@ -46,9 +45,9 @@ object KeyStoreManagerUtils {
     )
     }
 
-    /*
-    * Key generator to encrypt and decrypt data
-    * */
+    /**
+     * Key generator to encrypt and decrypt data
+     */
     @RequiresApi(Build.VERSION_CODES.M)
     fun getKeyGenerator() {
         val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, Android_KEY_STORE)
@@ -64,18 +63,18 @@ object KeyStoreManagerUtils {
         keyGenerator.generateKey()
     }
 
-    /*
-    * Method to encrypt data with key
-    * */
+    /**
+     * Method to encrypt data with key
+     */
     fun encryptData(key: String, data: String) {
         sharedPreferences?.edit()?.putString(key, data)?.apply()
         encryptedPairData = getEncryptedDataPair(data)
         encryptedPairData.second.toString(UTF_8)
     }
 
-    /*
+    /**
     * Key generator to encrypt/decrypt data
-    * */
+    */
     private fun getEncryptedDataPair(data: String): Pair<ByteArray, ByteArray> {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, getKey())
@@ -85,9 +84,9 @@ object KeyStoreManagerUtils {
         return Pair(iv, encryptedData)
     }
 
-    /*
-    * Method to encrypt data with key
-    * */
+    /**
+    * Method to decrypt data with key
+    */
     fun decryptData(key: String): String {
         val encryptedPairData = sharedPreferences?.getString(key, "")?.let { getEncryptedDataPair(it) }
         val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -96,24 +95,30 @@ object KeyStoreManagerUtils {
         return cipher.doFinal(encryptedPairData?.second).toString(UTF_8)
     }
 
-    /*
+    /**
     * Store encrypted data into preferences
-    * */
+    */
     fun savePreferenceData(key: String, data: String) {
         sharedPreferences?.edit()?.putString(key, data)?.apply()
     }
 
-    /*
+    /**
     * Retrieve decrypted data from preferences
-    * */
+    */
     fun getPreferencesData(key: String): String? {
         return sharedPreferences?.getString(key, "")
     }
 
+    /**
+    * Delete All local storage
+    */
     fun deletePreferencesData() {
         sharedPreferences?.edit()?.clear()?.apply()
     }
 
+    /**
+    * Get key from KeyStore
+    */
     private fun getKey(): SecretKey {
         val keyStore = KeyStore.getInstance(Android_KEY_STORE)
         keyStore.load(null)
@@ -121,41 +126,40 @@ object KeyStoreManagerUtils {
         return secreteKeyEntry.secretKey
     }
 
-    /*
-    * get Public key from sessionID
-    * */
+    /**
+    * Get Public key from sessionID
+    */
     fun getPubKey(sessionId: String): String {
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         return derivedECKeyPair.publicKey.toString(16)
     }
 
-    /*
-    * get Private key from sessionID
-    * */
+    /**
+    * Get Private key from sessionID
+    */
     fun getPrivateKey(sessionId: String): String {
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         return derivedECKeyPair.privateKey.toString(16)
     }
 
+    /**
+    * Generate Signature with privateKey and message
+    */
     fun getECDSASignature(privateKey: BigInteger?, data: String): String? {
         val derivedECKeyPair = ECKeyPair.create(privateKey)
         val hashedData = Hash.sha3(data.toByteArray(StandardCharsets.UTF_8))
         val signature = derivedECKeyPair.sign(hashedData)
-        System.out.printf(
-            "ECDSASignature: [r = %s, s = %s]\n",
-            signature.r.toString(16),
-            signature.s.toString(16)
-        )
         val v = ASN1EncodableVector()
         v.add(ASN1Integer(signature.r))
         v.add(ASN1Integer(signature.s))
         val der = DERSequence(v)
         val sigBytes = der.encoded
-        println("sigBytes: $sigBytes")
-        println("Final_Sig: " + convertByteToHexadecimal(sigBytes))
         return convertByteToHexadecimal(sigBytes)
     }
 
+    /**
+    * convert byte array to hex string
+    */
     private fun convertByteToHexadecimal(byteArray: ByteArray): String {
         var hex = ""
         // Iterating through each byte in the array

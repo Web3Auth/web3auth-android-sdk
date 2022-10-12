@@ -150,6 +150,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return logoutCompletableFuture
     }
 
+    /**
+    * Authorize User session in order to avoid re-login
+    */
     private fun authorizeSession(loginParams: LoginParams) {
         sessionId = KeyStoreManagerUtils.decryptData(KeyStoreManagerUtils.SESSION_ID)
         if(sessionId != null && sessionId?.isNotEmpty() == true) {
@@ -212,6 +215,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
     }
 
+
+    /**
+    * Session TimeOut API for logout
+    */
     private fun sessionTimeOutAPI() {
         val ephemKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key)
         val ivKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.IV_KEY)
@@ -235,6 +242,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     signature = KeyStoreManagerUtils.getECDSASignature(BigInteger(sessionId, 16), gsonData),
                     timeout = 1))
             if(result.isSuccessful) {
+                //Delete local storage
                 KeyStoreManagerUtils.deletePreferencesData()
             }
         }
