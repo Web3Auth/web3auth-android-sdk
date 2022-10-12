@@ -11,20 +11,11 @@ import com.web3auth.core.Web3AuthApp
 import org.bouncycastle.asn1.ASN1EncodableVector
 import org.bouncycastle.asn1.ASN1Integer
 import org.bouncycastle.asn1.DERSequence
-import org.bouncycastle.asn1.x9.ECNamedCurveTable
-import org.bouncycastle.asn1.x9.X9ECParameters
-import org.bouncycastle.jce.spec.ECNamedCurveSpec
 import org.web3j.crypto.ECKeyPair
 import org.web3j.crypto.Hash
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
-import java.security.KeyFactory
 import java.security.KeyStore
-import java.security.NoSuchAlgorithmException
-import java.security.PrivateKey
-import java.security.spec.ECParameterSpec
-import java.security.spec.ECPrivateKeySpec
-import java.security.spec.InvalidKeySpecException
 import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -162,8 +153,8 @@ object KeyStoreManagerUtils {
         val der = DERSequence(v)
         val sigBytes = der.encoded
         println("sigBytes: $sigBytes")
-        println("Final_Sig: " + convertByteToHexadecimal(sigBytes).lowercase(Locale.ROOT))
-        return convertByteToHexadecimal(sigBytes).lowercase(Locale.ROOT)
+        println("Final_Sig: " + convertByteToHexadecimal(sigBytes))
+        return convertByteToHexadecimal(sigBytes)
     }
 
     private fun convertByteToHexadecimal(byteArray: ByteArray): String {
@@ -172,47 +163,6 @@ object KeyStoreManagerUtils {
         for (i in byteArray) {
             hex += String.format("%02X", i)
         }
-        print(hex)
-        return hex
-    }
-
-    private fun padLeft(inputString: String, padChar: Char?, length: Int): String {
-        if (inputString.length >= length) return inputString
-        val sb = StringBuilder()
-        while (sb.length < length - inputString.length) {
-            sb.append(padChar)
-        }
-        sb.append(inputString)
-        return sb.toString()
-    }
-
-    private fun getPrivateKeyFromECBigIntAndCurve(s: BigInteger?, curveName: String): PrivateKey? {
-        val ecCurve: X9ECParameters = ECNamedCurveTable.getByName(curveName)
-        val ecParameterSpec: ECParameterSpec = ECNamedCurveSpec(
-            curveName,
-            ecCurve.curve,
-            ecCurve.g,
-            ecCurve.n,
-            ecCurve.h,
-            ecCurve.seed
-        )
-        val privateKeySpec = ECPrivateKeySpec(s, ecParameterSpec)
-        return try {
-            val keyFactory: KeyFactory = KeyFactory.getInstance("EC")
-            keyFactory.generatePrivate(privateKeySpec)
-        } catch (e: NoSuchAlgorithmException) {
-            e.printStackTrace()
-            null
-        } catch (e: InvalidKeySpecException) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    private fun compressPubKey(pubKey: BigInteger): String {
-        val pubKeyYPrefix = if (pubKey.testBit(0)) "03" else "02"
-        val pubKeyHex = pubKey.toString(16)
-        val pubKeyX = pubKeyHex.substring(0, 64)
-        return pubKeyYPrefix + pubKeyX
+        return hex.lowercase(Locale.ROOT)
     }
 }

@@ -131,7 +131,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
 
         web3AuthResponse.sessionId?.let { KeyStoreManagerUtils.encryptData(KeyStoreManagerUtils.SESSION_ID, it) }
-        println("sessionId : " + web3AuthResponse.sessionId)
         loginCompletableFuture.complete(web3AuthResponse)
     }
 
