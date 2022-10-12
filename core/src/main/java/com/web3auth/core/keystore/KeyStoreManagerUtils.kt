@@ -149,7 +149,7 @@ object KeyStoreManagerUtils {
         )
         val v = ASN1EncodableVector()
         v.add(ASN1Integer(signature.r))
-        v.add(ASN1Integer(signature.r))
+        v.add(ASN1Integer(signature.s))
         val der = DERSequence(v)
         val sigBytes = der.encoded
         println("sigBytes: $sigBytes")
