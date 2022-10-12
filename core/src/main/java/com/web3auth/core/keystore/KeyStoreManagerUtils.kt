@@ -137,10 +137,9 @@ object KeyStoreManagerUtils {
         return derivedECKeyPair.privateKey.toString(16)
     }
 
-    fun getECDSASignature(privateKey: BigInteger?, data: String?): String? {
-        val setDataString = Gson().toJson(data)
+    fun getECDSASignature(privateKey: BigInteger?, data: String): String? {
         val derivedECKeyPair = ECKeyPair.create(privateKey)
-        val hashedData = Hash.sha3(setDataString.toByteArray(StandardCharsets.UTF_8))
+        val hashedData = Hash.sha3(data.toByteArray(StandardCharsets.UTF_8))
         val signature = derivedECKeyPair.sign(hashedData)
         System.out.printf(
             "ECDSASignature: [r = %s, s = %s]\n",

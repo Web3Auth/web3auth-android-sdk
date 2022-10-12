@@ -226,11 +226,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         )
         var encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
         var encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac)
+        var gsonData = gson.toJson(encryptedMetadata)
+
         GlobalScope.launch {
             val result = web3AuthApi.logout(
                 LogoutApiRequest(key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId = sessionId.toString())) ,
-                    data = gson.toJson(encryptedMetadata),
-                    signature = KeyStoreManagerUtils.getECDSASignature(BigInteger(sessionId, 16), gson.toJson(encryptedMetadata)),
+                    data = gsonData,
+                    signature = KeyStoreManagerUtils.getECDSASignature(BigInteger(sessionId, 16), gsonData),
                     timeout = 1))
             if(result.isSuccessful) {
                 KeyStoreManagerUtils.deletePreferencesData()
