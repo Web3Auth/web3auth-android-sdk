@@ -9,7 +9,7 @@ import android.os.Looper
 import androidx.annotation.RequiresApi
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.os.postDelayed
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.api.Web3AuthApi
@@ -35,7 +35,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         CYAN
     }
 
-    private val gson = Gson()
+    private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     private val sdkUrl = Uri.parse(web3AuthOptions.sdkUrl)
     private val initParams: Map<String, Any>
@@ -225,13 +225,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             ephemKey,
             ivKey.toString()
         )
-        var encryptedData = aes256cbc.encrypt({}.toString().toByteArray(StandardCharsets.UTF_8))
-        var encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac).toString()
+        var encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
+        var encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac)
         GlobalScope.launch {
             val result = web3AuthApi.logout(
                 LogoutApiRequest(key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId = sessionId.toString())) ,
-                    data = encryptedData,
-                    signature = KeyStoreManagerUtils.getSignature(BigInteger(sessionId, 16), encryptedMetadata),
+                    data = gson.toJson(encryptedMetadata),
+                    signature = KeyStoreManagerUtils.getECDSASignature(BigInteger(sessionId, 16), gson.toJson(encryptedMetadata)),
                     timeout = 1))
             if(result.isSuccessful) {
                 KeyStoreManagerUtils.deletePreferencesData()

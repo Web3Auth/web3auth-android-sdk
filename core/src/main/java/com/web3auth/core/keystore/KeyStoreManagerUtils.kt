@@ -8,16 +8,20 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.google.gson.Gson
 import com.web3auth.core.Web3AuthApp
-import com.web3auth.core.types.AES256CBC
+import org.bouncycastle.asn1.ASN1EncodableVector
+import org.bouncycastle.asn1.ASN1Integer
+import org.bouncycastle.asn1.DERSequence
 import org.bouncycastle.asn1.x9.ECNamedCurveTable
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.jce.spec.ECNamedCurveSpec
-import org.bouncycastle.util.encoders.Hex
 import org.web3j.crypto.ECKeyPair
 import org.web3j.crypto.Hash
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
-import java.security.*
+import java.security.KeyFactory
+import java.security.KeyStore
+import java.security.NoSuchAlgorithmException
+import java.security.PrivateKey
 import java.security.spec.ECParameterSpec
 import java.security.spec.ECPrivateKeySpec
 import java.security.spec.InvalidKeySpecException
@@ -152,17 +156,17 @@ object KeyStoreManagerUtils {
             signature.r.toString(16),
             signature.s.toString(16)
         )
-        val sig = padLeft(signature.r.toString(16), '0', 64) +
-                padLeft(signature.s.toString(16), '0', 64) +
-                padLeft("", '0', 2)
-        println("Sig: $sig")
-        val sigBytes = AES256CBC.toByteArray(BigInteger(sig, 16))
+        val v = ASN1EncodableVector()
+        v.add(ASN1Integer(signature.r))
+        v.add(ASN1Integer(signature.r))
+        val der = DERSequence(v)
+        val sigBytes = der.encoded
         println("sigBytes: $sigBytes")
-        println("Final_Sig" + convertByteToHexadecimal(sigBytes).lowercase(Locale.ROOT))
+        println("Final_Sig: " + convertByteToHexadecimal(sigBytes).lowercase(Locale.ROOT))
         return convertByteToHexadecimal(sigBytes).lowercase(Locale.ROOT)
     }
 
-    fun convertByteToHexadecimal(byteArray: ByteArray): String {
+    private fun convertByteToHexadecimal(byteArray: ByteArray): String {
         var hex = ""
         // Iterating through each byte in the array
         for (i in byteArray) {
@@ -180,18 +184,6 @@ object KeyStoreManagerUtils {
         }
         sb.append(inputString)
         return sb.toString()
-    }
-
-    fun getSignature(privKey: BigInteger, data: String): String? {
-        val privateKey: PrivateKey? = getPrivateKeyFromECBigIntAndCurve(privKey, "secp256k1")
-        val signature: Signature = Signature.getInstance("SHA256withECDSA")
-        signature.initSign(privateKey)
-        signature.update(data.toByteArray(StandardCharsets.UTF_8))
-        val signed: ByteArray = signature.sign()
-        println("signed: $signed")
-        var sign = Hex.toHexString(signed)
-        println("Signatureee: $sign")
-        return sign
     }
 
     private fun getPrivateKeyFromECBigIntAndCurve(s: BigInteger?, curveName: String): PrivateKey? {
