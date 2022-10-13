@@ -3,21 +3,18 @@ package com.web3auth.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
-import com.web3auth.core.types.WhiteLabelData
-import com.web3auth.core.types.Provider
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
-import com.web3auth.core.types.ExtraLoginOptions
-import com.web3auth.core.types.LoginParams
-import com.web3auth.core.types.Web3AuthOptions
-import com.web3auth.core.types.Web3AuthResponse
+import com.web3auth.core.types.*
 import java8.util.concurrent.CompletableFuture
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
@@ -85,7 +82,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val key = web3AuthResponse.privKey
         val userInfo = web3AuthResponse.userInfo
         if (key is String && key.isNotEmpty()) {
-            contentTextView.text = gson.toJson(web3AuthResponse)
+            var string = "{\"privKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf\",\"sessionId\":\"62c9a25df9b54759eece08bdf8f43a3c0548e64d2a82757cff3d52cbe1739306\",\"ed25519PrivKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf22c725e309c9c6692e9664f7a606a2590fa03feb07e7f0f00525dd8a4f7983cd\",\"privKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf\",\"sessionId\":\"62c9a25df9b54759eece08bdf8f43a3c0548e64d2a82757cff3d52cbe1739306\",\"ed25519PrivKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf22c725e309c9c6692e9664f7a606a2590fa03feb07e7f0f00525dd8a4f7983cd\",\"privKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf\",\"sessionId\":\"62c9a25df9b54759eece08bdf8f43a3c0548e64d2a82757cff3d52cbe1739306\",\"ed25519PrivKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf22c725e309c9c6692e9664f7a606a2590fa03feb07e7f0f00525dd8a4f7983cd\",\"privKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf\",\"sessionId\":\"62c9a25df9b54759eece08bdf8f43a3c0548e64d2a82757cff3d52cbe1739306\",\"ed25519PrivKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf22c725e309c9c6692e9664f7a606a2590fa03feb07e7f0f00525dd8a4f7983cd\",\"privKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf\",\"sessionId\":\"62c9a25df9b54759eece08bdf8f43a3c0548e64d2a82757cff3d52cbe1739306\",\"ed25519PrivKey\":\"0ed0dc5df01aa12fe086ed79d191753349aa30179eeca1c133aac100624d1adf22c725e309c9c6692e9664f7a606a2590fa03feb07e7f0f00525dd8a4f7983cd\",\"userInfo\":{\"email\":\"gaurav@tor.us\",\"name\":\"GauravGoel\",\"profileImage\":\"https://lh3.googleusercontent.com/a/ALm5wu1Dje-Y60iGsfYH6vLA_4Q5etTazFWs7lW7tJoW=s96-c\",\"aggregateVerifier\":\"tkey-google\",\"verifier\":\"torus\",\"verifierId\":\"gaurav@tor.us\",\"typeOfLogin\":\"google\",\"dappShare\":\"\",\"idToken\":\"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRZT2dnXy01RU9FYmxhWS1WVlJZcVZhREFncHRuZktWNDUzNU1aUEMwdzAifQ.eyJpYXQiOjE2NjU2NTMzOTAsImF1ZCI6IkJBU2RaeHA1dFdxUEdremJPVTRWTUpzbno4UU9wSjJweXhmNmtaY3V4SThBSjFnc093NU1nYlc5NlJwQUF4X0trLTVwNHJoT29wUGhDYTlrUl85bUtwRSIsIm5vbmNlIjoiMDIzMGQ0OTYwNTc3YWM4OTQyODE0N2QxMzFhODY1ZjliOGMzMGMyZWVlMGZmMzQ3N2Y0OWJlMzVjOTY4NjU0NDk2IiwiaXNzIjoiaHR0cHM6Ly9hcGkub3BlbmxvZ2luLmNvbSIsIndhbGxldHMiOlt7InB1YmxpY19rZXkiOiIwM2E3YzQ1MDhhYTU0MTZiMzA3YzA0YmM1MTQwZWQzOTE4YmM2YzllM2I4YzI2MjE0MTBkMzAyNDQ4ZWE4Mzg5MGMiLCJ0eXBlIjoid2ViM2F1dGhfYXBwX2tleSIsImN1cnZlIjoic2VjcDI1NmsxIn1dLCJlbWFpbCI6ImdhdXJhdkB0b3IudXMiLCJuYW1lIjoiR2F1cmF2IEdvZWwiLCJwcm9maWxlSW1hZ2UiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BTG01d3UxRGplLVk2MGlHc2ZZSDZ2TEFfNFE1ZXRUYXpGV3M3bFc3dEpvVz1zOTYtYyIsInZlcmlmaWVyIjoidG9ydXMiLCJ2ZXJpZmllcklkIjoiZ2F1cmF2QHRvci51cyIsImFnZ3JlZ2F0ZVZlcmlmaWVyIjoidGtleS1nb29nbGUiLCJleHAiOjE2NjU3Mzk3OTB9.ef3RbLjWOLuOvV22Mue5ggWtU-je1FYuOAULHFO4UoFy7AC2mT53aPBcop81Mk0bkYd_201jlIlZDFlNdFyipw\",\"oAuthIdToken\":\"\"}}"
+            val jsonObject = JSONObject(gson.toJson(web3AuthResponse))
+            contentTextView.text = jsonObject.toString(4)
+            contentTextView.movementMethod = ScrollingMovementMethod()
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
