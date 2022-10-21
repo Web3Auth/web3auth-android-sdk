@@ -28,7 +28,6 @@ object KeyStoreManagerUtils {
     private const val TRANSFORMATION = "AES/CBC/PKCS7Padding"
     private const val Android_KEY_STORE = "AndroidKeyStore"
     private const val WEB3AUTH = "Web3Auth"
-    const val SESSION_ID = "sessionId"
     const val IV_KEY = "ivKey"
     const val EPHEM_PUBLIC_Key = "ephemPublicKey"
     const val MAC = "mac"
@@ -87,8 +86,16 @@ object KeyStoreManagerUtils {
     /**
     * Method to decrypt data with key
     */
-    fun decryptData(key: String): String {
-        val encryptedPairData = sharedPreferences?.getString(key, "")?.let { getEncryptedDataPair(it) }
+    fun decryptData(key: String): String? {
+        val sharedPreferenceIds = sharedPreferences?.all
+        var result: String? = null
+        sharedPreferenceIds?.forEach {
+                if(it.key.contains(key)) {
+                    result = sharedPreferences?.getString(it.key, "")
+                }
+        }
+        if(result == null) return null
+        val encryptedPairData = result?.let { getEncryptedDataPair(it) }
         val cipher = Cipher.getInstance(TRANSFORMATION)
         val keySpec = IvParameterSpec(encryptedPairData?.first)
         cipher.init(Cipher.DECRYPT_MODE, getKey(), keySpec)
@@ -112,8 +119,8 @@ object KeyStoreManagerUtils {
     /**
     * Delete All local storage
     */
-    fun deletePreferencesData() {
-        sharedPreferences?.edit()?.clear()?.apply()
+    fun deletePreferencesData(key: String) {
+        sharedPreferences?.edit()?.remove(key)?.apply()
     }
 
     /**
@@ -129,7 +136,7 @@ object KeyStoreManagerUtils {
     /**
     * Get Public key from sessionID
     */
-    fun getPubKey(sessionId: String): String {
+    fun getPubKey(sessionId: String?): String {
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         return derivedECKeyPair.publicKey.toString(16)
     }

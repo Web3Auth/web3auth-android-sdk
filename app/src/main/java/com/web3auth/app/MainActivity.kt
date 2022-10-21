@@ -114,7 +114,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     hashMapOf(
                         "primary" to "#123456"
                     )
-                )
+                ),
+            loginConfig = hashMapOf(
+                "loginConfig" to LoginConfigItem("torus", typeOfLogin = TypeOfLogin.GOOGLE, name = ""))
             )
         )
 

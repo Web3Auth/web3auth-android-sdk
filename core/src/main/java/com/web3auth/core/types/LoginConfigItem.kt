@@ -1,7 +1,7 @@
 package com.web3auth.core.types
 
 data class LoginConfigItem(
-    private var verifier: String,
+    public var verifier: String,
     private var typeOfLogin: TypeOfLogin,
     private var name: String,
     private var description: String? = null,
