@@ -157,9 +157,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     * Authorize User session in order to avoid re-login
     */
     private fun authorizeSession(loginParams: LoginParams) {
-        println(web3AuthOption.loginConfig)
         if(web3AuthOption.loginConfig != null) {
-            sessionId = KeyStoreManagerUtils.decryptData(web3AuthOption.loginConfig?.get("loginConfig")?.verifier.toString())
+            var loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
+            sessionId = KeyStoreManagerUtils.decryptData(loginConfigItem?.verifier.toString())
             if (sessionId != null && sessionId?.isNotEmpty() == true) {
                 var pubKey = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString()))
                 GlobalScope.launch {
@@ -250,9 +250,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     timeout = 1))
             if(result.isSuccessful) {
                 //Delete local storage
-                val shareKey =
-                    (initParams["loginConfig"] as HashMap<String, LoginConfigItem>?)?.get("loginConfig")?.verifier.toString()
-                KeyStoreManagerUtils.deletePreferencesData(shareKey)
+                var loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
+                KeyStoreManagerUtils.deletePreferencesData(loginConfigItem?.verifier.toString())
             }
         }
     }

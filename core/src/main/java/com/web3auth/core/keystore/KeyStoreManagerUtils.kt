@@ -121,6 +121,12 @@ object KeyStoreManagerUtils {
     */
     fun deletePreferencesData(key: String) {
         sharedPreferences?.edit()?.remove(key)?.apply()
+        val sharedPreferenceIds = sharedPreferences?.all
+        sharedPreferenceIds?.forEach {
+            if(it.key.contains(key)) {
+                sharedPreferences?.edit()?.remove(key)?.apply()
+            }
+        }
     }
 
     /**
