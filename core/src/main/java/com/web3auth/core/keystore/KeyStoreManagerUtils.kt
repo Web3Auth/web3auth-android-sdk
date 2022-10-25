@@ -1,9 +1,7 @@
 package com.web3auth.core.keystore
 
-import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import androidx.annotation.RequiresApi
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.web3auth.core.Web3AuthApp
@@ -37,19 +35,20 @@ object KeyStoreManagerUtils {
     private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
     private val sharedPreferences = Web3AuthApp.getContext()?.let {
         EncryptedSharedPreferences.create(
-        "Web3Auth",
-        masterKeyAlias,
+            "Web3Auth",
+            masterKeyAlias,
             it,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
     }
 
     /**
      * Key generator to encrypt and decrypt data
      */
     fun getKeyGenerator() {
-        val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, Android_KEY_STORE)
+        val keyGenerator =
+            KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, Android_KEY_STORE)
         val keyGeneratorSpec = KeyGenParameterSpec.Builder(
             WEB3AUTH,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
@@ -72,8 +71,8 @@ object KeyStoreManagerUtils {
     }
 
     /**
-    * Key generator to encrypt/decrypt data
-    */
+     * Key generator to encrypt/decrypt data
+     */
     private fun getEncryptedDataPair(data: String): Pair<ByteArray, ByteArray> {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, getKey())
@@ -84,17 +83,17 @@ object KeyStoreManagerUtils {
     }
 
     /**
-    * Method to decrypt data with key
-    */
+     * Method to decrypt data with key
+     */
     fun decryptData(key: String): String? {
         val sharedPreferenceIds = sharedPreferences?.all
         var result: String? = null
         sharedPreferenceIds?.forEach {
-                if(it.key.contains(key)) {
-                    result = sharedPreferences?.getString(it.key, "")
-                }
+            if (it.key.contains(key)) {
+                result = sharedPreferences?.getString(it.key, "")
+            }
         }
-        if(result == null) return null
+        if (result == null) return null
         val encryptedPairData = result?.let { getEncryptedDataPair(it) }
         val cipher = Cipher.getInstance(TRANSFORMATION)
         val keySpec = IvParameterSpec(encryptedPairData?.first)
@@ -103,61 +102,62 @@ object KeyStoreManagerUtils {
     }
 
     /**
-    * Store encrypted data into preferences
-    */
+     * Store encrypted data into preferences
+     */
     fun savePreferenceData(key: String, data: String) {
         sharedPreferences?.edit()?.putString(key, data)?.apply()
     }
 
     /**
-    * Retrieve decrypted data from preferences
-    */
+     * Retrieve decrypted data from preferences
+     */
     fun getPreferencesData(key: String): String? {
         return sharedPreferences?.getString(key, "")
     }
 
     /**
-    * Delete All local storage
-    */
+     * Delete All local storage
+     */
     fun deletePreferencesData(key: String) {
         sharedPreferences?.edit()?.remove(key)?.apply()
         val sharedPreferenceIds = sharedPreferences?.all
         sharedPreferenceIds?.forEach {
-            if(it.key.contains(key)) {
+            if (it.key.contains(key)) {
                 sharedPreferences?.edit()?.remove(key)?.apply()
             }
         }
     }
 
     /**
-    * Get key from KeyStore
-    */
+     * Get key from KeyStore
+     */
     private fun getKey(): SecretKey {
         val keyStore = KeyStore.getInstance(Android_KEY_STORE)
         keyStore.load(null)
-        val secreteKeyEntry: KeyStore.SecretKeyEntry = keyStore.getEntry(WEB3AUTH, null) as KeyStore.SecretKeyEntry
+        val secreteKeyEntry: KeyStore.SecretKeyEntry =
+            keyStore.getEntry(WEB3AUTH, null) as KeyStore.SecretKeyEntry
         return secreteKeyEntry.secretKey
     }
 
     /**
-    * Get Public key from sessionID
-    */
+     * Get Public key from sessionID
+     */
     fun getPubKey(sessionId: String): String {
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         return derivedECKeyPair.publicKey.toString(16)
     }
 
     /**
-    * Get Private key from sessionID
-    */
+     * Get Private key from sessionID
+     */
     fun getPrivateKey(sessionId: String): String {
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         return derivedECKeyPair.privateKey.toString(16)
     }
 
     /**
-    * Generate Signature with privateKey and message
-    */
+     * Generate Signature with privateKey and message
+     */
     fun getECDSASignature(privateKey: BigInteger?, data: String): String? {
         val derivedECKeyPair = ECKeyPair.create(privateKey)
         val hashedData = Hash.sha3(data.toByteArray(StandardCharsets.UTF_8))
@@ -171,8 +171,8 @@ object KeyStoreManagerUtils {
     }
 
     /**
-    * convert byte array to hex string
-    */
+     * convert byte array to hex string
+     */
     private fun convertByteToHexadecimal(byteArray: ByteArray): String {
         var hex = ""
         // Iterating through each byte in the array

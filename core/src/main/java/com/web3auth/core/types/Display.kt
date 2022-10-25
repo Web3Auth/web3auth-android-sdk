@@ -1,7 +1,5 @@
 package com.web3auth.core.types
 
-import java.util.HashMap
-
 enum class Display(private val label: String) {
     PAGE("page"), POPUP("popup"), TOUCH("touch"), WAP("wap");
 

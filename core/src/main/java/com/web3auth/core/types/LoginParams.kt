@@ -2,7 +2,7 @@ package com.web3auth.core.types
 
 import android.net.Uri
 
-data class LoginParams (
+data class LoginParams(
     val loginProvider: Provider,
     var dappShare: String? = null,
     val extraLoginOptions: ExtraLoginOptions? = null,

@@ -7,7 +7,6 @@ import android.net.Uri
 import android.util.Base64
 import android.util.Patterns
 import androidx.browser.customtabs.CustomTabsService
-import java.util.ArrayList
 
 const val BASE64_URL_FLAGS = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
 
@@ -24,13 +23,13 @@ val ALLOWED_CUSTOM_TABS_PACKAGES =
     )
 
 fun Context.doesDefaultBrowserSupportCustomTabs(): Boolean {
-    val defaultBrowserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://web3auth.io"));
+    val defaultBrowserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://web3auth.io"))
 
     val `package` = packageManager.resolveActivity(
         defaultBrowserIntent,
         PackageManager.MATCH_DEFAULT_ONLY
-    )?.activityInfo?.packageName ?: return false;
-    if (!ALLOWED_CUSTOM_TABS_PACKAGES.contains(`package`)) return false;
+    )?.activityInfo?.packageName ?: return false
+    if (!ALLOWED_CUSTOM_TABS_PACKAGES.contains(`package`)) return false
 
     val customTabsIntent = Intent()
     customTabsIntent.action = CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION

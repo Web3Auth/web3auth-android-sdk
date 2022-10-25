@@ -144,8 +144,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             logoutCompletableFuture.complete(null)
         }
 
-        web3AuthResponse.sessionId?.let { KeyStoreManagerUtils.encryptData(KeyStoreManagerUtils.SESSION_ID, it) }
-        if(web3AuthResponse.userInfo?.dappShare?.isNotEmpty() == true) {
+        web3AuthResponse.sessionId?.let {
+            KeyStoreManagerUtils.encryptData(
+                KeyStoreManagerUtils.SESSION_ID,
+                it
+            )
+        }
+        if (web3AuthResponse.userInfo?.dappShare?.isNotEmpty() == true) {
             KeyStoreManagerUtils.encryptData(
                 web3AuthResponse.userInfo?.verifier.plus(" | ")
                     .plus(web3AuthResponse.userInfo?.verifierId),
@@ -228,7 +233,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         web3AuthResponse =
                             gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                         if (web3AuthResponse != null) {
-                            Handler(Looper.getMainLooper()).postDelayed(500) {
+                            Handler(Looper.getMainLooper()).postDelayed(10) {
                                 loginCompletableFuture.complete(web3AuthResponse)
                             }
                         }

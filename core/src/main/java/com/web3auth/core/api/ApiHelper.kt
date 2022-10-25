@@ -13,7 +13,7 @@ object ApiHelper {
 
     private val okHttpClient = OkHttpClient().newBuilder()
         .addInterceptor(HttpLoggingInterceptor().apply {
-            if(BuildConfig.DEBUG) {
+            if (BuildConfig.DEBUG) {
                 level = HttpLoggingInterceptor.Level.BODY
             }
         })
