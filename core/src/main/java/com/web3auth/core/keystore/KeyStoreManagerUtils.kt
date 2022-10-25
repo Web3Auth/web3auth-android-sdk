@@ -31,6 +31,7 @@ object KeyStoreManagerUtils {
     const val IV_KEY = "ivKey"
     const val EPHEM_PUBLIC_Key = "ephemPublicKey"
     const val MAC = "mac"
+    const val SESSION_ID = "sessionId"
     private lateinit var encryptedPairData: Pair<ByteArray, ByteArray>
 
     private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
@@ -47,7 +48,6 @@ object KeyStoreManagerUtils {
     /**
      * Key generator to encrypt and decrypt data
      */
-    @RequiresApi(Build.VERSION_CODES.M)
     fun getKeyGenerator() {
         val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, Android_KEY_STORE)
         val keyGeneratorSpec = KeyGenParameterSpec.Builder(
@@ -142,7 +142,7 @@ object KeyStoreManagerUtils {
     /**
     * Get Public key from sessionID
     */
-    fun getPubKey(sessionId: String?): String {
+    fun getPubKey(sessionId: String): String {
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         return derivedECKeyPair.publicKey.toString(16)
     }
