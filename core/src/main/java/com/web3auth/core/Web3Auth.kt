@@ -45,6 +45,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     private var loginCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
     private var logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
+    private var sessionCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
 
     private var web3AuthResponse = Web3AuthResponse()
     private var shareMetadata = ShareMetadata()
@@ -72,6 +73,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
         this.initParams = initParams
         this.context = web3AuthOptions.context
+
+        //authorize session
+        authorizeSession()
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -171,8 +175,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             }
         }
 
-        //authorize sessionId or login
-        authorizeSession(loginParams)
+        //login
+        request("login", loginParams)
 
         loginCompletableFuture = CompletableFuture()
         return loginCompletableFuture
@@ -189,7 +193,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     /**
      * Authorize User session in order to avoid re-login
      */
-    private fun authorizeSession(loginParams: LoginParams) {
+    private fun authorizeSession() {
+        sessionCompletableFuture = CompletableFuture()
         sessionId = KeyStoreManagerUtils.decryptData(KeyStoreManagerUtils.SESSION_ID)
         if (sessionId != null && sessionId?.isNotEmpty() == true) {
             var pubKey = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString()))
@@ -233,22 +238,36 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         web3AuthResponse =
                             gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                         if (web3AuthResponse != null) {
+                            if (web3AuthResponse.error?.isNotBlank() == true) {
+                                Handler(Looper.getMainLooper()).postDelayed(10) {
+                                    sessionCompletableFuture.completeExceptionally(
+                                        UnKnownException(
+                                            web3AuthResponse.error ?: "Something went wrong"
+                                        )
+                                    )
+                                }
+                            }
+
+                            if (web3AuthResponse.privKey.isNullOrBlank()) {
+                                Handler(Looper.getMainLooper()).postDelayed(10) {
+                                    sessionCompletableFuture.complete(null)
+                                }
+                            }
+
                             Handler(Looper.getMainLooper()).postDelayed(10) {
-                                loginCompletableFuture.complete(web3AuthResponse)
+                                sessionCompletableFuture.complete(web3AuthResponse)
                             }
                         }
                     } catch (ex: Exception) {
                         ex.printStackTrace()
                     }
-                } else {
-                    //login with Web3Auth
-                    request("login", loginParams)
                 }
             }
-        } else {
-            //login with Web3Auth
-            request("login", loginParams)
         }
+    }
+
+    fun sessionResponse(): CompletableFuture<Web3AuthResponse> {
+        return sessionCompletableFuture
     }
 
     /**

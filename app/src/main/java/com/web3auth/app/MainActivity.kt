@@ -56,18 +56,18 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             if (error == null) {
                 reRender(loginResponse)
             } else {
-                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong" )
+                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
         }
     }
 
     private fun signOut() {
-        val logoutCompletableFuture =  web3Auth.logout()
+        val logoutCompletableFuture = web3Auth.logout()
         logoutCompletableFuture.whenComplete { _, error ->
             if (error == null) {
                 reRender(Web3AuthResponse())
             } else {
-                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong" )
+                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
         }
     }
@@ -105,22 +105,38 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         // Configure Web3Auth
         web3Auth = Web3Auth(
-            Web3AuthOptions(context = this,
-            clientId = getString(R.string.web3auth_project_id),
-            network = Web3Auth.Network.MAINNET,
-            redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample/redirect"),
+            Web3AuthOptions(
+                context = this,
+                clientId = getString(R.string.web3auth_project_id),
+                network = Web3Auth.Network.MAINNET,
+                redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample/redirect"),
                 whiteLabel = WhiteLabelData(
                     "Web3Auth Sample App", null, null, "en", true,
                     hashMapOf(
                         "primary" to "#123456"
                     )
                 ),
-            loginConfig = hashMapOf(
-                "loginConfig" to LoginConfigItem("torus", typeOfLogin = TypeOfLogin.GOOGLE, name = ""))
+                loginConfig = hashMapOf(
+                    "loginConfig" to LoginConfigItem(
+                        "torus",
+                        typeOfLogin = TypeOfLogin.GOOGLE,
+                        name = ""
+                    )
+                )
             )
         )
 
         web3Auth.setResultUrl(intent.data)
+
+        // for session response
+        val web3AuthResponse: CompletableFuture<Web3AuthResponse> = web3Auth.sessionResponse()
+        web3AuthResponse.whenComplete { loginResponse, error ->
+            if (error == null) {
+                reRender(loginResponse)
+            } else {
+                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+            }
+        }
 
         // Setup UI and event handlers
         val signInButton = findViewById<Button>(R.id.signInButton)
