@@ -129,8 +129,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         web3Auth.setResultUrl(intent.data)
 
         // for session response
-        val web3AuthResponse: CompletableFuture<Web3AuthResponse> = web3Auth.sessionResponse()
-        web3AuthResponse.whenComplete { loginResponse, error ->
+        val sessionResponse: CompletableFuture<Web3AuthResponse> = web3Auth.sessionResponse()
+        sessionResponse.whenComplete { loginResponse, error ->
             if (error == null) {
                 reRender(loginResponse)
             } else {
