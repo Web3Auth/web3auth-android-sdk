@@ -3,21 +3,18 @@ package com.web3auth.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
-import com.web3auth.core.types.WhiteLabelData
-import com.web3auth.core.types.Provider
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
-import com.web3auth.core.types.ExtraLoginOptions
-import com.web3auth.core.types.LoginParams
-import com.web3auth.core.types.Web3AuthOptions
-import com.web3auth.core.types.Web3AuthResponse
+import com.web3auth.core.types.*
 import java8.util.concurrent.CompletableFuture
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
@@ -59,19 +56,18 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             if (error == null) {
                 reRender(loginResponse)
             } else {
-                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong" )
+                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
-
         }
     }
 
     private fun signOut() {
-        val logoutCompletableFuture =  web3Auth.logout()
+        val logoutCompletableFuture = web3Auth.logout()
         logoutCompletableFuture.whenComplete { _, error ->
             if (error == null) {
                 reRender(Web3AuthResponse())
             } else {
-                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong" )
+                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
         }
     }
@@ -86,7 +82,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val key = web3AuthResponse.privKey
         val userInfo = web3AuthResponse.userInfo
         if (key is String && key.isNotEmpty()) {
-            contentTextView.text = gson.toJson(web3AuthResponse)
+            val jsonObject = JSONObject(gson.toJson(web3AuthResponse))
+            contentTextView.text = jsonObject.toString(4)
+            contentTextView.movementMethod = ScrollingMovementMethod()
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
@@ -107,20 +105,38 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         // Configure Web3Auth
         web3Auth = Web3Auth(
-            Web3AuthOptions(context = this,
-            clientId = getString(R.string.web3auth_project_id),
-            network = Web3Auth.Network.MAINNET,
-            redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample/redirect"),
+            Web3AuthOptions(
+                context = this,
+                clientId = getString(R.string.web3auth_project_id),
+                network = Web3Auth.Network.MAINNET,
+                redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample/redirect"),
                 whiteLabel = WhiteLabelData(
                     "Web3Auth Sample App", null, null, "en", true,
                     hashMapOf(
                         "primary" to "#123456"
+                    )
+                ),
+                loginConfig = hashMapOf(
+                    "loginConfig" to LoginConfigItem(
+                        "torus",
+                        typeOfLogin = TypeOfLogin.GOOGLE,
+                        name = ""
                     )
                 )
             )
         )
 
         web3Auth.setResultUrl(intent.data)
+
+        // for session response
+        val sessionResponse: CompletableFuture<Web3AuthResponse> = web3Auth.sessionResponse()
+        sessionResponse.whenComplete { loginResponse, error ->
+            if (error == null) {
+                reRender(loginResponse)
+            } else {
+                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+            }
+        }
 
         // Setup UI and event handlers
         val signInButton = findViewById<Button>(R.id.signInButton)

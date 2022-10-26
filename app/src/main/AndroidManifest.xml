@@ -42,7 +42,6 @@
                 <data android:scheme="web3auth" />
             </intent-filter>
         </activity>
-
     </application>
 
 </manifest>
