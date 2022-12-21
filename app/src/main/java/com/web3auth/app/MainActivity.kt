@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
 import com.web3auth.core.Web3Auth
-import com.web3auth.core.isEmailValid
+import com.web3auth.core.utils.isEmailValid
 import com.web3auth.core.types.*
 import java8.util.concurrent.CompletableFuture
 import org.json.JSONObject

@@ -1,4 +1,4 @@
-package com.web3auth.core
+package com.web3auth.core.utils
 
 import android.content.Context
 import android.content.Intent
