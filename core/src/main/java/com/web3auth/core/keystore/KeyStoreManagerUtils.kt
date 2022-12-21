@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Integer
 import org.bouncycastle.asn1.DERSequence
 import org.web3j.crypto.ECKeyPair
 import org.web3j.crypto.Hash
+import org.web3j.crypto.Keys
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
@@ -20,16 +21,17 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
 import kotlin.text.Charsets.UTF_8
 
-
 object KeyStoreManagerUtils {
 
     private const val TRANSFORMATION = "AES/CBC/PKCS7Padding"
-    private const val Android_KEY_STORE = "AndroidKeyStore"
+    const val Android_KEY_STORE = "AndroidKeyStore"
     private const val WEB3AUTH = "Web3Auth"
     const val IV_KEY = "ivKey"
     const val EPHEM_PUBLIC_Key = "ephemPublicKey"
     const val MAC = "mac"
     const val SESSION_ID = "sessionId"
+    const val ID_TOKEN = "idToken"
+    const val REFRESH_TOKEN = "appRefreshToken"
     private lateinit var encryptedPairData: Pair<ByteArray, ByteArray>
 
     private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
@@ -156,6 +158,11 @@ object KeyStoreManagerUtils {
         val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
         return derivedECKeyPair.privateKey.toString(16)
     }
+
+    /**
+     * Get new KeyPair
+     */
+    fun generateKeyPair(): ECKeyPair = Keys.createEcKeyPair()
 
     /**
      * Generate Signature with privateKey and message

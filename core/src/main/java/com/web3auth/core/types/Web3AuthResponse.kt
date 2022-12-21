@@ -8,5 +8,6 @@ data class Web3AuthResponse(
     val ed25519PrivKey: String? = null,
     val userInfo: UserInfo? = null,
     val error: String? = null,
-    val sessionId: String? = null
+    val sessionId: String? = null,
+    val appRefreshToken: String? = null
 )
