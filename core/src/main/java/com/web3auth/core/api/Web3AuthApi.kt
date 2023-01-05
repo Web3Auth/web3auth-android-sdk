@@ -2,6 +2,7 @@ package com.web3auth.core.api
 
 import com.web3auth.core.api.models.LogoutApiRequest
 import com.web3auth.core.api.models.RefreshSessionRequest
+import com.web3auth.core.api.models.RefreshSessionResponse
 import com.web3auth.core.api.models.StoreApiResponse
 import org.json.JSONObject
 import retrofit2.Response
@@ -18,5 +19,5 @@ interface Web3AuthApi {
     suspend fun logout(@Body logoutApiRequest: LogoutApiRequest): Response<JSONObject>
 
     @POST("/session/refresh")
-    suspend fun refreshSession(@Body refreshSessionRequest: RefreshSessionRequest): Response<JSONObject>
+    suspend fun refreshSession(@Body refreshSessionRequest: RefreshSessionRequest): Response<RefreshSessionResponse>
 }

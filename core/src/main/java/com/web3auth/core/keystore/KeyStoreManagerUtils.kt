@@ -31,7 +31,7 @@ object KeyStoreManagerUtils {
     const val MAC = "mac"
     const val SESSION_ID = "sessionId"
     const val ID_TOKEN = "idToken"
-    const val REFRESH_TOKEN = "appRefreshToken"
+    const val REFRESH_TOKEN = "refreshToken"
     private lateinit var encryptedPairData: Pair<ByteArray, ByteArray>
 
     private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
@@ -158,7 +158,7 @@ object KeyStoreManagerUtils {
     }
 
     /**
-     * Get new KeyPair
+     * Get new KeyPair value
      */
     fun generateKeyPair(): ECKeyPair = Keys.createEcKeyPair()
 

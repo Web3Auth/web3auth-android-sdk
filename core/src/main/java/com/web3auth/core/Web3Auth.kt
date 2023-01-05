@@ -248,7 +248,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     // Implementation specific oddity - hex string actually gets passed as a base64 string
                     try {
                         val encryptedShareBytes =
-                            AES256CBC.toByteArray(shareMetadata.ciphertext?.let { BigInteger(it, 16) })
+                            AES256CBC.toByteArray(shareMetadata.ciphertext?.let {
+                                BigInteger(
+                                    it,
+                                    16
+                                )
+                            })
                         val share = aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes))
                         val tempJson = JSONObject(share.toString())
                         tempJson.put("userInfo", tempJson.get("store"))
@@ -273,11 +278,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                             }
 
                             Handler(Looper.getMainLooper()).postDelayed(10) {
-                                if(JwtUtils.isTokenExpired(idToken.toString())) {
+                                if (JwtUtils.isTokenExpired(idToken.toString())) {
                                     refreshSession(web3AuthResponse)
-                                } else {
-                                    sessionCompletableFuture.complete(web3AuthResponse)
                                 }
+                                sessionCompletableFuture.complete(web3AuthResponse)
                             }
                         }
                     } catch (ex: Exception) {
@@ -333,20 +337,28 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
     }
 
+    /**
+    * Session refresh API
+    */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun refreshSession(web3AuthResponse: Web3AuthResponse) {
-        val refreshToken = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.REFRESH_TOKEN)
-        val ephemKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key)
+        val refreshToken =
+            KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.REFRESH_TOKEN)
+        val ephemKey =
+            KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key)
         val ivKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.IV_KEY)
         val mac = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.MAC)
-        val mewKeyPair = KeyStoreManagerUtils.generateKeyPair().toString()
+        val newKeyPair = KeyStoreManagerUtils.generateKeyPair().toString()
 
         if (ephemKey?.isEmpty() == true && ivKey?.isEmpty() == true) return
         val aes256cbc = AES256CBC(
-            mewKeyPair,
+            newKeyPair,
             ephemKey,
             ivKey.toString()
         )
-        val encryptedData = aes256cbc.encrypt(web3AuthResponse.userInfo.toString().toByteArray(StandardCharsets.UTF_8))
+        val encryptedData = aes256cbc.encrypt(
+            web3AuthResponse.userInfo.toString().toByteArray(StandardCharsets.UTF_8)
+        )
         val encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac)
         val gsonData = gson.toJson(encryptedMetadata)
         GlobalScope.launch {
@@ -354,29 +366,24 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 RefreshSessionRequest(
                     refresh_token = refreshToken,
                     old_session_key = sessionId,
-                    key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId = mewKeyPair)),
+                    key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId = newKeyPair)),
                     data = gsonData,
-                    signature =  KeyStoreManagerUtils.getECDSASignature(
-                        BigInteger(mewKeyPair, 16),
+                    signature = KeyStoreManagerUtils.getECDSASignature(
+                        BigInteger(newKeyPair, 16),
                         gsonData
                     ),
                     namespace = web3AuthResponse.userInfo?._sessionNamespace
                 )
             )
             if (result.isSuccessful) {
-                web3AuthResponse.sessionId?.let {
-                    KeyStoreManagerUtils.encryptData(
-                        KeyStoreManagerUtils.SESSION_ID,
-                        it
-                    )
-                }
-                web3AuthResponse.userInfo?.idToken?.let {
+                KeyStoreManagerUtils.encryptData(KeyStoreManagerUtils.SESSION_ID, newKeyPair)
+                result.body()?.id_token?.let {
                     KeyStoreManagerUtils.encryptData(
                         KeyStoreManagerUtils.ID_TOKEN,
                         it
                     )
                 }
-                web3AuthResponse.appRefreshToken?.let {
+                result.body()?.refresh_token?.let {
                     KeyStoreManagerUtils.encryptData(
                         KeyStoreManagerUtils.REFRESH_TOKEN,
                         it
