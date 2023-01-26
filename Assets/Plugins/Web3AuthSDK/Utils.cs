@@ -16,8 +16,7 @@ public static class Utils
 
     public static void LaunchUrl(string url, string redirectUri = null, string objectName = null)
     {
-        Debug.Log((new Uri(redirectUri)).Scheme);
-#if UNITY_EDITOR || UNITY_STANDALONE_WIN
+#if UNITY_EDITOR || UNITY_STANDALONE
         Application.OpenURL(url);
 #elif UNITY_ANDROID
         using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
