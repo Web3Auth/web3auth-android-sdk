@@ -44,6 +44,11 @@ public class KeyStoreManagerUtils
         SecurePlayerPrefs.DeleteKey(key);
     }
 
+    public static void clearPreferencesData()
+    {
+        SecurePlayerPrefs.DeleteAll();
+    }
+
     public static string getECDSASignature(string privateKey, string data){
         var curve = SecNamedCurves.GetByName("secp256k1");
         var domain = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
