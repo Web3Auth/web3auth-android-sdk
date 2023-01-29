@@ -5,9 +5,20 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.Runtime.InteropServices;
 
 public class KeyStoreManagerUtils
 {
+#if UNITY_IOS
+    [DllImport("__Internal")]
+    extern static int web3auth_keystore_set(string key, string value);
+
+    [DllImport("__Internal")]
+    extern static string web3auth_keystore_get(string key);
+
+    [DllImport("__Internal")]
+    extern static int web3auth_keystore_delete(string key);
+#endif
 
     public static string SESSION_ID = "sessionId";
     public static string IV_KEY = "ivKey";
@@ -27,26 +38,35 @@ public class KeyStoreManagerUtils
 
     static KeyStoreManagerUtils()
     {
+#if !UNITY_IOS
         SecurePlayerPrefs.Init();
+#endif
     }
 
     public static void savePreferenceData(string key, string value)
     {
+#if UNITY_IOS
+        web3auth_keystore_set(key, value);
+#else
         SecurePlayerPrefs.SetString(key, value);
+#endif
     }
 
     public static string getPreferencesData(string key)
     {
+#if UNITY_IOS
+        return web3auth_keystore_get(key);
+#else
         return SecurePlayerPrefs.GetString(key);
+#endif
     }
     public static void deletePreferencesData(string key)
     {
+#if UNITY_IOS
+        web3auth_keystore_delete(key);
+#else
         SecurePlayerPrefs.DeleteKey(key);
-    }
-
-    public static void clearPreferencesData()
-    {
-        SecurePlayerPrefs.DeleteAll();
+#endif
     }
 
     public static string getECDSASignature(string privateKey, string data){

@@ -39,7 +39,14 @@ public class BuildPostProcess
         urlSchemes.AddString(uri.Scheme);
 
         infoPlist.WriteToFile(infoPlistPath);
-        
+
+
+
+        using (StreamWriter sw = File.AppendText(pathToBuiltProject + "/Podfile"))
+        {
+            sw.WriteLine("pod 'Firebase/Messaging', '6.6.0'\n");
+        }
+
 
 #endif
     }

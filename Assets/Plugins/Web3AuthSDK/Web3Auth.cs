@@ -386,7 +386,18 @@ public class Web3Auth: MonoBehaviour
 
             if (result != null)
             {
-                KeyStoreManagerUtils.clearPreferencesData();
+                try
+                {
+                    KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key);
+                    KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.IV_KEY);
+                    KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.MAC);
+                    KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.SESSION_ID);
+                    KeyStoreManagerUtils.deletePreferencesData(web3AuthOptions.loginConfig?.Values.First()?.verifier);
+                } 
+                catch (Exception ex)
+                {
+                    Debug.LogError(ex.Message);
+                }
             }
         }
     }
