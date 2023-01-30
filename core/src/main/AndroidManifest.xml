@@ -3,10 +3,6 @@
     package="com.web3auth.core">
 
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <application
-        android:name=".Web3AuthApp"/>
-
     <queries>
         <intent>
             <action android:name="android.support.customtabs.action.CustomTabsService" />

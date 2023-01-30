@@ -54,11 +54,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private var web3AuthOption = web3AuthOptions
 
     init {
-        //initiate keyStore
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            initiateKeyStoreManager()
-        }
-
         // Build init params
         val initParams = mutableMapOf(
             "clientId" to web3AuthOptions.clientId,
@@ -74,11 +69,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         this.initParams = initParams
         this.context = web3AuthOptions.context
 
+        KeyStoreManagerUtils.initializePreferences(context.applicationContext)
+
+        //initiate keyStore
+        initiateKeyStoreManager()
+
         //authorize session
         authorizeSession()
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
     private fun initiateKeyStoreManager() {
         KeyStoreManagerUtils.getKeyGenerator()
     }

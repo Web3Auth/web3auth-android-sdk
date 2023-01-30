@@ -1,10 +1,10 @@
 package com.web3auth.core.keystore
 
+import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
-import com.web3auth.core.Web3AuthApp
 import org.bouncycastle.asn1.ASN1EncodableVector
 import org.bouncycastle.asn1.ASN1Integer
 import org.bouncycastle.asn1.DERSequence
@@ -33,14 +33,16 @@ object KeyStoreManagerUtils {
     private lateinit var encryptedPairData: Pair<ByteArray, ByteArray>
 
     private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-    private val sharedPreferences = Web3AuthApp.getContext()?.let {
-        EncryptedSharedPreferences.create(
+    private lateinit var sharedPreferences: EncryptedSharedPreferences
+
+    fun initializePreferences(context: Context) {
+        sharedPreferences = EncryptedSharedPreferences.create(
             "Web3Auth",
             masterKeyAlias,
-            it,
+            context,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        ) as EncryptedSharedPreferences
     }
 
     /**
