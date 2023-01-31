@@ -242,10 +242,28 @@ public class Web3Auth: MonoBehaviour
 
         if (!string.IsNullOrEmpty(this.web3AuthResponse.sessionId))
             this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, this.web3AuthResponse.sessionId) );
+
+        if (!string.IsNullOrEmpty(web3AuthResponse.userInfo?.dappShare))
+        {
+            KeyStoreManagerUtils.savePreferenceData(
+                web3AuthResponse.userInfo?.verifier, web3AuthResponse.userInfo?.dappShare
+            );
+        }
     }
 
     public void login(LoginParams loginParams)
     {
+        if (web3AuthOptions.loginConfig != null)
+        {
+            var loginConfigItem = web3AuthOptions.loginConfig?.Values.First();
+            var share = KeyStoreManagerUtils.getPreferencesData(loginConfigItem?.verifier);
+
+            if (!string.IsNullOrEmpty(share))
+            {
+                loginParams.dappShare = share;
+            }
+        }
+
         request("login", loginParams);
     }
 
@@ -366,12 +384,21 @@ public class Web3Auth: MonoBehaviour
             );
 
 
-            //if (result != null)
-            //{
-            //    //Delete local storage
-            //    var loginConfigItem = web3AuthOptions.loginConfig.Values.First();
-            //    KeyStoreManagerUtils.deletePreferencesData(loginConfigItem.verifier);
-            //}
+            if (result != null)
+            {
+                try
+                {
+                    KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key);
+                    KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.IV_KEY);
+                    KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.MAC);
+                    KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.SESSION_ID);
+                    KeyStoreManagerUtils.deletePreferencesData(web3AuthOptions.loginConfig?.Values.First()?.verifier);
+                } 
+                catch (Exception ex)
+                {
+                    Debug.LogError(ex.Message);
+                }
+            }
         }
     }
 

@@ -1,6 +1,7 @@
+using Org.BouncyCastle.Asn1.Sec;
+using Org.BouncyCastle.Crypto.Agreement;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Security;
 using System.Security.Cryptography;
 
@@ -57,15 +58,17 @@ public class AES256CBC
 
     public BigInteger ecdh(string privateKeyHex, string ephemPublicKeyHex)
     {
-        string affineX = ephemPublicKeyHex.Substring(2, 66 - 2);
-        string affineY = ephemPublicKeyHex.Substring(66);
+        var domain = SecNamedCurves.GetByName("secp256k1");
+        var parameters = new ECDomainParameters(domain.Curve, domain.G, domain.H);
 
-        ECPointArithmetic ecPoint = new ECPointArithmetic(new FpCurve(
-            new BigInteger("115792089237316195423570985008687907853269984665640564039457584007908834671663"),
-            new BigInteger("0"),
-            new BigInteger("7")), new BigInteger(affineX, 16), new BigInteger(affineY, 16), null);
+        ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(new BigInteger(privateKeyHex, 16), parameters);
 
-        return ecPoint.multiply(new BigInteger(privateKeyHex, 16)).getX();
+        ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
+        basicAgreement.Init(privKey);
+
+        var pt = domain.Curve.DecodePoint(new BigInteger(ephemPublicKeyHex, 16).ToByteArray());
+
+        return basicAgreement.CalculateAgreement(new ECPublicKeyParameters(pt, parameters));
     }
 
     public static byte[] toByteArray(string s)
