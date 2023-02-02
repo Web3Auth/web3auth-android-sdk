@@ -18,9 +18,6 @@ public static class Utils
     public extern static string GetCurrentURL();
 
     [DllImport("__Internal")]
-    public extern static string GetAuthCode();
-
-    [DllImport("__Internal")]
     extern static void OpenURL(string url);
 
     [DllImport("__Internal")]

@@ -1,16 +1,13 @@
 using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using System.Net.Http;
 using System;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using System.Text;
+using UnityEngine.Networking;
 
 public class Web3AuthApi
 {
     static Web3AuthApi instance;
-    static Uri baseAddress = new Uri("https://broadcast-server.tor.us");
+    static string baseAddress = "https://broadcast-server.tor.us";
 
     public static Web3AuthApi getInstance()
     {
@@ -19,36 +16,37 @@ public class Web3AuthApi
         return instance;
     }
 
-    public StoreApiResponse? authorizeSession(string key)
+    public IEnumerator authorizeSession(string key, Action<StoreApiResponse> callback)
     {
-        using (var client = new HttpClient())
-        {
-            client.BaseAddress = baseAddress;
-            HttpResponseMessage response = client.GetAsync("/store/get?key=" + key).Result;
+        var request = UnityWebRequest.Get($"{baseAddress}/store/get?key={key}");
+        yield return request.SendWebRequest();
 
-            if (response.IsSuccessStatusCode)
-            {
-                string result = response.Content.ReadAsStringAsync().Result;
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<StoreApiResponse>(result);
-            }
-            return null;
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            string result = request.downloadHandler.text;
+            callback(Newtonsoft.Json.JsonConvert.DeserializeObject<StoreApiResponse>(result));
         }
+        else
+            callback(null);
     }
 
-    public JObject logout(LogoutApiRequest logoutApiRequest)
+    public IEnumerator logout(LogoutApiRequest logoutApiRequest, Action<JObject> callback)
     {
-        using (var client = new HttpClient())
-        {
-            client.BaseAddress = baseAddress;
-            var content = new StringContent(JsonConvert.SerializeObject(logoutApiRequest), Encoding.UTF8, "application/json");
-            HttpResponseMessage response = client.PostAsync("/store/set", content).Result;
+        var request = new UnityWebRequest($"{baseAddress}/store/set");
 
-            if (response.IsSuccessStatusCode)
-            {
-                string result = response.Content.ReadAsStringAsync().Result;
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<JObject>(result);
-            }
-            return null;
+        byte[] data = new System.Text.UTF8Encoding().GetBytes(JsonConvert.SerializeObject(logoutApiRequest));
+        request.uploadHandler = new UploadHandlerRaw(data);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            string result = request.downloadHandler.text;
+            callback(Newtonsoft.Json.JsonConvert.DeserializeObject<JObject>(result));
         }
+        else
+            callback(null);
     }
 }

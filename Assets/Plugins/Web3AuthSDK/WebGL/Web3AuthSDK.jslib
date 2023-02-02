@@ -8,15 +8,6 @@ mergeInto(LibraryManager.library, {
     return buffer;
   },
 
-  GetAuthCode: function () {
-    var code = window.location.hash;
-
-    var bufferSize = lengthBytesUTF8(code) + 1;
-    var buffer = _malloc(bufferSize);
-    stringToUTF8(code, buffer, bufferSize);
-    return buffer;
-  },
-
   OpenURL: function (url) {
     url = UTF8ToString(url);
     window.location.href = url;
@@ -24,6 +15,6 @@ mergeInto(LibraryManager.library, {
 
   RemoveAuthCodeFromURL: function() {
     window.history.replaceState(null, null, ' ');
-  }
+  },
 
 });
