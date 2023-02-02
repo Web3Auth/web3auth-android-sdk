@@ -54,6 +54,13 @@ public class Web3Auth: MonoBehaviour
         {
             this.setResultUrl(url);
         };
+
+#elif UNITY_WEBGL
+        var code = Utils.GetAuthCode();
+        if (Utils.GetAuthCode() != "") 
+        {
+            this.setResultUrl(new Uri($"http://localhost#{code}"));
+        } 
 #endif
 
         authorizeSession();
@@ -194,6 +201,8 @@ public class Web3Auth: MonoBehaviour
     {
 #if UNITY_STANDALONE || UNITY_EDITOR
         this.initParams["redirectUrl"] = StartLocalWebserver();
+#elif UNITY_WEBGL
+        this.initParams["redirectUrl"] = Utils.GetCurrentURL();
 #endif
         Dictionary<string, object> paramMap = new Dictionary<string, object>();
         paramMap["init"] = this.initParams;
@@ -249,6 +258,13 @@ public class Web3Auth: MonoBehaviour
                 web3AuthResponse.userInfo?.verifier, web3AuthResponse.userInfo?.dappShare
             );
         }
+
+#if !UNITY_EDITOR && UNITY_WEBGL
+        if (this.web3AuthResponse != null) 
+        {
+            Utils.RemoveAuthCodeFromURL();
+        } 
+#endif
     }
 
     public void login(LoginParams loginParams)

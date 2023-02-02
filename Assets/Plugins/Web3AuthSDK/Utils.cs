@@ -8,9 +8,23 @@ using UnityEngine;
 
 public static class Utils
 {
-#if UNITY_IOS
+#if !UNITY_EDITOR && UNITY_IOS
     [DllImport("__Internal")]
     extern static void web3auth_launch(string url, string redirectUri, string objectName);
+#endif
+
+#if !UNITY_EDITOR && UNITY_WEBGL
+    [DllImport("__Internal")]
+    public extern static string GetCurrentURL();
+
+    [DllImport("__Internal")]
+    public extern static string GetAuthCode();
+
+    [DllImport("__Internal")]
+    extern static void OpenURL(string url);
+
+    [DllImport("__Internal")]
+    public extern static void RemoveAuthCodeFromURL();
 #endif
 
 
@@ -29,6 +43,8 @@ public static class Utils
 #elif UNITY_IOS
     var uri = new Uri(redirectUri);
     web3auth_launch(url, uri.Scheme, objectName);
+#elif UNITY_WEBGL
+    OpenURL(url);
 #endif
     }
 
