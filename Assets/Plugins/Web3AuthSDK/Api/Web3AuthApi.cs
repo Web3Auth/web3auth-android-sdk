@@ -3,6 +3,7 @@ using System;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using UnityEngine.Networking;
+using UnityEngine;
 
 public class Web3AuthApi
 {
@@ -32,13 +33,13 @@ public class Web3AuthApi
 
     public IEnumerator logout(LogoutApiRequest logoutApiRequest, Action<JObject> callback)
     {
-        var request = new UnityWebRequest($"{baseAddress}/store/set");
+        WWWForm data = new WWWForm();
+        data.AddField("key", logoutApiRequest.key);
+        data.AddField("data", logoutApiRequest.data);
+        data.AddField("signature", logoutApiRequest.signature);
+        data.AddField("timeout", logoutApiRequest.timeout.ToString());
 
-        byte[] data = new System.Text.UTF8Encoding().GetBytes(JsonConvert.SerializeObject(logoutApiRequest));
-        request.uploadHandler = new UploadHandlerRaw(data);
-        request.downloadHandler = new DownloadHandlerBuffer();
-        request.SetRequestHeader("Content-Type", "application/json");
-
+        var request = UnityWebRequest.Post($"{baseAddress}/store/set", data);
         yield return request.SendWebRequest();
 
         if (request.result == UnityWebRequest.Result.Success)

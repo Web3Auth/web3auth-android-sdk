@@ -232,9 +232,13 @@ public class Web3Auth: MonoBehaviour
     public void setResultUrl(Uri uri)
     {
         string hash = uri.Fragment;
+#if !UNITY_EDITOR && UNITY_WEBGL
         if (hash == null || hash.Length == 0)
             return;
-
+#else
+        if (hash == null)
+            throw new UserCancelledException();
+#endif
         hash = hash.Remove(0, 1);
 
         Dictionary<string, string> queryParameters = Utils.ParseQuery(uri.Query);
@@ -288,7 +292,6 @@ public class Web3Auth: MonoBehaviour
     public void logout(Dictionary<string, object> extraParams)
     {
         sessionTimeOutAPI();
-        request("logout", extraParams: extraParams);
     }
 
     public void logout(Uri redirectUrl = null, string appState = null)
@@ -314,21 +317,6 @@ public class Web3Auth: MonoBehaviour
                 if (response != null)
                 {
                     var shareMetadata = Newtonsoft.Json.JsonConvert.DeserializeObject<ShareMetadata>(response.message);
-
-                    KeyStoreManagerUtils.savePreferenceData(
-                        KeyStoreManagerUtils.EPHEM_PUBLIC_Key,
-                        shareMetadata.ephemPublicKey
-                    );
-
-                    KeyStoreManagerUtils.savePreferenceData(
-                        KeyStoreManagerUtils.IV_KEY,
-                        shareMetadata.iv
-                    );
-
-                    KeyStoreManagerUtils.savePreferenceData(
-                        KeyStoreManagerUtils.MAC,
-                        shareMetadata.mac
-                    );
 
                     var aes256cbc = new AES256CBC(
                         sessionId,
@@ -367,59 +355,59 @@ public class Web3Auth: MonoBehaviour
         string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
         if (!string.IsNullOrEmpty(sessionId))
         {
-            var ephemKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key);
-            var ivKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.IV_KEY);
-            var mac = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.MAC);
-
-            if (string.IsNullOrEmpty(ephemKey) == true && string.IsNullOrEmpty(ivKey) == true) return;
-
-            var aes256cbc = new AES256CBC(
-                sessionId,
-                ephemKey,
-                ivKey
-            );
-
-
-            var encryptedData = aes256cbc.encrypt(System.Text.Encoding.UTF8.GetBytes(""));
-            var encryptedMetadata = new ShareMetadata()
+            var pubKey = KeyStoreManagerUtils.getPubKey(sessionId);
+            StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, (response =>
             {
-                iv = ivKey,
-                ephemPublicKey = ephemKey,
-                ciphertext = encryptedData,
-                mac = mac
-            };
-            var jsonData = JsonConvert.SerializeObject(encryptedMetadata);
+                if (response != null)
+                {
+                    var shareMetadata = Newtonsoft.Json.JsonConvert.DeserializeObject<ShareMetadata>(response.message);
 
-            StartCoroutine(Web3AuthApi.getInstance().logout(
-                new LogoutApiRequest()
-                {
-                    key = KeyStoreManagerUtils.getPubKey(sessionId),
-                    data = jsonData,
-                    signature = KeyStoreManagerUtils.getECDSASignature(
+                    var aes256cbc = new AES256CBC(
                         sessionId,
-                        jsonData
-                    ),
-                    timeout = 1
-                }, result =>
-                {
-                    if (result != null)
+                        shareMetadata.ephemPublicKey,
+                        shareMetadata.iv
+                    );
+
+                    var encryptedData = aes256cbc.encrypt(System.Text.Encoding.UTF8.GetBytes(""));
+                    var encryptedMetadata = new ShareMetadata()
                     {
-                        try
+                        iv = shareMetadata.iv,
+                        ephemPublicKey = shareMetadata.ephemPublicKey,
+                        ciphertext = encryptedData,
+                        mac = shareMetadata.mac
+                    };
+                    var jsonData = JsonConvert.SerializeObject(encryptedMetadata);
+
+                    StartCoroutine(Web3AuthApi.getInstance().logout(
+                        new LogoutApiRequest()
                         {
-                            KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key);
-                            KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.IV_KEY);
-                            KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.MAC);
-                            KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.SESSION_ID);
-                            KeyStoreManagerUtils.deletePreferencesData(web3AuthOptions.loginConfig?.Values.First()?.verifier);
-                        }
-                        catch (Exception ex)
+                            key = KeyStoreManagerUtils.getPubKey(sessionId),
+                            data = jsonData,
+                            signature = KeyStoreManagerUtils.getECDSASignature(
+                                sessionId,
+                                jsonData
+                            ),
+                            timeout = 1
+                        }, result =>
                         {
-                            Debug.LogError(ex.Message);
+                            if (result != null)
+                            {
+                                try
+                                {
+                                    KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.SESSION_ID);
+                                    KeyStoreManagerUtils.deletePreferencesData(web3AuthOptions.loginConfig?.Values.First()?.verifier);
+
+                                    this.Enqueue(() => this.onLogout?.Invoke());
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.LogError(ex.Message);
+                                }
+                            }
                         }
-                    }
+                    ));
                 }
-            ));
-            
+            })));
         }
     }
 
