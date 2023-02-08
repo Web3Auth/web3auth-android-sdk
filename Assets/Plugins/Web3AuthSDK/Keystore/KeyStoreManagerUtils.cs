@@ -27,13 +27,20 @@ public class KeyStoreManagerUtils
 
     public static string getPubKey(string sessionId)
     {
-        var domain = SecNamedCurves.GetByName("secp256k1");
-        var parameters = new ECDomainParameters(domain.Curve, domain.G, domain.H);
+        try
+        {
+            var domain = SecNamedCurves.GetByName("secp256k1");
+            var parameters = new ECDomainParameters(domain.Curve, domain.G, domain.H);
 
-        var key = new ECPrivateKeyParameters(new BigInteger(sessionId, 16), parameters);
-        var q = new ECPublicKeyParameters("EC", domain.G.Multiply(key.D), parameters).Q;
+            var key = new ECPrivateKeyParameters(new BigInteger(sessionId, 16), parameters);
+            var q = new ECPublicKeyParameters("EC", domain.G.Multiply(key.D), parameters).Q;
 
-        return Hex.ToHexString(domain.Curve.CreatePoint(q.XCoord.ToBigInteger(), q.YCoord.ToBigInteger()).GetEncoded(false));
+            return Hex.ToHexString(domain.Curve.CreatePoint(q.XCoord.ToBigInteger(), q.YCoord.ToBigInteger()).GetEncoded(false));
+        } catch (System.Exception ex)
+        {
+            UnityEngine.Debug.Log(ex);
+            return "";
+        }
     }
 
     static KeyStoreManagerUtils()
