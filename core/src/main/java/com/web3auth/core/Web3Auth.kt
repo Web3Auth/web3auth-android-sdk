@@ -55,9 +55,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private var web3AuthOption = web3AuthOptions
 
     init {
-        //initiate keyStore
-        initiateKeyStoreManager()
-
         // Build init params
         val initParams = mutableMapOf(
             "clientId" to web3AuthOptions.clientId,
@@ -245,7 +242,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     )
 
                     val aes256cbc = AES256CBC(
-                        sessionId?.let { it },
+                        sessionId,
                         shareMetadata.ephemPublicKey,
                         shareMetadata.iv.toString()
                     )
@@ -253,13 +250,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     // Implementation specific oddity - hex string actually gets passed as a base64 string
                     try {
                         val encryptedShareBytes =
-                            AES256CBC.toByteArray(BigInteger(shareMetadata.ciphertext, 16))
-                            AES256CBC.toByteArray(shareMetadata.ciphertext?.let {
-                                BigInteger(
-                                    it,
-                                    16
-                                )
-                            })
+                            AES256CBC.toByteArray(shareMetadata.ciphertext?.let { BigInteger(it, 16) })
                         val share = aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes))
                         val tempJson = JSONObject(share.toString())
                         tempJson.put("userInfo", tempJson.get("store"))
@@ -315,7 +306,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (ephemKey?.isEmpty() == true && ivKey?.isEmpty() == true) return
 
         val aes256cbc = AES256CBC(
-            sessionId?.let { it },
+            sessionId,
             ephemKey,
             ivKey.toString()
         )
@@ -329,7 +320,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId = sessionId.toString())),
                     data = gsonData,
                     signature = KeyStoreManagerUtils.getECDSASignature(
-                        BigInteger(sessionId, 16),
+                        sessionId?.let { BigInteger(it, 16) },
                         gsonData
                     ),
                     timeout = 1
