@@ -194,9 +194,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      */
     private fun authorizeSession() {
         sessionCompletableFuture = CompletableFuture()
-        sessionId = KeyStoreManagerUtils.decryptData(KeyStoreManagerUtils.SESSION_ID)
+        sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID)
         if (sessionId != null && sessionId?.isNotEmpty() == true) {
-            var pubKey = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString()))
+            val pubKey = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString()))
             GlobalScope.launch {
                 val result = web3AuthApi.authorizeSession(pubKey)
                 if (result.isSuccessful && result.body() != null) {
@@ -231,7 +231,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         val encryptedShareBytes =
                             AES256CBC.toByteArray(BigInteger(shareMetadata.ciphertext, 16))
                         val share = aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes))
-                        var tempJson = JSONObject(share.toString())
+                        val tempJson = JSONObject(share.toString())
                         tempJson.put("userInfo", tempJson.get("store"))
                         tempJson.remove("store")
                         web3AuthResponse =
