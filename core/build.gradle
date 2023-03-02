@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
 
     defaultConfig {
         minSdkVersion 24
-        targetSdkVersion 31
+        targetSdkVersion 33
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "proguard-rules.pro"
@@ -58,7 +58,7 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
 
     // android security
-    implementation 'androidx.security:security-crypto:1.0.0-alpha02'
+    implementation 'androidx.security:security-crypto:1.1.0-alpha05'
     implementation 'org.web3j:core:4.8.8-android'
 
     // Test
