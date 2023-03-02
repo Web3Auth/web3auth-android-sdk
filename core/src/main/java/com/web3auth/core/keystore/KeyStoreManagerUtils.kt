@@ -67,7 +67,7 @@ object KeyStoreManagerUtils {
      * Method to encrypt data with key
      */
     fun encryptData(key: String, data: String) {
-        sharedPreferences?.edit()?.putString(key, data)?.apply()
+        sharedPreferences.edit().putString(key, data)?.apply()
         encryptedPairData = getEncryptedDataPair(data)
         encryptedPairData.second.toString(UTF_8)
     }
@@ -88,44 +88,49 @@ object KeyStoreManagerUtils {
      * Method to decrypt data with key
      */
     fun decryptData(key: String): String? {
-        val sharedPreferenceIds = sharedPreferences?.all
         var result: String? = null
-        sharedPreferenceIds?.forEach {
-            if (it.key.contains(key)) {
-                result = sharedPreferences?.getString(it.key, "")
+        try {
+            val sharedPreferenceIds = sharedPreferences.all
+            sharedPreferenceIds.forEach {
+                if (it.key.contains(key)) {
+                    result = sharedPreferences.getString(it.key, "")
+                }
             }
+            if (result == null) return null
+            val encryptedPairData = result?.let { getEncryptedDataPair(it) }
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            val keySpec = IvParameterSpec(encryptedPairData?.first)
+            cipher.init(Cipher.DECRYPT_MODE, getKey(), keySpec)
+            return cipher.doFinal(encryptedPairData?.second).toString(UTF_8)
+        } catch (ex: Exception) {
+            ex.printStackTrace()
         }
-        if (result == null) return null
-        val encryptedPairData = result?.let { getEncryptedDataPair(it) }
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        val keySpec = IvParameterSpec(encryptedPairData?.first)
-        cipher.init(Cipher.DECRYPT_MODE, getKey(), keySpec)
-        return cipher.doFinal(encryptedPairData?.second).toString(UTF_8)
+        return result
     }
 
     /**
      * Store encrypted data into preferences
      */
     fun savePreferenceData(key: String, data: String) {
-        sharedPreferences?.edit()?.putString(key, data)?.apply()
+        sharedPreferences.edit().putString(key, data)?.apply()
     }
 
     /**
      * Retrieve decrypted data from preferences
      */
     fun getPreferencesData(key: String): String? {
-        return sharedPreferences?.getString(key, "")
+        return sharedPreferences.getString(key, "")
     }
 
     /**
      * Delete All local storage
      */
     fun deletePreferencesData(key: String) {
-        sharedPreferences?.edit()?.remove(key)?.apply()
-        val sharedPreferenceIds = sharedPreferences?.all
-        sharedPreferenceIds?.forEach {
+        sharedPreferences.edit().remove(key)?.apply()
+        val sharedPreferenceIds = sharedPreferences.all
+        sharedPreferenceIds.forEach {
             if (it.key.contains(key)) {
-                sharedPreferences?.edit()?.remove(key)?.apply()
+                sharedPreferences.edit().remove(key)?.apply()
             }
         }
     }
