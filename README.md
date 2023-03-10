@@ -100,7 +100,7 @@ Web3Auth Unity SDK provides a tool to simulate the redirect callback. To open go
 
 ## 🩹 Examples
 
-Checkout the examples for your preferred blockchain and platform in our [examples repository](https://github.com/Web3Auth/examples/)
+Checkout the examples for your preferred blockchain and platform in our [examples](https://web3auth.io/docs/examples)
 
 ## 🌐 Demo
 
