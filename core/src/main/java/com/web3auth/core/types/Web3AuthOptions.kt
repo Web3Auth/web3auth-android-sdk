@@ -12,4 +12,5 @@ data class Web3AuthOptions (
     var sdkUrl: String = "https://sdk.openlogin.com",
     val whiteLabel: WhiteLabelData? = null,
     val loginConfig: HashMap<String, LoginConfigItem>? = null,
+    val useCoreKitKey: Boolean? = false,
 )
