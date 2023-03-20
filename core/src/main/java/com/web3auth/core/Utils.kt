@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Base64
 import android.util.Patterns
+import android.widget.Toast
 import androidx.browser.customtabs.CustomTabsService
 
 const val BASE64_URL_FLAGS = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
@@ -62,4 +63,12 @@ fun Context.getCustomTabsBrowsers(): List<String> {
         }
     }
     return customTabsBrowsers
+}
+
+fun Context.shortToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+    Toast.makeText(this, message, duration).show()
+}
+
+fun Context.longToast(message: String, duration: Int = Toast.LENGTH_LONG) {
+    Toast.makeText(this, message, duration).show()
 }
