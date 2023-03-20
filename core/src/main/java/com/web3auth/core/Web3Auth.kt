@@ -16,6 +16,7 @@ import com.web3auth.core.keystore.KeyStoreManagerUtils
 import com.web3auth.core.types.*
 import com.web3auth.core.types.Base64
 import java8.util.concurrent.CompletableFuture
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -73,10 +74,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         initiateKeyStoreManager()
 
         //authorize session
-        if(ApiHelper.isNetworkAvailable(context))
-             authorizeSession()
-        else
-            context.shortToast("Internet Connection not available")
+        if(ApiHelper.isNetworkAvailable(context)) {
+            authorizeSession()
+        }
     }
 
     private fun initiateKeyStoreManager() {
@@ -167,7 +167,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     fun login(loginParams: LoginParams): CompletableFuture<Web3AuthResponse> {
         //check for share
         if (web3AuthOption.loginConfig != null) {
-            var loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
+            val loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
             val share: String? =
                 KeyStoreManagerUtils.decryptData(loginConfigItem?.verifier.toString())
             if (share?.isNotEmpty() == true) {
@@ -183,10 +183,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     fun logout(params: Map<String, Any>? = null): CompletableFuture<Void> {
-        if(ApiHelper.isNetworkAvailable(context))
+        if(ApiHelper.isNetworkAvailable(context)) {
             sessionTimeOutAPI()
-        else
-            context.shortToast("Internet Connection not available")
+        }
         request("logout", extraParams = params)
 
         logoutCompletableFuture = CompletableFuture()
@@ -196,6 +195,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     /**
      * Authorize User session in order to avoid re-login
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun authorizeSession() {
         sessionCompletableFuture = CompletableFuture()
         sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID)
@@ -226,7 +226,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         )
 
                         val aes256cbc = AES256CBC(
-                            sessionId?.let { it },
+                            sessionId,
                             shareMetadata.ephemPublicKey,
                             shareMetadata.iv.toString()
                         )
@@ -263,7 +263,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         }
                     }
                 } catch (ex: Exception) {
-                    context.shortToast("Something went wrong.")
+                    ex.printStackTrace()
                 }
             }
         }
@@ -286,13 +286,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             if (ephemKey?.isEmpty() == true && ivKey?.isEmpty() == true) return
 
             val aes256cbc = AES256CBC(
-                sessionId?.let { it },
+                sessionId,
                 ephemKey,
                 ivKey.toString()
             )
-            var encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
-            var encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac)
-            var gsonData = gson.toJson(encryptedMetadata)
+            val encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
+            val encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac)
+            val gsonData = gson.toJson(encryptedMetadata)
 
             GlobalScope.launch {
                 val result = web3AuthApi.logout(
@@ -300,7 +300,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId = sessionId.toString())),
                         data = gsonData,
                         signature = KeyStoreManagerUtils.getECDSASignature(
-                            BigInteger(sessionId, 16),
+                            sessionId?.let { BigInteger(it, 16) },
                             gsonData
                         ),
                         timeout = 1
@@ -308,13 +308,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 )
                 if (result.isSuccessful) {
                     //Delete local storage
-                    var loginConfigItem: LoginConfigItem? =
+                    val loginConfigItem: LoginConfigItem? =
                         web3AuthOption.loginConfig?.values?.first()
                     KeyStoreManagerUtils.deletePreferencesData(loginConfigItem?.verifier.toString())
                 }
             }
         } catch (ex: Exception) {
-            context.shortToast("Something went wrong.")
+            ex.printStackTrace()
         }
     }
 
