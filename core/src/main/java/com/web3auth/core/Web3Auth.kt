@@ -143,20 +143,29 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             Web3AuthResponse::class.java
         )
 
-        if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitKey != null) {
-            web3AuthResponse.privKey = web3AuthResponse.coreKitKey
-        }
-
-        if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey != null) {
-            web3AuthResponse.ed25519PrivKey = web3AuthResponse.coreKitEd25519PrivKey
-        }
-
         if (web3AuthResponse.error?.isNotBlank() == true) {
             loginCompletableFuture.completeExceptionally(
                 UnKnownException(
                     web3AuthResponse.error ?: "Something went wrong"
                 )
             )
+        }
+
+        if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitKey.isNullOrEmpty()) {
+            web3AuthResponse.privKey = web3AuthResponse.coreKitKey
+        }
+
+        if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitKey.isNullOrBlank()) {
+            logoutCompletableFuture.complete(null)
+        }
+
+        //non evm use below, for evm don't use
+        if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
+            web3AuthResponse.ed25519PrivKey =
+                web3AuthResponse.coreKitEd25519PrivKey
+        }
+        if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey.isNullOrBlank()) {
+            logoutCompletableFuture.complete(null)
         }
 
         if (web3AuthResponse.privKey.isNullOrBlank()) {
@@ -256,16 +265,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         web3AuthResponse =
                             gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                         if (web3AuthResponse != null) {
-
-                            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitKey != null) {
-                                web3AuthResponse.privKey = web3AuthResponse.coreKitKey
-                            }
-
-                            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey != null) {
-                                web3AuthResponse.ed25519PrivKey =
-                                    web3AuthResponse.coreKitEd25519PrivKey
-                            }
-
                             if (web3AuthResponse.error?.isNotBlank() == true) {
                                 Handler(Looper.getMainLooper()).postDelayed(10) {
                                     sessionCompletableFuture.completeExceptionally(
@@ -273,6 +272,28 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                             web3AuthResponse.error ?: "Something went wrong"
                                         )
                                     )
+                                }
+                            }
+
+                            if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitKey.isNullOrEmpty()) {
+                                web3AuthResponse.privKey = web3AuthResponse.coreKitKey
+                            }
+
+                            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitKey.isNullOrBlank()) {
+                                Handler(Looper.getMainLooper()).postDelayed(10) {
+                                    sessionCompletableFuture.complete(null)
+                                }
+                            }
+
+                            //non evm use below, for evm don't use
+                            if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
+                                web3AuthResponse.ed25519PrivKey =
+                                    web3AuthResponse.coreKitEd25519PrivKey
+                            }
+
+                            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey.isNullOrBlank()) {
+                                Handler(Looper.getMainLooper()).postDelayed(10) {
+                                    sessionCompletableFuture.complete(null)
                                 }
                             }
 
