@@ -3,10 +3,8 @@ package com.web3auth.core
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import androidx.annotation.RequiresApi
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.os.postDelayed
 import com.google.gson.GsonBuilder
@@ -18,6 +16,7 @@ import com.web3auth.core.keystore.KeyStoreManagerUtils
 import com.web3auth.core.types.*
 import com.web3auth.core.types.Base64
 import java8.util.concurrent.CompletableFuture
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -75,7 +74,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         initiateKeyStoreManager()
 
         //authorize session
-        authorizeSession()
+        if (ApiHelper.isNetworkAvailable(context)) {
+            authorizeSession()
+        }
     }
 
     private fun initiateKeyStoreManager() {
@@ -166,7 +167,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     fun login(loginParams: LoginParams): CompletableFuture<Web3AuthResponse> {
         //check for share
         if (web3AuthOption.loginConfig != null) {
-            var loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
+            val loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
             val share: String? =
                 KeyStoreManagerUtils.decryptData(loginConfigItem?.verifier.toString())
             if (share?.isNotEmpty() == true) {
@@ -182,7 +183,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     fun logout(params: Map<String, Any>? = null): CompletableFuture<Void> {
-        sessionTimeOutAPI()
+        if (ApiHelper.isNetworkAvailable(context)) {
+            sessionTimeOutAPI()
+        }
         request("logout", extraParams = params)
 
         logoutCompletableFuture = CompletableFuture()
@@ -192,42 +195,43 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     /**
      * Authorize User session in order to avoid re-login
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun authorizeSession() {
         sessionCompletableFuture = CompletableFuture()
         sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID)
         if (sessionId != null && sessionId?.isNotEmpty() == true) {
             val pubKey = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId.toString()))
             GlobalScope.launch {
-                val result = web3AuthApi.authorizeSession(pubKey)
-                if (result.isSuccessful && result.body() != null) {
-                    val messageObj = JSONObject(result.body()?.message).toString()
-                    shareMetadata = gson.fromJson(
-                        messageObj,
-                        ShareMetadata::class.java
-                    )
-                    println("shareMetadata$shareMetadata")
+                try {
+                    val result = web3AuthApi.authorizeSession(pubKey)
+                    if (result.isSuccessful && result.body() != null) {
+                        val messageObj = JSONObject(result.body()?.message).toString()
+                        shareMetadata = gson.fromJson(
+                            messageObj,
+                            ShareMetadata::class.java
+                        )
+                        println("shareMetadata$shareMetadata")
 
-                    KeyStoreManagerUtils.savePreferenceData(
-                        KeyStoreManagerUtils.EPHEM_PUBLIC_Key,
-                        shareMetadata.ephemPublicKey.toString()
-                    )
-                    KeyStoreManagerUtils.savePreferenceData(
-                        KeyStoreManagerUtils.IV_KEY,
-                        shareMetadata.iv.toString()
-                    )
-                    KeyStoreManagerUtils.savePreferenceData(
-                        KeyStoreManagerUtils.MAC,
-                        shareMetadata.mac.toString()
-                    )
+                        KeyStoreManagerUtils.savePreferenceData(
+                            KeyStoreManagerUtils.EPHEM_PUBLIC_Key,
+                            shareMetadata.ephemPublicKey.toString()
+                        )
+                        KeyStoreManagerUtils.savePreferenceData(
+                            KeyStoreManagerUtils.IV_KEY,
+                            shareMetadata.iv.toString()
+                        )
+                        KeyStoreManagerUtils.savePreferenceData(
+                            KeyStoreManagerUtils.MAC,
+                            shareMetadata.mac.toString()
+                        )
 
-                    val aes256cbc = AES256CBC(
-                        sessionId?.let { it },
-                        shareMetadata.ephemPublicKey,
-                        shareMetadata.iv.toString()
-                    )
+                        val aes256cbc = AES256CBC(
+                            sessionId,
+                            shareMetadata.ephemPublicKey,
+                            shareMetadata.iv.toString()
+                        )
 
-                    // Implementation specific oddity - hex string actually gets passed as a base64 string
-                    try {
+                        // Implementation specific oddity - hex string actually gets passed as a base64 string
                         val encryptedShareBytes =
                             AES256CBC.toByteArray(BigInteger(shareMetadata.ciphertext, 16))
                         val share = aes256cbc.decrypt(Base64.encodeBytes(encryptedShareBytes))
@@ -257,9 +261,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                 sessionCompletableFuture.complete(web3AuthResponse)
                             }
                         }
-                    } catch (ex: Exception) {
-                        ex.printStackTrace()
                     }
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
                 }
             }
         }
@@ -273,39 +277,44 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      * Session TimeOut API for logout
      */
     private fun sessionTimeOutAPI() {
-        val ephemKey =
-            KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key)
-        val ivKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.IV_KEY)
-        val mac = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.MAC)
+        try {
+            val ephemKey =
+                KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key)
+            val ivKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.IV_KEY)
+            val mac = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.MAC)
 
-        if (ephemKey?.isEmpty() == true && ivKey?.isEmpty() == true) return
+            if (ephemKey?.isEmpty() == true && ivKey?.isEmpty() == true) return
 
-        val aes256cbc = AES256CBC(
-            sessionId?.let { it },
-            ephemKey,
-            ivKey.toString()
-        )
-        var encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
-        var encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac)
-        var gsonData = gson.toJson(encryptedMetadata)
-
-        GlobalScope.launch {
-            val result = web3AuthApi.logout(
-                LogoutApiRequest(
-                    key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId = sessionId.toString())),
-                    data = gsonData,
-                    signature = KeyStoreManagerUtils.getECDSASignature(
-                        BigInteger(sessionId, 16),
-                        gsonData
-                    ),
-                    timeout = 1
-                )
+            val aes256cbc = AES256CBC(
+                sessionId,
+                ephemKey,
+                ivKey.toString()
             )
-            if (result.isSuccessful) {
-                //Delete local storage
-                var loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
-                KeyStoreManagerUtils.deletePreferencesData(loginConfigItem?.verifier.toString())
+            val encryptedData = aes256cbc.encrypt("".toByteArray(StandardCharsets.UTF_8))
+            val encryptedMetadata = ShareMetadata(ivKey, ephemKey, encryptedData, mac)
+            val gsonData = gson.toJson(encryptedMetadata)
+
+            GlobalScope.launch {
+                val result = web3AuthApi.logout(
+                    LogoutApiRequest(
+                        key = "04".plus(KeyStoreManagerUtils.getPubKey(sessionId = sessionId.toString())),
+                        data = gsonData,
+                        signature = KeyStoreManagerUtils.getECDSASignature(
+                            sessionId?.let { BigInteger(it, 16) },
+                            gsonData
+                        ),
+                        timeout = 1
+                    )
+                )
+                if (result.isSuccessful) {
+                    //Delete local storage
+                    val loginConfigItem: LoginConfigItem? =
+                        web3AuthOption.loginConfig?.values?.first()
+                    KeyStoreManagerUtils.deletePreferencesData(loginConfigItem?.verifier.toString())
+                }
             }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
         }
     }
 
