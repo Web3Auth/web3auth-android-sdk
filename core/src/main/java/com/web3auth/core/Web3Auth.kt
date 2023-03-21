@@ -33,7 +33,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         TESTNET,
 
         @SerializedName("cyan")
-        CYAN
+        CYAN,
+
+        @SerializedName("aqua")
+        AQUA,
+
+        @SerializedName("celeste")
+        CELESTE
     }
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
@@ -136,6 +142,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             decodeBase64URLString(hash).toString(Charsets.UTF_8),
             Web3AuthResponse::class.java
         )
+
+        if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitKey != null) {
+            web3AuthResponse.privKey = web3AuthResponse.coreKitKey
+        }
+
+        if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey != null) {
+            web3AuthResponse.ed25519PrivKey = web3AuthResponse.coreKitEd25519PrivKey
+        }
+
         if (web3AuthResponse.error?.isNotBlank() == true) {
             loginCompletableFuture.completeExceptionally(
                 UnKnownException(
@@ -241,6 +256,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         web3AuthResponse =
                             gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                         if (web3AuthResponse != null) {
+
+                            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitKey != null) {
+                                web3AuthResponse.privKey = web3AuthResponse.coreKitKey
+                            }
+
+                            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey != null) {
+                                web3AuthResponse.ed25519PrivKey =
+                                    web3AuthResponse.coreKitEd25519PrivKey
+                            }
+
                             if (web3AuthResponse.error?.isNotBlank() == true) {
                                 Handler(Looper.getMainLooper()).postDelayed(10) {
                                     sessionCompletableFuture.completeExceptionally(
