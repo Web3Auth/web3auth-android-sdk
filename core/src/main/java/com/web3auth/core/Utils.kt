@@ -64,11 +64,3 @@ fun Context.getCustomTabsBrowsers(): List<String> {
     }
     return customTabsBrowsers
 }
-
-fun Context.shortToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
-    Toast.makeText(this, message, duration).show()
-}
-
-fun Context.longToast(message: String, duration: Int = Toast.LENGTH_LONG) {
-    Toast.makeText(this, message, duration).show()
-}
