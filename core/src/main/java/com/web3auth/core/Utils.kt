@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Base64
 import android.util.Patterns
-import android.widget.Toast
 import androidx.browser.customtabs.CustomTabsService
 
 const val BASE64_URL_FLAGS = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING

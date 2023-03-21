@@ -74,7 +74,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         initiateKeyStoreManager()
 
         //authorize session
-        if(ApiHelper.isNetworkAvailable(context)) {
+        if (ApiHelper.isNetworkAvailable(context)) {
             authorizeSession()
         }
     }
@@ -183,7 +183,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     fun logout(params: Map<String, Any>? = null): CompletableFuture<Void> {
-        if(ApiHelper.isNetworkAvailable(context)) {
+        if (ApiHelper.isNetworkAvailable(context)) {
             sessionTimeOutAPI()
         }
         request("logout", extraParams = params)
