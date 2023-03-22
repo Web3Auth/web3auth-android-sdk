@@ -164,7 +164,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
 
         if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitKey.isNullOrBlank()) {
-            logoutCompletableFuture.complete(null)
+            loginCompletableFuture.complete(null)
         }
 
         if (web3AuthOption.chainNamespace == ChainNamespace.SOLANA) {
@@ -173,7 +173,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     web3AuthResponse.coreKitEd25519PrivKey
             }
             if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey.isNullOrBlank()) {
-                logoutCompletableFuture.complete(null)
+                loginCompletableFuture.complete(null)
             }
         }
 
