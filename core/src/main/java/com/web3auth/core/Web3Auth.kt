@@ -42,6 +42,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         CELESTE
     }
 
+    enum class ChainNamespace {
+        @SerializedName("eip155")
+        EIP155,
+
+        @SerializedName("solana")
+        SOLANA
+    }
+
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     private val sdkUrl = Uri.parse(web3AuthOptions.sdkUrl)
@@ -159,13 +167,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             logoutCompletableFuture.complete(null)
         }
 
-        //non evm use below, for evm don't use
-        if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
-            web3AuthResponse.ed25519PrivKey =
-                web3AuthResponse.coreKitEd25519PrivKey
-        }
-        if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey.isNullOrBlank()) {
-            logoutCompletableFuture.complete(null)
+        if (web3AuthOption.chainNamespace != ChainNamespace.EIP155 && web3AuthOption.chainNamespace != ChainNamespace.SOLANA) {
+            if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
+                web3AuthResponse.ed25519PrivKey =
+                    web3AuthResponse.coreKitEd25519PrivKey
+            }
+            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey.isNullOrBlank()) {
+                logoutCompletableFuture.complete(null)
+            }
         }
 
         if (web3AuthResponse.privKey.isNullOrBlank()) {
@@ -285,15 +294,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                 }
                             }
 
-                            //non evm use below, for evm don't use
-                            if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
-                                web3AuthResponse.ed25519PrivKey =
-                                    web3AuthResponse.coreKitEd25519PrivKey
-                            }
+                            if (web3AuthOption.chainNamespace != ChainNamespace.EIP155 && web3AuthOption.chainNamespace != ChainNamespace.SOLANA) {
+                                if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
+                                    web3AuthResponse.ed25519PrivKey =
+                                        web3AuthResponse.coreKitEd25519PrivKey
+                                }
 
-                            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey.isNullOrBlank()) {
-                                Handler(Looper.getMainLooper()).postDelayed(10) {
-                                    sessionCompletableFuture.complete(null)
+                                if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey.isNullOrBlank()) {
+                                    Handler(Looper.getMainLooper()).postDelayed(10) {
+                                        sessionCompletableFuture.complete(null)
+                                    }
                                 }
                             }
 
