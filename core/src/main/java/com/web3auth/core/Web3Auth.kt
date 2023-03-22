@@ -167,7 +167,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             logoutCompletableFuture.complete(null)
         }
 
-        if (web3AuthOption.chainNamespace != ChainNamespace.EIP155 && web3AuthOption.chainNamespace != ChainNamespace.SOLANA) {
+        if (web3AuthOption.chainNamespace == ChainNamespace.SOLANA) {
             if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
                 web3AuthResponse.ed25519PrivKey =
                     web3AuthResponse.coreKitEd25519PrivKey
@@ -294,7 +294,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                 }
                             }
 
-                            if (web3AuthOption.chainNamespace != ChainNamespace.EIP155 && web3AuthOption.chainNamespace != ChainNamespace.SOLANA) {
+                            if (web3AuthOption.chainNamespace == ChainNamespace.SOLANA) {
                                 if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
                                     web3AuthResponse.ed25519PrivKey =
                                         web3AuthResponse.coreKitEd25519PrivKey
