@@ -13,11 +13,11 @@ data class Web3AuthOptions(
     val whiteLabel: WhiteLabelData? = null,
     val loginConfig: HashMap<String, LoginConfigItem>? = null,
     val useCoreKitKey: Boolean? = false,
-    val chainNamespace: Web3Auth.ChainNamespace? = null
+    val chainNamespace: Web3Auth.ChainNamespace? = Web3Auth.ChainNamespace.EIP155
 )
 
 fun getSdkUrl(network: Web3Auth.Network): String {
-    var sdkUrl: String = ""
+    var sdkUrl = ""
     sdkUrl = if (network == Web3Auth.Network.TESTNET) {
         "https://dev-sdk.openlogin.com"
     } else {
