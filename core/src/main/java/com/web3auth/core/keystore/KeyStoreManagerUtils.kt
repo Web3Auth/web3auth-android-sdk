@@ -36,13 +36,17 @@ object KeyStoreManagerUtils {
     private lateinit var sharedPreferences: EncryptedSharedPreferences
 
     fun initializePreferences(context: Context) {
-        sharedPreferences = EncryptedSharedPreferences.create(
-            "Web3Auth",
-            masterKeyAlias,
-            context,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        ) as EncryptedSharedPreferences
+        try {
+            sharedPreferences = EncryptedSharedPreferences.create(
+                "Web3Auth",
+                masterKeyAlias,
+                context,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            ) as EncryptedSharedPreferences
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
     }
 
     /**
