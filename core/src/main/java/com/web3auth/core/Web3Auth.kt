@@ -332,7 +332,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             ex.printStackTrace()
         }
     }
-    x`x
+
     fun getPrivkey(): String {
         val privKey: String = if (web3AuthOption.useCoreKitKey == true) {
             web3AuthResponse.coreKitKey.toString()
