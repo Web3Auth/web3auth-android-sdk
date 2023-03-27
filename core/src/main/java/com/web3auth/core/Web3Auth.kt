@@ -159,24 +159,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             )
         }
 
-        if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitKey.isNullOrEmpty()) {
-            web3AuthResponse.privKey = web3AuthResponse.coreKitKey
-        }
-
-        if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitKey.isNullOrBlank()) {
-            loginCompletableFuture.complete(null)
-        }
-
-        if (web3AuthOption.chainNamespace == ChainNamespace.SOLANA) {
-            if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
-                web3AuthResponse.ed25519PrivKey =
-                    web3AuthResponse.coreKitEd25519PrivKey
-            }
-            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey.isNullOrBlank()) {
-                loginCompletableFuture.complete(null)
-            }
-        }
-
         if (web3AuthResponse.privKey.isNullOrBlank()) {
             logoutCompletableFuture.complete(null)
         }
@@ -284,29 +266,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                 }
                             }
 
-                            if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitKey.isNullOrEmpty()) {
-                                web3AuthResponse.privKey = web3AuthResponse.coreKitKey
-                            }
-
-                            if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitKey.isNullOrBlank()) {
-                                Handler(Looper.getMainLooper()).postDelayed(10) {
-                                    sessionCompletableFuture.complete(null)
-                                }
-                            }
-
-                            if (web3AuthOption.chainNamespace == ChainNamespace.SOLANA) {
-                                if (web3AuthOption.useCoreKitKey == true && !web3AuthResponse.coreKitEd25519PrivKey.isNullOrEmpty()) {
-                                    web3AuthResponse.ed25519PrivKey =
-                                        web3AuthResponse.coreKitEd25519PrivKey
-                                }
-
-                                if (web3AuthOption.useCoreKitKey == true && web3AuthResponse.coreKitEd25519PrivKey.isNullOrBlank()) {
-                                    Handler(Looper.getMainLooper()).postDelayed(10) {
-                                        sessionCompletableFuture.complete(null)
-                                    }
-                                }
-                            }
-
                             if (web3AuthResponse.privKey.isNullOrBlank()) {
                                 Handler(Looper.getMainLooper()).postDelayed(10) {
                                     sessionCompletableFuture.complete(null)
@@ -372,6 +331,24 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
+    }
+    x`x
+    fun getPrivkey(): String {
+        val privKey: String = if (web3AuthOption.useCoreKitKey == true) {
+            web3AuthResponse.coreKitKey.toString()
+        } else {
+            web3AuthResponse.privKey.toString()
+        }
+        return privKey
+    }
+
+    fun getEd25519PrivKey(): String {
+        val ed25519Key: String = if (web3AuthOption.useCoreKitKey == true) {
+            web3AuthResponse.coreKitEd25519PrivKey.toString()
+        } else {
+            web3AuthResponse.ed25519PrivKey.toString()
+        }
+        return ed25519Key
     }
 
     fun logout(
