@@ -33,7 +33,21 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         TESTNET,
 
         @SerializedName("cyan")
-        CYAN
+        CYAN,
+
+        @SerializedName("aqua")
+        AQUA,
+
+        @SerializedName("celeste")
+        CELESTE
+    }
+
+    enum class ChainNamespace {
+        @SerializedName("eip155")
+        EIP155,
+
+        @SerializedName("solana")
+        SOLANA
     }
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
@@ -136,6 +150,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             decodeBase64URLString(hash).toString(Charsets.UTF_8),
             Web3AuthResponse::class.java
         )
+
         if (web3AuthResponse.error?.isNotBlank() == true) {
             loginCompletableFuture.completeExceptionally(
                 UnKnownException(
@@ -316,6 +331,24 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
+    }
+
+    fun getPrivkey(): String {
+        val privKey: String = if (web3AuthOption.useCoreKitKey == true) {
+            web3AuthResponse.coreKitKey.toString()
+        } else {
+            web3AuthResponse.privKey.toString()
+        }
+        return privKey
+    }
+
+    fun getEd25519PrivKey(): String {
+        val ed25519Key: String = if (web3AuthOption.useCoreKitKey == true) {
+            web3AuthResponse.coreKitEd25519PrivKey.toString()
+        } else {
+            web3AuthResponse.ed25519PrivKey.toString()
+        }
+        return ed25519Key
     }
 
     fun logout(

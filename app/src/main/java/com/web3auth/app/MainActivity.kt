@@ -55,6 +55,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         loginCompletableFuture.whenComplete { loginResponse, error ->
             if (error == null) {
                 reRender(loginResponse)
+                println("PrivKey: " + web3Auth.getPrivkey())
+                println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
             } else {
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
@@ -133,6 +135,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         sessionResponse.whenComplete { loginResponse, error ->
             if (error == null) {
                 reRender(loginResponse)
+                println("PrivKey: " + web3Auth.getPrivkey())
+                println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
             } else {
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
