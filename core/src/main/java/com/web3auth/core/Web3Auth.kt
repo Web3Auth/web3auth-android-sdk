@@ -351,6 +351,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return ed25519Key
     }
 
+    fun getUserInfo(): UserInfo {
+        return web3AuthResponse.userInfo!!
+    }
+
     fun logout(
         redirectUrl: Uri? = null,
         appState: String? = null

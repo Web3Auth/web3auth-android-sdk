@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 reRender(loginResponse)
                 println("PrivKey: " + web3Auth.getPrivkey())
                 println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
+                println("Web3Auth UserInfo" + web3Auth.getUserInfo())
             } else {
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
@@ -137,6 +138,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 reRender(loginResponse)
                 println("PrivKey: " + web3Auth.getPrivkey())
                 println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
+                println("Web3Auth UserInfo" + web3Auth.getUserInfo())
             } else {
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
