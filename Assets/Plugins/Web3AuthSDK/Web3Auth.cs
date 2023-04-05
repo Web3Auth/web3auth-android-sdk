@@ -444,6 +444,11 @@ public class Web3Auth: MonoBehaviour
         return ed25519Key;
     }
 
+    public UserInfo getUserInfo()
+    {
+        return web3AuthResponse.userInfo;
+    }
+
     public void Update()
     {
         lock (_executionQueue)
