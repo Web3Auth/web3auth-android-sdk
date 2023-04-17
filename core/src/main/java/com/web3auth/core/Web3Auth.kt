@@ -154,7 +154,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (web3AuthResponse.error?.isNotBlank() == true) {
             loginCompletableFuture.completeExceptionally(
                 UnKnownException(
-                    web3AuthResponse.error ?: "Something went wrong"
+                    web3AuthResponse.error ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_ERROR)
                 )
             )
         }
@@ -259,7 +259,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                 Handler(Looper.getMainLooper()).postDelayed(10) {
                                     sessionCompletableFuture.completeExceptionally(
                                         UnKnownException(
-                                            web3AuthResponse.error ?: "Something went wrong"
+                                            web3AuthResponse.error ?: Web3AuthError.getError(
+                                                ErrorCode.SOMETHING_WENT_ERROR
+                                            )
                                         )
                                     )
                                 }
@@ -334,7 +336,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     fun getPrivkey(): String {
         val privKey: String = if (web3AuthResponse == null) {
-            throw Error("No user found, please login again")
+            throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
         } else {
             if (web3AuthOption.useCoreKitKey == true) {
                 web3AuthResponse.coreKitEd25519PrivKey.toString()
@@ -347,7 +349,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     fun getEd25519PrivKey(): String {
         val ed25519Key: String = if (web3AuthResponse == null) {
-            throw Error("No user found, please login again")
+            throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
         } else {
             if (web3AuthOption.useCoreKitKey == true) {
                 web3AuthResponse.coreKitEd25519PrivKey.toString()
@@ -360,7 +362,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     fun getUserInfo(): UserInfo? {
         if (web3AuthResponse == null || web3AuthResponse.userInfo == null) {
-            throw Error("No userInfo found, please login again")
+            throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
         } else {
             return web3AuthResponse.userInfo
         }
