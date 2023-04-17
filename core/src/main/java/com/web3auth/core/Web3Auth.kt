@@ -154,7 +154,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (web3AuthResponse.error?.isNotBlank() == true) {
             loginCompletableFuture.completeExceptionally(
                 UnKnownException(
-                    web3AuthResponse.error ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_ERROR)
+                    web3AuthResponse.error ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
                 )
             )
         }
@@ -260,7 +260,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                     sessionCompletableFuture.completeExceptionally(
                                         UnKnownException(
                                             web3AuthResponse.error ?: Web3AuthError.getError(
-                                                ErrorCode.SOMETHING_WENT_ERROR
+                                                ErrorCode.SOMETHING_WENT_WRONG
                                             )
                                         )
                                     )

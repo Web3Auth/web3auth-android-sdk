@@ -13,7 +13,7 @@ object Web3AuthError {
             ErrorCode.DECODING_ERROR -> {
                 "Decoding Error"
             }
-            ErrorCode.SOMETHING_WENT_ERROR -> {
+            ErrorCode.SOMETHING_WENT_WRONG -> {
                 "Something went wrong!"
             }
             ErrorCode.RUNTIME_ERROR -> {
@@ -32,5 +32,5 @@ enum class ErrorCode {
     DECODING_ERROR,
     RUNTIME_ERROR,
     APP_CANCELLED,
-    SOMETHING_WENT_ERROR,
+    SOMETHING_WENT_WRONG,
 }
