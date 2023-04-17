@@ -225,7 +225,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                             messageObj,
                             ShareMetadata::class.java
                         )
-                        println("shareMetadata$shareMetadata")
 
                         KeyStoreManagerUtils.savePreferenceData(
                             KeyStoreManagerUtils.EPHEM_PUBLIC_Key,
@@ -334,25 +333,37 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     fun getPrivkey(): String {
-        val privKey: String = if (web3AuthOption.useCoreKitKey == true) {
-            web3AuthResponse.coreKitKey.toString()
+        val privKey: String = if (web3AuthResponse == null) {
+            throw Error("No userInfo found, please login again")
         } else {
-            web3AuthResponse.privKey.toString()
+            if (web3AuthOption.useCoreKitKey == true) {
+                web3AuthResponse.coreKitEd25519PrivKey.toString()
+            } else {
+                web3AuthResponse.ed25519PrivKey.toString()
+            }
         }
         return privKey
     }
 
     fun getEd25519PrivKey(): String {
-        val ed25519Key: String = if (web3AuthOption.useCoreKitKey == true) {
-            web3AuthResponse.coreKitEd25519PrivKey.toString()
+        val ed25519Key: String = if (web3AuthResponse == null) {
+            throw Error("No userInfo found, please login again")
         } else {
-            web3AuthResponse.ed25519PrivKey.toString()
+            if (web3AuthOption.useCoreKitKey == true) {
+                web3AuthResponse.coreKitEd25519PrivKey.toString()
+            } else {
+                web3AuthResponse.ed25519PrivKey.toString()
+            }
         }
         return ed25519Key
     }
 
-    fun getUserInfo(): UserInfo {
-        return web3AuthResponse.userInfo!!
+    fun getUserInfo(): UserInfo? {
+        if (web3AuthResponse == null) {
+            throw Error("No userInfo found, please login again")
+        } else {
+            return web3AuthResponse.userInfo
+        }
     }
 
     fun logout(
