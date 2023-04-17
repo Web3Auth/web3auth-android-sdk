@@ -418,16 +418,25 @@ public class Web3Auth: MonoBehaviour
 
     public string getPrivKey()
     {
-        return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitKey : web3AuthResponse.privKey;
+        if (web3AuthResponse == null)
+            throw new Exception(Web3AuthError.getError(ErrorCode.NOUSERFOUND));
+
+         return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitKey : web3AuthResponse.privKey;
     }
 
     public string getEd25519PrivKey()
     {
+        if (web3AuthResponse == null)
+            throw new Exception(Web3AuthError.getError(ErrorCode.NOUSERFOUND));
+
         return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitEd25519PrivKey : web3AuthResponse.ed25519PrivKey;
     }
 
     public UserInfo getUserInfo()
     {
+        if (web3AuthResponse == null)
+            throw new Exception(Web3AuthError.getError(ErrorCode.NOUSERFOUND));
+
         return web3AuthResponse.userInfo;
     }
 
