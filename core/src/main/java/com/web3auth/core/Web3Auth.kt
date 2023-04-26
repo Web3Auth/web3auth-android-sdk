@@ -343,10 +343,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     fun getUserInfo(): UserInfo? {
-        if (web3AuthResponse == null || web3AuthResponse.userInfo == null) {
+        return if (web3AuthResponse == null) {
             throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
         } else {
-            return web3AuthResponse.userInfo
+            web3AuthResponse.userInfo
         }
     }
 }

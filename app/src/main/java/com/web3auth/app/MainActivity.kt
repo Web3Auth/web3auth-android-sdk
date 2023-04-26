@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
-        isLoginStep.set(true);
+        isLoginStep.set(true)
         val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(
             LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions)
         )
@@ -84,13 +84,13 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
-        var key: String? = null;
+        var key: String? = null
         var userInfo: UserInfo? = null
         try {
             key = web3Auth.getPrivkey()
             userInfo = web3Auth.getUserInfo()
         } catch (ex: Exception) {
-            print(ex);
+            print(ex)
         }
 
         if (key != null && userInfo != null && key.isNotEmpty()) {
