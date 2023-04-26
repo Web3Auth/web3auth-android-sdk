@@ -169,6 +169,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.EPHEM_PUBLIC_Key)
                 val ivKey = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.IV_KEY)
                 val mac = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.MAC)
+                sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID)
 
                 if (ephemKey.isNullOrEmpty() || ivKey.isNullOrEmpty() || mac.isNullOrEmpty() || sessionId.isNullOrEmpty()) {
                     logoutCompletableFuture.complete(null)
@@ -222,7 +223,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         } else {
             logoutCompletableFuture.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.RUNTIME_ERROR)))
         }
-        web3AuthResponse = Web3AuthResponse();
+        web3AuthResponse = Web3AuthResponse()
         return logoutCompletableFuture
     }
 

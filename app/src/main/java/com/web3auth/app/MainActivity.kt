@@ -15,9 +15,7 @@ import com.web3auth.core.isEmailValid
 import com.web3auth.core.types.*
 import java8.util.concurrent.CompletableFuture
 import org.json.JSONObject
-import java.lang.Exception
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
@@ -73,7 +71,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val logoutCompletableFuture = web3Auth.logout()
         logoutCompletableFuture.whenComplete { _, error ->
             if (error == null) {
-                reRender();
+                reRender()
             } else {
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
@@ -87,7 +85,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
         var key: String? = null;
-        var userInfo: UserInfo? = null;
+        var userInfo: UserInfo? = null
         try {
             key = web3Auth.getPrivkey()
             userInfo = web3Auth.getUserInfo()
