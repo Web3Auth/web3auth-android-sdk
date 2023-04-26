@@ -17,10 +17,10 @@ import java8.util.concurrent.CompletableFuture
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
 
+
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
-//    private val resumeCounter = AtomicInteger(0)
-    private val isLoginStep = AtomicBoolean(false)
+    private val isLoginCompleted = AtomicBoolean(false)
 
     private val verifierList: List<LoginVerifier> = listOf(
         LoginVerifier("Google", Provider.GOOGLE),
@@ -51,11 +51,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
-        isLoginStep.set(true)
         val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(
             LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions)
         )
         loginCompletableFuture.whenComplete { _, error ->
+            isLoginCompleted.set(true)
             if (error == null) {
                 reRender()
                 println("PrivKey: " + web3Auth.getPrivkey())
@@ -175,15 +175,14 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         web3Auth.setResultUrl(intent?.data)
     }
 
-//    override fun onResume() {
-//        super.onResume()
-//        resumeCounter.set(resumeCounter.get() + 1);
-//        if (!isLoginStep.get() && resumeCounter.get() > 1) {
-//            web3Auth.setResultUrl(null)
-//        } else {
-//            isLoginStep.set(false)
-//        }
-//    }
+    override fun onResume() {
+        super.onResume()
+        if (isLoginCompleted.get()) {
+            isLoginCompleted.set(false)
+        } else {
+            println("User closed the browser.")
+        }
+    }
 
     override fun onItemClick(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
         selectedLoginProvider = verifierList[p2].loginProvider
