@@ -15,9 +15,14 @@ import com.web3auth.core.isEmailValid
 import com.web3auth.core.types.*
 import java8.util.concurrent.CompletableFuture
 import org.json.JSONObject
+import java.lang.Exception
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
+//    private val resumeCounter = AtomicInteger(0)
+    private val isLoginStep = AtomicBoolean(false)
 
     private val verifierList: List<LoginVerifier> = listOf(
         LoginVerifier("Google", Provider.GOOGLE),
@@ -48,13 +53,13 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
-
+        isLoginStep.set(true);
         val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(
             LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions)
         )
-        loginCompletableFuture.whenComplete { loginResponse, error ->
+        loginCompletableFuture.whenComplete { _, error ->
             if (error == null) {
-                reRender(loginResponse)
+                reRender()
                 println("PrivKey: " + web3Auth.getPrivkey())
                 println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
                 println("Web3Auth UserInfo" + web3Auth.getUserInfo())
@@ -68,25 +73,31 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val logoutCompletableFuture = web3Auth.logout()
         logoutCompletableFuture.whenComplete { _, error ->
             if (error == null) {
-                reRender(Web3AuthResponse())
+                reRender();
             } else {
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
         }
     }
 
-    private fun reRender(web3AuthResponse: Web3AuthResponse) {
+    private fun reRender() {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
+        var key: String? = null;
+        var userInfo: UserInfo? = null;
+        try {
+            key = web3Auth.getPrivkey()
+            userInfo = web3Auth.getUserInfo()
+        } catch (ex: Exception) {
+            print(ex);
+        }
 
-        val key = web3AuthResponse.privKey
-        val userInfo = web3AuthResponse.userInfo
-        if (key is String && key.isNotEmpty()) {
-            val jsonObject = JSONObject(gson.toJson(web3AuthResponse))
-            contentTextView.text = jsonObject.toString(4)
+        if (key != null && userInfo != null && key.isNotEmpty()) {
+            val jsonObject = JSONObject(gson.toJson(userInfo))
+            contentTextView.text = jsonObject.toString(4) + "\n Private Key: " + key
             contentTextView.movementMethod = ScrollingMovementMethod()
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
@@ -111,7 +122,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             Web3AuthOptions(
                 context = this,
                 clientId = getString(R.string.web3auth_project_id),
-                network = Web3Auth.Network.MAINNET,
+                network = Network.MAINNET,
                 redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample/redirect"),
                 whiteLabel = WhiteLabelData(
                     "Web3Auth Sample App", null, null, "en", true,
@@ -132,10 +143,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         web3Auth.setResultUrl(intent.data)
 
         // for session response
-        val sessionResponse: CompletableFuture<Web3AuthResponse> = web3Auth.sessionResponse()
-        sessionResponse.whenComplete { loginResponse, error ->
+        val sessionResponse: CompletableFuture<Void> = web3Auth.initialize()
+        sessionResponse.whenComplete { _, error ->
             if (error == null) {
-                reRender(loginResponse)
+                reRender()
                 println("PrivKey: " + web3Auth.getPrivkey())
                 println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
                 println("Web3Auth UserInfo" + web3Auth.getUserInfo())
@@ -165,6 +176,16 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         super.onNewIntent(intent)
         web3Auth.setResultUrl(intent?.data)
     }
+
+//    override fun onResume() {
+//        super.onResume()
+//        resumeCounter.set(resumeCounter.get() + 1);
+//        if (!isLoginStep.get() && resumeCounter.get() > 1) {
+//            web3Auth.setResultUrl(null)
+//        } else {
+//            isLoginStep.set(false)
+//        }
+//    }
 
     override fun onItemClick(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
         selectedLoginProvider = verifierList[p2].loginProvider
