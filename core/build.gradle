@@ -31,6 +31,12 @@ android {
     }
 }
 
+allprojects {
+    repositories {
+        maven { url "https://jitpack.io" }
+    }
+}
+
 dependencies {
     // Default
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -60,6 +66,9 @@ dependencies {
     // android security
     implementation 'androidx.security:security-crypto:1.1.0-alpha05'
     implementation 'org.web3j:core:4.8.8-android'
+
+    //session-manager-sdk
+    implementation 'com.github.grvgoel81:session-manager-android:0.0.1'
 
     // Test
     testImplementation 'junit:junit:4.+'
