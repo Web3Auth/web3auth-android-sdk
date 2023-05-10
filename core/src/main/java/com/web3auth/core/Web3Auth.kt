@@ -2,10 +2,7 @@ package com.web3auth.core
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import androidx.browser.customtabs.CustomTabsIntent
-import androidx.core.os.postDelayed
 import com.google.gson.GsonBuilder
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
@@ -183,27 +180,21 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 web3AuthResponse =
                     gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                 if (web3AuthResponse.error?.isNotBlank() == true) {
-                    Handler(Looper.getMainLooper()).postDelayed(10) {
-                        sessionCompletableFuture.completeExceptionally(
-                            UnKnownException(
-                                web3AuthResponse.error ?: Web3AuthError.getError(
-                                    ErrorCode.SOMETHING_WENT_WRONG
-                                )
+                    sessionCompletableFuture.completeExceptionally(
+                        UnKnownException(
+                            web3AuthResponse.error ?: Web3AuthError.getError(
+                                ErrorCode.SOMETHING_WENT_WRONG
                             )
                         )
-                    }
+                    )
                 } else if (web3AuthResponse.privKey.isNullOrBlank()) {
-                    Handler(Looper.getMainLooper()).postDelayed(10) {
-                        sessionCompletableFuture.completeExceptionally(
-                            Exception(
-                                Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
-                            )
+                    sessionCompletableFuture.completeExceptionally(
+                        Exception(
+                            Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
                         )
-                    }
+                    )
                 } else {
-                    Handler(Looper.getMainLooper()).postDelayed(10) {
-                        sessionCompletableFuture.complete(web3AuthResponse)
-                    }
+                    sessionCompletableFuture.complete(web3AuthResponse)
                 }
             } else {
                 sessionCompletableFuture.completeExceptionally(
