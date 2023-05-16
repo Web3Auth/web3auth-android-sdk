@@ -4,7 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
+import androidx.security.crypto.MasterKey
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -18,16 +18,17 @@ object KeyStoreManagerUtils {
     private const val Android_KEY_STORE = "AndroidKeyStore"
     private const val WEB3AUTH = "Web3Auth"
     private lateinit var encryptedPairData: Pair<ByteArray, ByteArray>
-
-    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
     private lateinit var sharedPreferences: EncryptedSharedPreferences
 
     fun initializePreferences(context: Context) {
         try {
+            val keyGenParameterSpec = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
             sharedPreferences = EncryptedSharedPreferences.create(
-                "Web3Auth",
-                masterKeyAlias,
                 context,
+                "Web3Auth",
+                keyGenParameterSpec,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             ) as EncryptedSharedPreferences
