@@ -22,7 +22,7 @@ Checkout the official [Web3Auth Documentation](https://web3auth.io/docs) and [SD
 
 ## ⏪ Requirements
 
-- Android API version 21 or newer is required.
+- Android API version 24 or newer is required.
 
 ## ⚡ Installation
 
