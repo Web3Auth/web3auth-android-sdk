@@ -7,18 +7,18 @@ import com.web3auth.core.Web3Auth
 data class Web3AuthOptions(
     var context: Context,
     val clientId: String,
-    val network: Web3Auth.Network,
+    val network: Network,
     @Transient var redirectUrl: Uri? = null,
     var sdkUrl: String = getSdkUrl(network),
     val whiteLabel: WhiteLabelData? = null,
     val loginConfig: HashMap<String, LoginConfigItem>? = null,
     val useCoreKitKey: Boolean? = false,
-    val chainNamespace: Web3Auth.ChainNamespace? = Web3Auth.ChainNamespace.EIP155
+    val chainNamespace: ChainNamespace? = ChainNamespace.EIP155
 )
 
-fun getSdkUrl(network: Web3Auth.Network): String {
+fun getSdkUrl(network: Network): String {
     var sdkUrl = ""
-    sdkUrl = if (network == Web3Auth.Network.TESTNET) {
+    sdkUrl = if (network == Network.TESTNET) {
         "https://dev-sdk.openlogin.com"
     } else {
         "https://sdk.openlogin.com"
