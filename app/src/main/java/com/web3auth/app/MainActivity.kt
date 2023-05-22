@@ -17,10 +17,10 @@ import java8.util.concurrent.CompletableFuture
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
 
-
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
     private val isLoginCompleted = AtomicBoolean(false)
+    private var count = 0
 
     private val verifierList: List<LoginVerifier> = listOf(
         LoginVerifier("Google", Provider.GOOGLE),
@@ -55,7 +55,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions)
         )
         loginCompletableFuture.whenComplete { _, error ->
-            isLoginCompleted.set(true)
             if (error == null) {
                 reRender()
                 println("PrivKey: " + web3Auth.getPrivkey())
@@ -173,14 +172,20 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         web3Auth.setResultUrl(intent?.data)
+        isLoginCompleted.set(true)
     }
 
     override fun onResume() {
         super.onResume()
         if (isLoginCompleted.get()) {
             isLoginCompleted.set(false)
+            count = 0
         } else {
-            println("User closed the browser.")
+            if (count > 0) {
+                Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
+                web3Auth.setResultUrl(null)
+            }
+            count++
         }
     }
 

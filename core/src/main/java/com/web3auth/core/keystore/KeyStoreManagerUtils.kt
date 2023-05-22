@@ -4,43 +4,31 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
-import org.bouncycastle.asn1.ASN1EncodableVector
-import org.bouncycastle.asn1.ASN1Integer
-import org.bouncycastle.asn1.DERSequence
-import org.web3j.crypto.ECKeyPair
-import org.web3j.crypto.Hash
-import java.math.BigInteger
-import java.nio.charset.StandardCharsets
+import androidx.security.crypto.MasterKey
 import java.security.KeyStore
-import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
 import kotlin.text.Charsets.UTF_8
 
-
 object KeyStoreManagerUtils {
 
     private const val TRANSFORMATION = "AES/CBC/PKCS7Padding"
     private const val Android_KEY_STORE = "AndroidKeyStore"
     private const val WEB3AUTH = "Web3Auth"
-    const val IV_KEY = "ivKey"
-    const val EPHEM_PUBLIC_Key = "ephemPublicKey"
-    const val MAC = "mac"
-    const val SESSION_ID = "sessionId"
     private lateinit var encryptedPairData: Pair<ByteArray, ByteArray>
-
-    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
     private lateinit var sharedPreferences: EncryptedSharedPreferences
 
     fun initializePreferences(context: Context) {
         try {
+            val keyGenParameterSpec = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
             sharedPreferences = EncryptedSharedPreferences.create(
-                "Web3Auth",
-                masterKeyAlias,
                 context,
+                "Web3Auth",
+                keyGenParameterSpec,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             ) as EncryptedSharedPreferences
@@ -113,20 +101,6 @@ object KeyStoreManagerUtils {
     }
 
     /**
-     * Store encrypted data into preferences
-     */
-    fun savePreferenceData(key: String, data: String) {
-        sharedPreferences.edit().putString(key, data)?.apply()
-    }
-
-    /**
-     * Retrieve decrypted data from preferences
-     */
-    fun getPreferencesData(key: String): String? {
-        return sharedPreferences.getString(key, "")
-    }
-
-    /**
      * Delete All local storage
      */
     fun deletePreferencesData(key: String) {
@@ -148,48 +122,5 @@ object KeyStoreManagerUtils {
         val secreteKeyEntry: KeyStore.SecretKeyEntry =
             keyStore.getEntry(WEB3AUTH, null) as KeyStore.SecretKeyEntry
         return secreteKeyEntry.secretKey
-    }
-
-    /**
-     * Get Public key from sessionID
-     */
-    fun getPubKey(sessionId: String): String {
-        val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
-        return derivedECKeyPair.publicKey.toString(16)
-    }
-
-    /**
-     * Get Private key from sessionID
-     */
-    fun getPrivateKey(sessionId: String): String {
-        val derivedECKeyPair: ECKeyPair = ECKeyPair.create(BigInteger(sessionId, 16))
-        return derivedECKeyPair.privateKey.toString(16)
-    }
-
-    /**
-     * Generate Signature with privateKey and message
-     */
-    fun getECDSASignature(privateKey: BigInteger?, data: String): String? {
-        val derivedECKeyPair = ECKeyPair.create(privateKey)
-        val hashedData = Hash.sha3(data.toByteArray(StandardCharsets.UTF_8))
-        val signature = derivedECKeyPair.sign(hashedData)
-        val v = ASN1EncodableVector()
-        v.add(ASN1Integer(signature.r))
-        v.add(ASN1Integer(signature.s))
-        val der = DERSequence(v)
-        val sigBytes = der.encoded
-        return convertByteToHexadecimal(sigBytes)
-    }
-
-    /**
-     * convert byte array to hex string
-     */
-    private fun convertByteToHexadecimal(byteArray: ByteArray): String {
-        var hex = ""
-        // Iterating through each byte in the array
-        for (i in byteArray) {
-            hex += String.format("%02X", i)
-        }
-        return hex.lowercase(Locale.ROOT)
     }
 }

@@ -2,7 +2,6 @@ package com.web3auth.core.types
 
 import android.content.Context
 import android.net.Uri
-import com.web3auth.core.Web3Auth
 
 data class Web3AuthOptions(
     var context: Context,
@@ -17,8 +16,7 @@ data class Web3AuthOptions(
 )
 
 fun getSdkUrl(network: Network): String {
-    var sdkUrl = ""
-    sdkUrl = if (network == Network.TESTNET) {
+    val sdkUrl: String = if (network == Network.TESTNET) {
         "https://dev-sdk.openlogin.com"
     } else {
         "https://sdk.openlogin.com"
