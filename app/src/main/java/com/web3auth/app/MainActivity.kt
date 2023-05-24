@@ -13,8 +13,8 @@ import com.google.gson.Gson
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
 import com.web3auth.core.types.*
-import java8.util.concurrent.CompletableFuture
 import org.json.JSONObject
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {

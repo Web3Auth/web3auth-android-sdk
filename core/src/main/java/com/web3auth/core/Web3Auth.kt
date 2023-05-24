@@ -8,9 +8,9 @@ import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
 import com.web3auth.core.types.*
 import com.web3auth.session_manager_android.SessionManager
-import java8.util.concurrent.CompletableFuture
 import org.json.JSONObject
 import java.util.*
+import java.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
