@@ -175,8 +175,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 val tempJson = JSONObject(response)
-                tempJson.put("userInfo", tempJson.get("store"))
-                tempJson.remove("store")
                 web3AuthResponse =
                     gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                 if (web3AuthResponse.error?.isNotBlank() == true) {
@@ -214,9 +212,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
         } else {
             if (web3AuthOption.useCoreKitKey == true) {
-                web3AuthResponse.coreKitEd25519PrivKey
+                web3AuthResponse.coreKitKey
             } else {
-                web3AuthResponse.ed25519PrivKey
+                web3AuthResponse.privKey
             }
         }
         return privKey
