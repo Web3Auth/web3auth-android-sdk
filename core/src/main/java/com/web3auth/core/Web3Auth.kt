@@ -18,7 +18,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     private var loginCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
 
-    private var web3AuthResponse = Web3AuthResponse()
+    private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
     private var sessionManager: SessionManager = SessionManager(web3AuthOption.context)
 
@@ -108,22 +108,22 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             decodeBase64URLString(hash).toString(Charsets.UTF_8), Web3AuthResponse::class.java
         )
 
-        if (web3AuthResponse.error?.isNotBlank() == true) {
+        if (web3AuthResponse?.error?.isNotBlank() == true) {
             loginCompletableFuture.completeExceptionally(
                 UnKnownException(
-                    web3AuthResponse.error ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
+                    web3AuthResponse?.error ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
                 )
             )
-        } else if (web3AuthResponse.privKey.isNullOrBlank()) {
+        } else if (web3AuthResponse?.privKey.isNullOrBlank()) {
             loginCompletableFuture.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)))
         } else {
-            web3AuthResponse.sessionId?.let { sessionManager.saveSessionId(it) }
+            web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
 
-            if (web3AuthResponse.userInfo?.dappShare?.isNotEmpty() == true) {
+            if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
                 KeyStoreManagerUtils.encryptData(
-                    web3AuthResponse.userInfo?.verifier.plus(" | ")
-                        .plus(web3AuthResponse.userInfo?.verifierId),
-                    web3AuthResponse.userInfo?.dappShare!!,
+                    web3AuthResponse?.userInfo?.verifier.plus(" | ")
+                        .plus(web3AuthResponse?.userInfo?.verifierId),
+                    web3AuthResponse?.userInfo?.dappShare!!,
                 )
             }
             loginCompletableFuture.complete(web3AuthResponse)
@@ -177,15 +177,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 val tempJson = JSONObject(response)
                 web3AuthResponse =
                     gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
-                if (web3AuthResponse.error?.isNotBlank() == true) {
+                if (web3AuthResponse?.error?.isNotBlank() == true) {
                     sessionCompletableFuture.completeExceptionally(
                         UnKnownException(
-                            web3AuthResponse.error ?: Web3AuthError.getError(
+                            web3AuthResponse?.error ?: Web3AuthError.getError(
                                 ErrorCode.SOMETHING_WENT_WRONG
                             )
                         )
                     )
-                } else if (web3AuthResponse.privKey.isNullOrBlank()) {
+                } else if (web3AuthResponse?.privKey.isNullOrBlank()) {
                     sessionCompletableFuture.completeExceptionally(
                         Exception(
                             Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
@@ -207,37 +207,37 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return sessionCompletableFuture
     }
 
-    fun getPrivkey(): String? {
+    fun getPrivkey(): String {
         val privKey: String? = if (web3AuthResponse == null) {
-            throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
+            ""
         } else {
             if (web3AuthOption.useCoreKitKey == true) {
-                web3AuthResponse.coreKitKey
+                web3AuthResponse?.coreKitKey
             } else {
-                web3AuthResponse.privKey
+                web3AuthResponse?.privKey
             }
         }
-        return privKey
+        return privKey ?: ""
     }
 
-    fun getEd25519PrivKey(): String? {
+    fun getEd25519PrivKey(): String {
         val ed25519Key: String? = if (web3AuthResponse == null) {
-            throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
+            ""
         } else {
             if (web3AuthOption.useCoreKitKey == true) {
-                web3AuthResponse.coreKitEd25519PrivKey
+                web3AuthResponse?.coreKitEd25519PrivKey
             } else {
-                web3AuthResponse.ed25519PrivKey
+                web3AuthResponse?.ed25519PrivKey
             }
         }
-        return ed25519Key
+        return ed25519Key ?: ""
     }
 
     fun getUserInfo(): UserInfo? {
         return if (web3AuthResponse == null) {
             throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
         } else {
-            web3AuthResponse.userInfo
+            web3AuthResponse?.userInfo
         }
     }
 }
