@@ -13,7 +13,12 @@ public class Web3Auth: MonoBehaviour
 {
     public enum Network
     {
-        MAINNET, TESTNET, CYAN
+        MAINNET, TESTNET, CYAN, AQUA
+    }
+
+    public enum ChainNamespace
+    {
+        EIP155, SOLANA
     }
 
     private Web3AuthOptions web3AuthOptions;
@@ -411,6 +416,29 @@ public class Web3Auth: MonoBehaviour
         }
     }
 
+    public string getPrivKey()
+    {
+        if (web3AuthResponse == null)
+            return null
+
+         return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitKey : web3AuthResponse.privKey;
+    }
+
+    public string getEd25519PrivKey()
+    {
+        if (web3AuthResponse == null)
+            return null
+
+        return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitEd25519PrivKey : web3AuthResponse.ed25519PrivKey;
+    }
+
+    public UserInfo getUserInfo()
+    {
+        if (web3AuthResponse == null)
+            throw new Exception(Web3AuthError.getError(ErrorCode.NOUSERFOUND));
+
+        return web3AuthResponse.userInfo;
+    }
 
     public void Update()
     {
