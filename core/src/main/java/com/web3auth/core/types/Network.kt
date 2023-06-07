@@ -13,8 +13,5 @@ enum class Network {
     CYAN,
 
     @SerializedName("aqua")
-    AQUA,
-
-    @SerializedName("celeste")
-    CELESTE
+    AQUA
 }
