@@ -13,7 +13,7 @@ public class Web3Auth: MonoBehaviour
 {
     public enum Network
     {
-        MAINNET, TESTNET, CYAN, AQUA, CELESTE
+        MAINNET, TESTNET, CYAN, AQUA
     }
 
     public enum ChainNamespace
