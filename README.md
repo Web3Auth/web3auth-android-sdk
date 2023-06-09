@@ -125,6 +125,18 @@ class MainActivity : AppCompatActivity() {
 
         // Handle user signing in when app is not alive
         web3Auth.setResultUrl(intent?.data)
+
+        // Call initialize function to get private key and user information value without relogging in user if a user has an active session
+        val sessionResponse: CompletableFuture<Void> = web3Auth.initialize()
+        sessionResponse.whenComplete { _, error ->
+            if (error == null) {
+                println("PrivKey: " + web3Auth.getPrivkey())
+                println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
+                println("Web3Auth UserInfo" + web3Auth.getUserInfo())
+            } else {
+                // render error UI
+            }
+        }
         
         // ...
     }
@@ -142,9 +154,12 @@ class MainActivity : AppCompatActivity() {
         val selectedLoginProvider = Provider.GOOGLE   // Can be Google, Facebook, Twitch etc
         val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(LoginParams(selectedLoginProvider))
         
-        loginCompletableFuture.whenComplete { loginResponse, error ->
+        loginCompletableFuture.whenComplete { _, error ->
             if (error == null) {
                 // render logged in UI
+                println("PrivKey: " + web3Auth.getPrivkey())
+                println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
+                println("Web3Auth UserInfo" + web3Auth.getUserInfo())
             } else {
                 // render login error UI
             }
