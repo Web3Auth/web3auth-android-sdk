@@ -65,10 +65,10 @@ dependencies {
 
     // android security
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
-    implementation 'org.web3j:core:4.8.8-android'
+    implementation 'org.web3j:core:4.9.5'
 
     //session-manager-sdk
-    implementation 'com.github.Web3Auth:session-manager-android:0.0.3'
+    implementation 'com.github.Web3Auth:session-manager-android:0.0.5'
 
     // Test
     testImplementation 'junit:junit:4.+'
