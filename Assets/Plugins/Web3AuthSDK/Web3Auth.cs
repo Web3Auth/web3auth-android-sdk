@@ -86,6 +86,9 @@ public class Web3Auth: MonoBehaviour
 
         if (this.web3AuthOptions.loginConfig != null)
             this.initParams["loginConfig"] = JsonConvert.SerializeObject(this.web3AuthOptions.loginConfig);
+
+        if (this.web3AuthOptions.clientId != null)
+            this.initParams["clientId"] = this.web3AuthOptions.clientId;       
         
     }
 
@@ -419,15 +422,15 @@ public class Web3Auth: MonoBehaviour
     public string getPrivKey()
     {
         if (web3AuthResponse == null)
-            return null
+            return "";
 
-         return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitKey : web3AuthResponse.privKey;
+        return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitKey : web3AuthResponse.privKey;
     }
 
     public string getEd25519PrivKey()
     {
         if (web3AuthResponse == null)
-            return null
+            return "";
 
         return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitEd25519PrivKey : web3AuthResponse.ed25519PrivKey;
     }
