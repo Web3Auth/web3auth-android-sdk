@@ -419,7 +419,7 @@ public class Web3Auth: MonoBehaviour
     public string getPrivKey()
     {
         if (web3AuthResponse == null)
-            return null
+            return null;
 
          return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitKey : web3AuthResponse.privKey;
     }
@@ -427,7 +427,7 @@ public class Web3Auth: MonoBehaviour
     public string getEd25519PrivKey()
     {
         if (web3AuthResponse == null)
-            return null
+            return null;
 
         return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitEd25519PrivKey : web3AuthResponse.ed25519PrivKey;
     }
