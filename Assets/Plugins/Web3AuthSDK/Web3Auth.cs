@@ -9,7 +9,7 @@ using System.Collections;
 using Org.BouncyCastle.Math;
 using Newtonsoft.Json.Linq;
 
-public class Web3Auth: MonoBehaviour
+public class Web3Auth : MonoBehaviour
 {
     public enum Network
     {
@@ -86,7 +86,10 @@ public class Web3Auth: MonoBehaviour
 
         if (this.web3AuthOptions.loginConfig != null)
             this.initParams["loginConfig"] = JsonConvert.SerializeObject(this.web3AuthOptions.loginConfig);
-        
+
+        if (this.web3AuthOptions.clientId != null)
+            this.initParams["clientId"] = this.web3AuthOptions.clientId;
+
     }
 
     private void onDeepLinkActivated(string url)
@@ -204,7 +207,7 @@ public class Web3Auth: MonoBehaviour
     }
 #endif
 
-    private void request(string  path, LoginParams loginParams = null, Dictionary<string, object> extraParams = null)
+    private void request(string path, LoginParams loginParams = null, Dictionary<string, object> extraParams = null)
     {
 #if UNITY_STANDALONE || UNITY_EDITOR
         this.initParams["redirectUrl"] = StartLocalWebserver();
@@ -216,9 +219,9 @@ public class Web3Auth: MonoBehaviour
         paramMap["params"] = loginParams == null ? (object)new Dictionary<string, object>() : (object)loginParams;
 
         if (extraParams != null && extraParams.Count > 0)
-            foreach(KeyValuePair<string, object> item in extraParams)
+            foreach (KeyValuePair<string, object> item in extraParams)
             {
-                (paramMap["params"] as Dictionary<string, object>) [item.Key] = item.Value;
+                (paramMap["params"] as Dictionary<string, object>)[item.Key] = item.Value;
             }
 
         string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(paramMap, Newtonsoft.Json.Formatting.None,
@@ -261,7 +264,7 @@ public class Web3Auth: MonoBehaviour
             this.Enqueue(() => this.onLogin?.Invoke(this.web3AuthResponse));
 
         if (!string.IsNullOrEmpty(this.web3AuthResponse.sessionId))
-            this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, this.web3AuthResponse.sessionId) );
+            this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, this.web3AuthResponse.sessionId));
 
         if (!string.IsNullOrEmpty(web3AuthResponse.userInfo?.dappShare))
         {
@@ -419,15 +422,15 @@ public class Web3Auth: MonoBehaviour
     public string getPrivKey()
     {
         if (web3AuthResponse == null)
-            return null;
+            return "";
 
-         return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitKey : web3AuthResponse.privKey;
+        return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitKey : web3AuthResponse.privKey;
     }
 
     public string getEd25519PrivKey()
     {
         if (web3AuthResponse == null)
-            return null;
+            return "";
 
         return web3AuthOptions.useCoreKitKey.Value ? web3AuthResponse.coreKitEd25519PrivKey : web3AuthResponse.ed25519PrivKey;
     }
@@ -455,7 +458,8 @@ public class Web3Auth: MonoBehaviour
     {
         lock (_executionQueue)
         {
-            _executionQueue.Enqueue(() => {
+            _executionQueue.Enqueue(() =>
+            {
                 StartCoroutine(ActionWrapper(action));
             });
         }
