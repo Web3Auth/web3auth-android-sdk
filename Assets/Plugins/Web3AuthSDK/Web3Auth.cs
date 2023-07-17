@@ -90,6 +90,14 @@ public class Web3Auth : MonoBehaviour
         if (this.web3AuthOptions.clientId != null)
             this.initParams["clientId"] = this.web3AuthOptions.clientId;
 
+        this.initParams["network"] = this.web3AuthOptions.network.ToString().ToLower();
+
+
+        if (this.web3AuthOptions.useCoreKitKey.HasValue)
+            this.initParams["useCoreKitKey"] = this.web3AuthOptions.useCoreKitKey.Value;
+
+        if (this.web3AuthOptions.chainNamespace != null)
+            this.initParams["chainNamespace"] = this.web3AuthOptions.chainNamespace;
     }
 
     private void onDeepLinkActivated(string url)
