@@ -82,18 +82,20 @@ object KeyStoreManagerUtils {
     fun decryptData(key: String): String? {
         var result: String? = null
         try {
-            val sharedPreferenceIds = sharedPreferences.all
-            sharedPreferenceIds.forEach {
-                if (it.key.contains(key)) {
-                    result = sharedPreferences.getString(it.key, "")
+            if (this::sharedPreferences.isInitialized) {
+                val sharedPreferenceIds = sharedPreferences.all
+                sharedPreferenceIds.forEach {
+                    if (it.key.contains(key)) {
+                        result = sharedPreferences.getString(it.key, "")
+                    }
                 }
+                if (result == null) return null
+                val encryptedPairData = result?.let { getEncryptedDataPair(it) }
+                val cipher = Cipher.getInstance(TRANSFORMATION)
+                val keySpec = IvParameterSpec(encryptedPairData?.first)
+                cipher.init(Cipher.DECRYPT_MODE, getKey(), keySpec)
+                return cipher.doFinal(encryptedPairData?.second).toString(UTF_8)
             }
-            if (result == null) return null
-            val encryptedPairData = result?.let { getEncryptedDataPair(it) }
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            val keySpec = IvParameterSpec(encryptedPairData?.first)
-            cipher.init(Cipher.DECRYPT_MODE, getKey(), keySpec)
-            return cipher.doFinal(encryptedPairData?.second).toString(UTF_8)
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
