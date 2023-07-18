@@ -75,3 +75,4 @@ crashlytics-build.properties
 ios-build/*
 web3auth-android-build_*/
 TestBuild_BackUpThisFolder_ButDontShipItWithYourGame/*
+.DS_Store
