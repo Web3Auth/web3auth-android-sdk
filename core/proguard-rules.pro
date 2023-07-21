@@ -13,6 +13,9 @@
 # OkHttp platform used only on JVM and when Conscrypt dependency is available.
 -dontwarn okhttp3.internal.platform.ConscryptPlatform
 -keep class okhttp3.Headers { *; }
+-keep class org.bouncycastle.jcajce.provider.** { *; }
+-keep class org.bouncycastle.jce.provider.** { *; }
+-keep class com.web3auth.session_manager_android.**
 
 #### GSON
 # Prevent proguard from stripping interface information from TypeAdapterFactory,

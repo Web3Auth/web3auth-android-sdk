@@ -59,9 +59,11 @@ object KeyStoreManagerUtils {
      * Method to encrypt data with key
      */
     fun encryptData(key: String, data: String) {
-        sharedPreferences.edit().putString(key, data)?.apply()
-        encryptedPairData = getEncryptedDataPair(data)
-        encryptedPairData.second.toString(UTF_8)
+        if (this::sharedPreferences.isInitialized) {
+            sharedPreferences.edit().putString(key, data)?.apply()
+            encryptedPairData = getEncryptedDataPair(data)
+            encryptedPairData.second.toString(UTF_8)
+        }
     }
 
     /**
