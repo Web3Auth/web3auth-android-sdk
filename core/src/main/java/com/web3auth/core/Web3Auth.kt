@@ -64,10 +64,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         extraParams?.let { paramMap.plus("params" to extraParams) }
         val validParams = paramMap.filterValues { it != null }
 
-        val hash = gson.toJson(validParams).toByteArray(Charsets.UTF_8).toBase64URLString()
+        val hash =
+            "b64Params=" + gson.toJson(validParams).toByteArray(Charsets.UTF_8).toBase64URLString()
 
         val url = Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
-            .encodedPath(sdkUrl.encodedPath).appendPath(path).fragment(hash).build()
+            .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
 
         val defaultBrowser = context.getDefaultBrowser()
         val customTabsBrowsers = context.getCustomTabsBrowsers()
