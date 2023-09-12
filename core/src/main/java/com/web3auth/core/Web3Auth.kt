@@ -6,6 +6,7 @@ import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
+import com.web3auth.core.models.OpenloginSessionConfig
 import com.web3auth.core.types.*
 import com.web3auth.session_manager_android.SessionManager
 import org.json.JSONObject
@@ -29,7 +30,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private fun request(
         path: String, params: LoginParams? = null, extraParams: Map<String, Any>? = null
     ) {
-        val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
+        val sdkUrl = Uri.parse(web3AuthOption.sdkUrl + "/start")
         val context = web3AuthOption.context
 
         val initParams = mutableMapOf(
@@ -42,6 +43,19 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             gson.toJson(web3AuthOption.whiteLabel)
         if (web3AuthOption.loginConfig != null) initParams["loginConfig"] =
             gson.toJson(web3AuthOption.loginConfig)
+        if (web3AuthOption.buildEnv == null) {
+            web3AuthOption.buildEnv = BuildEnv.PRODUCTION
+        }
+
+        val openloginSessionConfig = params?.let {
+            OpenloginSessionConfig(
+                actionType = path,
+                options = this.web3AuthOption,
+                params = it
+            )
+        }
+
+        var loginId = openloginSessionConfig?.let { getLoginId(it) }
 
 
         val paramMap = mapOf(
@@ -205,6 +219,23 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             }
         }
         return sessionCompletableFuture
+    }
+
+    fun getLoginId(openloginSessionConfig: OpenloginSessionConfig): CompletableFuture<String> {
+        val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
+        if (this.sessionManager == null) {
+            createSessionCompletableFuture.completeExceptionally(Exception("Session Manager is not initialized"))
+        }
+        val sessionResponse: CompletableFuture<String> =
+            sessionManager.createSession(openloginSessionConfig.toString(), 600)
+        sessionResponse.whenComplete { response, error ->
+            if (error == null) {
+                createSessionCompletableFuture.complete(response)
+            } else {
+                createSessionCompletableFuture.completeExceptionally(error)
+            }
+        }
+        return createSessionCompletableFuture
     }
 
     fun getPrivkey(): String {

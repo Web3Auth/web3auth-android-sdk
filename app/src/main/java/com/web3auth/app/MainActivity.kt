@@ -119,7 +119,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             Web3AuthOptions(
                 context = this,
                 clientId = getString(R.string.web3auth_project_id),
-                network = Network.MAINNET,
+                network = Network.SAPPHIRE_MAINNET,
+                buildEnv = BuildEnv.PRODUCTION,
                 redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample/redirect"),
                 whiteLabel = WhiteLabelData(
                     "Web3Auth Sample App", null, null, "en", true,

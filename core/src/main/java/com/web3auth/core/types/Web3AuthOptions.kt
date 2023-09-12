@@ -7,19 +7,26 @@ data class Web3AuthOptions(
     var context: Context,
     val clientId: String,
     val network: Network,
+    var buildEnv: BuildEnv,
     @Transient var redirectUrl: Uri? = null,
-    var sdkUrl: String = getSdkUrl(network),
+    var sdkUrl: String = getSdkUrl(buildEnv),
     val whiteLabel: WhiteLabelData? = null,
     val loginConfig: HashMap<String, LoginConfigItem>? = null,
     val useCoreKitKey: Boolean? = false,
-    val chainNamespace: ChainNamespace? = ChainNamespace.EIP155
+    val chainNamespace: ChainNamespace? = ChainNamespace.EIP155,
 )
 
-fun getSdkUrl(network: Network): String {
-    val sdkUrl: String = if (network == Network.TESTNET) {
-        "https://dev-sdk.openlogin.com"
-    } else {
-        "https://sdk.openlogin.com"
+fun getSdkUrl(buildEnv: BuildEnv): String {
+    val sdkUrl: String = when (buildEnv) {
+        BuildEnv.STAGING -> {
+            "https://staging-auth.web3auth.io"
+        }
+        BuildEnv.TESTING -> {
+            "https://develop-auth.web3auth.io"
+        }
+        else -> {
+            "https://auth.web3auth.io"
+        }
     }
     return sdkUrl
 }
