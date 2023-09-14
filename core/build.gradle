@@ -68,7 +68,9 @@ dependencies {
     implementation 'org.web3j:core:4.8.8-android'
 
     //session-manager-sdk
-    implementation 'com.github.Web3Auth:session-manager-android:0.0.8'
+    //implementation 'com.github.Web3Auth:session-manager-android:0.0.8'
+    implementation 'com.github.grvgoel81:session-manager-android:1.0.8'
+    //implementation 'com.github.web3auth:session-manager-android:feat~mac-implementation-0.0.5-g69eedc6-4'
 
     // Test
     testImplementation 'junit:junit:4.+'
