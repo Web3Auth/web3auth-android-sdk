@@ -127,6 +127,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
         if (sessionId != null) {
             sessionManager.saveSessionId(sessionId)
+
+            //Rehydrate Session
             if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
                 this.authorizeSession().whenComplete { resp, error ->
                     if (error == null) {
