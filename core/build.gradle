@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     defaultConfig {
         minSdkVersion 24
-        targetSdkVersion 33
+        targetSdkVersion 34
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "proguard-rules.pro"
@@ -47,7 +47,7 @@ dependencies {
     api 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.4'
 
     // Custom Tabs
-    implementation 'androidx.browser:browser:1.5.0'
+    implementation 'androidx.browser:browser:1.6.0'
 
     // Encoding
     implementation 'com.google.code.gson:gson:2.9.1'
@@ -68,9 +68,7 @@ dependencies {
     implementation 'org.web3j:core:4.8.8-android'
 
     //session-manager-sdk
-    //implementation 'com.github.Web3Auth:session-manager-android:0.0.8'
-    implementation 'com.github.grvgoel81:session-manager-android:1.0.8'
-    //implementation 'com.github.web3auth:session-manager-android:feat~mac-implementation-0.0.5-g69eedc6-4'
+    implementation 'com.github.Web3Auth:session-manager-android:0.0.9'
 
     // Test
     testImplementation 'junit:junit:4.+'
