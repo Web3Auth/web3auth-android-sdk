@@ -6,7 +6,6 @@ import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
-import com.web3auth.core.models.OpenloginSessionConfig
 import com.web3auth.core.types.*
 import com.web3auth.session_manager_android.SessionManager
 import org.json.JSONObject
@@ -30,7 +29,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private fun request(
         path: String, params: LoginParams? = null, extraParams: Map<String, Any>? = null
     ) {
-        val sdkUrl = Uri.parse(web3AuthOption.sdkUrl + "/start")
+        val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
         val context = web3AuthOption.context
 
         val initParams = mutableMapOf(
@@ -43,48 +42,48 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             gson.toJson(web3AuthOption.whiteLabel)
         if (web3AuthOption.loginConfig != null) initParams["loginConfig"] =
             gson.toJson(web3AuthOption.loginConfig)
-        if (web3AuthOption.buildEnv == null) {
-            web3AuthOption.buildEnv = BuildEnv.PRODUCTION
-        }
-
-        val openloginSessionConfig = params?.let {
-            OpenloginSessionConfig(
-                actionType = path,
-                options = this.web3AuthOption,
-                params = it
-            )
-        }
-
-        var loginId = openloginSessionConfig?.let { getLoginId(it) }
-
+        if (web3AuthOption.buildEnv != null) initParams["buildEnv"] =
+            web3AuthOption.buildEnv.toString().lowercase()
 
         val paramMap = mapOf(
-            "init" to initParams, "params" to params
+            "options" to initParams, "params" to params, "actionType" to path
         )
         extraParams?.let { paramMap.plus("params" to extraParams) }
         val validParams = paramMap.filterValues { it != null }
+        println("validParams: " + gson.toJson(validParams))
 
-        val hash =
-            "b64Params=" + gson.toJson(validParams).toByteArray(Charsets.UTF_8).toBase64URLString()
+        val loginIdCf = getLoginId(validParams)
 
-        val url = Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
-            .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
+        loginIdCf.whenComplete { loginId, error ->
+            if (error == null) {
+                val jsonObject = mapOf(
+                    "loginId" to loginId
+                )
+                val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
+                    .toBase64URLString()
 
-        val defaultBrowser = context.getDefaultBrowser()
-        val customTabsBrowsers = context.getCustomTabsBrowsers()
+                val url =
+                    Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
+                        .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
+                println("url: $url")
+                val defaultBrowser = context.getDefaultBrowser()
+                val customTabsBrowsers = context.getCustomTabsBrowsers()
 
-        if (customTabsBrowsers.contains(defaultBrowser)) {
-            val customTabs = CustomTabsIntent.Builder().build()
-            customTabs.intent.setPackage(defaultBrowser)
-            customTabs.launchUrl(context, url)
-        } else if (customTabsBrowsers.isNotEmpty()) {
-            val customTabs = CustomTabsIntent.Builder().build()
-            customTabs.intent.setPackage(customTabsBrowsers[0])
-            customTabs.launchUrl(context, url)
-        } else {
-            // Open in browser externally
-            context.startActivity(Intent(Intent.ACTION_VIEW, url))
+                if (customTabsBrowsers.contains(defaultBrowser)) {
+                    val customTabs = CustomTabsIntent.Builder().build()
+                    customTabs.intent.setPackage(defaultBrowser)
+                    customTabs.launchUrl(context, url)
+                } else if (customTabsBrowsers.isNotEmpty()) {
+                    val customTabs = CustomTabsIntent.Builder().build()
+                    customTabs.intent.setPackage(customTabsBrowsers[0])
+                    customTabs.launchUrl(context, url)
+                } else {
+                    // Open in browser externally
+                    context.startActivity(Intent(Intent.ACTION_VIEW, url))
+                }
+            }
         }
+
     }
 
     fun initialize(): CompletableFuture<Void> {
@@ -222,13 +221,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return sessionCompletableFuture
     }
 
-    fun getLoginId(openloginSessionConfig: OpenloginSessionConfig): CompletableFuture<String> {
+    private fun getLoginId(jsonObject: Map<String, Any?>): CompletableFuture<String> {
         val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
         if (this.sessionManager == null) {
             createSessionCompletableFuture.completeExceptionally(Exception("Session Manager is not initialized"))
         }
         val sessionResponse: CompletableFuture<String> =
-            sessionManager.createSession(openloginSessionConfig.toString(), 600)
+            sessionManager.createSession(gson.toJson(jsonObject), 600)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 createSessionCompletableFuture.complete(response)
