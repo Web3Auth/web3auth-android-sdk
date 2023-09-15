@@ -18,6 +18,6 @@ enum class Network {
     @SerializedName("sapphire_devnet")
     SAPPHIRE_DEVNET,
 
-    @SerializedName("sapphire-mainnet")
+    @SerializedName("sapphire_mainnet")
     SAPPHIRE_MAINNET
 }
