@@ -19,14 +19,16 @@ data class Web3AuthOptions(
 fun getSdkUrl(buildEnv: BuildEnv): String {
     val sdkUrl: String = when (buildEnv) {
         BuildEnv.STAGING -> {
-            "https://staging-auth.web3auth.io"
+            "https://staging-auth.web3auth.io/$openLoginVersion"
         }
         BuildEnv.TESTING -> {
             "https://develop-auth.web3auth.io"
         }
         else -> {
-            "https://auth.web3auth.io"
+            "https://auth.web3auth.io/$openLoginVersion"
         }
     }
     return sdkUrl
 }
+
+const val openLoginVersion = "v5"
