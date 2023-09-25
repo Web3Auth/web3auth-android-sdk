@@ -46,7 +46,7 @@ public class Web3AuthSample : MonoBehaviour
         {
             verifier = "your_verifierid_from_web3auth_dashboard",
             typeOfLogin = TypeOfLogin.GOOGLE,
-            clientId = "your_clientid_from_google_or_etc"
+            clientId = "your_clientId_from_web3auth_dashboard"
         };
 
         web3Auth = GetComponent<Web3Auth>();
@@ -72,7 +72,10 @@ public class Web3AuthSample : MonoBehaviour
                 {"CUSTOM_VERIFIER", loginConfigItem}
             }
             */
-            network = Web3Auth.Network.TESTNET
+            clientId = "BG4pe3aBso5SjVbpotFQGnXVHgxhgOxnqnNBKyjfEJ3izFvIVWUaMIzoCrAfYag8O6t6a6AOvdLcS4JR2sQMjR4",
+            buildEnv = BuildEnv.TESTING,
+            redirectUrl = new Uri("torusapp://com.torus.Web3AuthUnity/auth"),
+            network = Web3Auth.Network.SAPPHIRE_DEVNET
         });
         web3Auth.onLogin += onLogin;
         web3Auth.onLogout += onLogout;

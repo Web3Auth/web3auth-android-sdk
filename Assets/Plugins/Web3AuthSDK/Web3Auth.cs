@@ -240,25 +240,8 @@ public class Web3Auth : MonoBehaviour
                 (paramMap["params"] as Dictionary<string, object>)[item.Key] = item.Value;
             }
 
-       var loginId = createSession(JsonConvert.SerializeObject(paramMap), 600);
-
-       if(!string.IsNullOrEmpty(loginId)) {
-            var loginIdObject = new Dictionary<string, string>
-            {
-                { "loginId", loginId }
-            };
-            string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Newtonsoft.Json.Formatting.None,
-                            new JsonSerializerSettings
-                            {
-                                NullValueHandling = NullValueHandling.Ignore
-                            })));
-
-            UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
-            uriBuilder.Path = path;
-            uriBuilder.Fragment = "b64Params=" + hash;
-
-            Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
-        }
+       /*var loginId = */
+       createSession(JsonConvert.SerializeObject(paramMap), 600);
     }
 
     public void setResultUrl(Uri uri)
@@ -358,7 +341,7 @@ public class Web3Auth : MonoBehaviour
 
                     var encryptedShareBytes = AES256CBC.toByteArray(new BigInteger(shareMetadata.ciphertext, 16));
                     var share = aes256cbc.decrypt(encryptedShareBytes, shareMetadata.mac);
-                    var tempJson = JsonConvert.DeserializeObject<JObject>(share);
+                    var tempJson = JsonConvert.DeserializeObject<JObject>(System.Text.Encoding.UTF8.GetString(share));
                     tempJson.Add("userInfo", tempJson["store"]);
                     tempJson.Remove("store");
 
@@ -405,7 +388,7 @@ public class Web3Auth : MonoBehaviour
                     {
                         iv = shareMetadata.iv,
                         ephemPublicKey = shareMetadata.ephemPublicKey,
-                        ciphertext = encryptedData,
+                        ciphertext = KeyStoreManagerUtils.convertByteToHexadecimal(encryptedData),
                         mac = shareMetadata.mac
                     };
                     var jsonData = JsonConvert.SerializeObject(encryptedMetadata);
@@ -445,23 +428,24 @@ public class Web3Auth : MonoBehaviour
 
     private string createSession(string data, long sessionTime) {
         var newSessionKey = KeyStoreManagerUtils.generateRandomSessionKey();
-        Console.WriteLine("newSessionKey" + newSessionKey);
-        var ephemKey = "04" + KeyStoreManagerUtils.getPubKey(newSessionKey);
-        Console.WriteLine("ephemKey" + ephemKey);
+        //var newSessionKey = "644fb82ebd6012c445b8717d396d90ad1b820f8f609e952df4c4508cce868153";
+        Debug.Log("newSessionKey: " + newSessionKey);
+        var ephemKey = KeyStoreManagerUtils.getPubKey(newSessionKey);
+        Debug.Log("ephemKey: " + ephemKey);
         var ivKey = KeyStoreManagerUtils.generateRandomBytes();
-        Console.WriteLine("ivKey" + ivKey);
+        Debug.Log("ivKey: " + KeyStoreManagerUtils.convertByteToHexadecimal(ivKey));
         var aes256cbc = new AES256CBC(
             newSessionKey,
             ephemKey,
             KeyStoreManagerUtils.convertByteToHexadecimal(ivKey)
         );
         var encryptedData = aes256cbc.encrypt(System.Text.Encoding.UTF8.GetBytes(data));
-        var mac = aes256cbc.getMac(System.Text.Encoding.UTF8.GetBytes(encryptedData));
+        var mac = aes256cbc.getMac(encryptedData);
         var encryptedMetadata = new ShareMetadata()
         {
             iv = KeyStoreManagerUtils.convertByteToHexadecimal(ivKey),
             ephemPublicKey = ephemKey,
-            ciphertext = encryptedData,
+            ciphertext = KeyStoreManagerUtils.convertByteToHexadecimal(encryptedData),
             mac = KeyStoreManagerUtils.convertByteToHexadecimal(mac)
         };
         var jsonData = JsonConvert.SerializeObject(encryptedMetadata);
@@ -481,6 +465,25 @@ public class Web3Auth : MonoBehaviour
                 {
                     try
                     {
+                        KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, newSessionKey);
+
+                        if(!string.IsNullOrEmpty(newSessionKey)) {
+                                    var loginIdObject = new Dictionary<string, string>
+                                    {
+                                        { "loginId", newSessionKey }
+                                    };
+                                    string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Newtonsoft.Json.Formatting.None,
+                                                    new JsonSerializerSettings
+                                                    {
+                                                        NullValueHandling = NullValueHandling.Ignore
+                                                    })));
+
+                                    UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
+                                    uriBuilder.Path = "start";
+                                    uriBuilder.Fragment = "b64Params=" + hash;
+
+                                    Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
+                               }
                         this.Enqueue(() => this.onLogout?.Invoke());
                     }
                     catch (Exception ex)

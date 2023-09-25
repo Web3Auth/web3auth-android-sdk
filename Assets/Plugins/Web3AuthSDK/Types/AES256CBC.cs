@@ -39,7 +39,7 @@ public class AES256CBC
         }
     }
 
-    public string encrypt(byte[] src)
+    public byte[] encrypt(byte[] src)
     {
         var key = ParameterUtilities.CreateKeyParameter("AES", AES_ENCRYPTION_KEY);
         var parametersWithIv = new ParametersWithIV(key, ENCRYPTION_IV);
@@ -47,12 +47,13 @@ public class AES256CBC
         var cipher = CipherUtilities.GetCipher(TRANSFORMATION);
         cipher.Init(true, parametersWithIv);
 
-        return System.Text.Encoding.UTF8.GetString(
+        return cipher.DoFinal(src);
+        /*return System.Text.Encoding.UTF8.GetString(
             cipher.DoFinal(src)
-        );
+        );*/
     }
 
-    public string decrypt(byte[] src, string mac)
+    public byte[] decrypt(byte[] src, string mac)
     {
         if (!hmacSha256Verify(MAC_KEY, getCombinedData(src), mac))
         {
@@ -64,9 +65,10 @@ public class AES256CBC
         var cipher = CipherUtilities.GetCipher(TRANSFORMATION);
         cipher.Init(false, parametersWithIv);
 
-        return System.Text.Encoding.UTF8.GetString(
+        return cipher.DoFinal(src);
+        /*return System.Text.Encoding.UTF8.GetString(
             cipher.DoFinal(src)
-        );
+        );*/
     }
 
 
