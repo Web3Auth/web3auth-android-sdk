@@ -62,6 +62,7 @@ public class Web3Auth : MonoBehaviour
 #if UNITY_EDITOR
         Web3AuthSDK.Editor.Web3AuthDebug.onURLRecieved += (Uri url) =>
         {
+            Debug.Log("onDeepLinkActivated Unity editor Called");
             this.setResultUrl(url);
         };
 
@@ -107,6 +108,7 @@ public class Web3Auth : MonoBehaviour
 
     private void onDeepLinkActivated(string url)
     {
+        Debug.Log("onDeepLinkActivated Called");
         this.setResultUrl(new Uri(url));
     }
 
@@ -240,12 +242,32 @@ public class Web3Auth : MonoBehaviour
                 (paramMap["params"] as Dictionary<string, object>)[item.Key] = item.Value;
             }
 
-       /*var loginId = */
+       /*var loginId =*/
        createSession(JsonConvert.SerializeObject(paramMap), 600);
+       /*Debug.Log("loginId: " + loginId);
+       if(!string.IsNullOrEmpty(loginId)) {
+            var loginIdObject = new Dictionary<string, string>
+            {
+                 { "loginId", loginId }
+            };
+            string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Newtonsoft.Json.Formatting.None,
+                new JsonSerializerSettings
+                {
+                          NullValueHandling = NullValueHandling.Ignore
+                })));
+
+            UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
+            uriBuilder.Path = "start";
+            uriBuilder.Fragment = "b64Params=" + hash;
+
+            Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
+            Debug.Log("url called: " + uriBuilder.ToString());
+       }*/
     }
 
     public void setResultUrl(Uri uri)
     {
+        Debug.Log("setResultUrlcalled.");
         string hash = uri.Fragment;
 #if !UNITY_EDITOR && UNITY_WEBGL
         if (hash == null || hash.Length == 0)
@@ -255,13 +277,25 @@ public class Web3Auth : MonoBehaviour
             throw new UserCancelledException();
 #endif
         hash = hash.Remove(0, 1);
-
+        Debug.Log("Hash: " + hash + "sessionid: " + hash.Split('&')[0].Split('=')[1]);
         Dictionary<string, string> queryParameters = Utils.ParseQuery(uri.Query);
 
         if (queryParameters.Keys.Contains("error"))
             throw new UnKnownException(queryParameters["error"]);
 
-        this.web3AuthResponse = JsonConvert.DeserializeObject<Web3AuthResponse>(Encoding.UTF8.GetString(Utils.DecodeBase64(hash)));
+        string sessionId = hash.Split('&')[0].Split('=')[1];
+
+        if (sessionId != null)
+        {
+            //save new sessionId
+            KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, sessionId);
+
+            //call authorize session API
+            authorizeSession();
+
+        }
+
+        /*this.web3AuthResponse = JsonConvert.DeserializeObject<Web3AuthResponse>(Encoding.UTF8.GetString(Utils.DecodeBase64(hash)));
         if (!string.IsNullOrEmpty(this.web3AuthResponse.error))
             throw new UnKnownException(web3AuthResponse.error);
 
@@ -278,7 +312,7 @@ public class Web3Auth : MonoBehaviour
             KeyStoreManagerUtils.savePreferenceData(
                 web3AuthResponse.userInfo?.verifier, web3AuthResponse.userInfo?.dappShare
             );
-        }
+        }*/
 
 #if !UNITY_EDITOR && UNITY_WEBGL
         if (this.web3AuthResponse != null) 
@@ -352,6 +386,18 @@ public class Web3Auth : MonoBehaviour
                         if (this.web3AuthResponse.error != null)
                         {
                             throw new UnKnownException(this.web3AuthResponse.error ?? "Something went wrong");
+                        }
+
+                        if (!string.IsNullOrEmpty(this.web3AuthResponse.sessionId)) {
+                            KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, this.web3AuthResponse.sessionId);
+                        }
+
+
+                        if (!string.IsNullOrEmpty(web3AuthResponse.userInfo?.dappShare))
+                        {
+                            KeyStoreManagerUtils.savePreferenceData(
+                                        web3AuthResponse.userInfo?.verifier, web3AuthResponse.userInfo?.dappShare
+                            );
                         }
 
                         if (string.IsNullOrEmpty(this.web3AuthResponse.privKey) || string.IsNullOrEmpty(this.web3AuthResponse.privKey.Trim('0')))
@@ -465,26 +511,28 @@ public class Web3Auth : MonoBehaviour
                 {
                     try
                     {
-                        KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, newSessionKey);
+                        Debug.Log("newSessionKeyAftercreateSession: " + newSessionKey);
+                        this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, newSessionKey));
 
                         if(!string.IsNullOrEmpty(newSessionKey)) {
-                                    var loginIdObject = new Dictionary<string, string>
-                                    {
-                                        { "loginId", newSessionKey }
-                                    };
-                                    string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Newtonsoft.Json.Formatting.None,
-                                                    new JsonSerializerSettings
-                                                    {
-                                                        NullValueHandling = NullValueHandling.Ignore
-                                                    })));
+                            var loginIdObject = new Dictionary<string, string>
+                            {
+                                { "loginId", newSessionKey }
+                            };
+                            string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Newtonsoft.Json.Formatting.None,
+                                     new JsonSerializerSettings
+                                     {
+                                          NullValueHandling = NullValueHandling.Ignore
+                                     })));
 
-                                    UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
-                                    uriBuilder.Path = "start";
-                                    uriBuilder.Fragment = "b64Params=" + hash;
+                            UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
+                            uriBuilder.Path = "start";
+                            uriBuilder.Fragment = "b64Params=" + hash;
 
-                                    Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
-                               }
-                        this.Enqueue(() => this.onLogout?.Invoke());
+                            Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
+                            Debug.Log("url called: " + uriBuilder.ToString());
+                        }
+                        //this.Enqueue(() => this.onLogout?.Invoke());
                     }
                     catch (Exception ex)
                     {
