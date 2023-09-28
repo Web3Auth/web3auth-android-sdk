@@ -345,7 +345,6 @@ public class Web3Auth : MonoBehaviour
             {
                 if (response != null)
                 {
-                    Debug.Log("authorizeSessionRespnse : " + response.message);
                     var shareMetadata = Newtonsoft.Json.JsonConvert.DeserializeObject<ShareMetadata>(response.message);
 
                     var aes256cbc = new AES256CBC(
