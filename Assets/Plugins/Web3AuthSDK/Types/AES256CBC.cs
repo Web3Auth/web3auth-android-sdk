@@ -48,9 +48,6 @@ public class AES256CBC
         cipher.Init(true, parametersWithIv);
 
         return cipher.DoFinal(src);
-        /*return System.Text.Encoding.UTF8.GetString(
-            cipher.DoFinal(src)
-        );*/
     }
 
     public byte[] decrypt(byte[] src, string mac)
@@ -66,9 +63,6 @@ public class AES256CBC
         cipher.Init(false, parametersWithIv);
 
         return cipher.DoFinal(src);
-        /*return System.Text.Encoding.UTF8.GetString(
-            cipher.DoFinal(src)
-        );*/
     }
 
 

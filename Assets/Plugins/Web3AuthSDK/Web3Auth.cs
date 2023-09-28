@@ -226,8 +226,6 @@ public class Web3Auth : MonoBehaviour
     {
 #if UNITY_STANDALONE || UNITY_EDITOR
         this.initParams["redirectUrl"] = StartLocalWebserver();
-        Debug.Log("request UNITY_STANDALONE called");
-        Debug.Log(StartLocalWebserver());
 #elif UNITY_WEBGL
         this.initParams["redirectUrl"] = Utils.GetCurrentURL();
 #endif
@@ -258,11 +256,10 @@ public class Web3Auth : MonoBehaviour
                   })));
 
              UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
-             uriBuilder.Path = "start";
+             uriBuilder.Path = path;
              uriBuilder.Fragment = "b64Params=" + hash;
 
              Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
-             Debug.Log("url called: " + uriBuilder.ToString());
         }
     }
 
@@ -286,11 +283,9 @@ public class Web3Auth : MonoBehaviour
 
         //save new sessionId
         this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, sessionId));
-        Debug.Log("sessionId saved obtained from hash.: " + sessionId);
 
         //call authorize session API
         authorizeSession(sessionId);
-        Debug.Log("AuthorizeSession called with: " + sessionId);
 
 #if !UNITY_EDITOR && UNITY_WEBGL
         if (this.web3AuthResponse != null) 
