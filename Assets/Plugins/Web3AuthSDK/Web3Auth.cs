@@ -285,7 +285,7 @@ public class Web3Auth : MonoBehaviour
         this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, sessionId));
 
         //call authorize session API
-        authorizeSession(sessionId);
+        this.Enqueue(() => authorizeSession(sessionId));
 
 #if !UNITY_EDITOR && UNITY_WEBGL
         if (this.web3AuthResponse != null) 
@@ -336,11 +336,10 @@ public class Web3Auth : MonoBehaviour
         } else {
            sessionId = newSessionId;
         }
-        Debug.Log("sessionId from KeyStoreManager: " + sessionId);
+
         if (!string.IsNullOrEmpty(sessionId))
         {
             var pubKey = KeyStoreManagerUtils.getPubKey(sessionId);
-            Debug.Log("pubKey: " + pubKey);
             StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, (response =>
             {
                 if (response != null)
@@ -358,7 +357,6 @@ public class Web3Auth : MonoBehaviour
                     var tempJson = JsonConvert.DeserializeObject<JObject>(System.Text.Encoding.UTF8.GetString(share));
 
                     this.web3AuthResponse = JsonConvert.DeserializeObject<Web3AuthResponse>(tempJson.ToString());
-                    Debug.Log("authorizeSessionRespnse : " + this.web3AuthResponse);
                     if (this.web3AuthResponse != null)
                     {
                         if (this.web3AuthResponse.error != null)
@@ -369,7 +367,6 @@ public class Web3Auth : MonoBehaviour
                         if (!string.IsNullOrEmpty(this.web3AuthResponse.sessionId)) {
                             KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, this.web3AuthResponse.sessionId);
                         }
-
 
                         if (!string.IsNullOrEmpty(web3AuthResponse.userInfo?.dappShare))
                         {
