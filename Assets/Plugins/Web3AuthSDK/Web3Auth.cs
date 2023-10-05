@@ -26,6 +26,16 @@ public class Web3Auth : MonoBehaviour
         PRODUCTION, STAGING, TESTING
     }
 
+    public enum ThemeModes
+    {
+        LIGHT, DARK, AUTO
+    }
+
+    public enum Language
+    {
+        EN, DE, JA, KO, ZH, ES, FR, PT, NL
+    }
+
     private Web3AuthOptions web3AuthOptions;
     private Dictionary<string, object> initParams;
 

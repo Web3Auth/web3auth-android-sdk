@@ -54,11 +54,11 @@ public class Web3AuthSample : MonoBehaviour
         {
             whiteLabel = new WhiteLabelData()
             {
-                name = "Web3Auth Sample App",
+                appName = "Web3Auth Sample App",
                 logoLight = null,
                 logoDark = null,
-                defaultLanguage = "en",
-                dark = true,
+                defaultLanguage = Language.EN.ToString().ToLower(),
+                mode = ThemeModes.LIGHT.ToString().ToLower(),
                 theme = new Dictionary<string, string>
                 {
                     { "primary", "#123456" }
