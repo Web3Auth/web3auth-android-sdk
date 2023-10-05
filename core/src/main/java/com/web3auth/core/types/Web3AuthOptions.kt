@@ -13,7 +13,8 @@ data class Web3AuthOptions(
     val whiteLabel: WhiteLabelData? = null,
     val loginConfig: HashMap<String, LoginConfigItem>? = null,
     val useCoreKitKey: Boolean? = false,
-    val chainNamespace: ChainNamespace? = ChainNamespace.EIP155
+    val chainNamespace: ChainNamespace? = ChainNamespace.EIP155,
+    val mfaSettings: MfaSettings? = null
 )
 
 fun getSdkUrl(buildEnv: BuildEnv): String {

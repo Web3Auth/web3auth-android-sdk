@@ -119,20 +119,21 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             Web3AuthOptions(
                 context = this,
                 clientId = getString(R.string.web3auth_project_id),
-                network = Network.SAPPHIRE_DEVNET,
-                buildEnv = BuildEnv.PRODUCTION,
+                network = Network.SAPPHIRE_MAINNET,
+                buildEnv = BuildEnv.TESTING,
                 redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample/redirect"),
                 whiteLabel = WhiteLabelData(
-                    "Web3Auth Sample App", null, null, "en", true,
+                    "Web3Auth Sample App", null, null, null,
+                    Language.DE, ThemeModes.LIGHT, true,
                     hashMapOf(
                         "primary" to "#123456"
                     )
                 ),
                 loginConfig = hashMapOf(
-                    "loginConfig" to LoginConfigItem(
-                        "torus",
+                    "google" to LoginConfigItem(
+                        verifier = "w3a-google-demo",
                         typeOfLogin = TypeOfLogin.GOOGLE,
-                        name = ""
+                        clientId = "519228911939-cri01h55lsjbsia1k7ll6qpalrus75ps.apps.googleusercontent.com",
                     )
                 )
             )
