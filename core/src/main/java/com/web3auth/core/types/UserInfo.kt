@@ -14,5 +14,6 @@ data class UserInfo (
     var dappShare: String = "",
     var idToken: String = "",
     var oAuthIdToken: String = "",
-    var oAuthAccessToken: String = ""
+    var oAuthAccessToken: String = "",
+    var isMfaEnabled: Boolean? = null
 )

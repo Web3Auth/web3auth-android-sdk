@@ -32,44 +32,63 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
         val context = web3AuthOption.context
 
-        val initParams = mutableMapOf(
+        val initOptions = mutableMapOf(
             "clientId" to web3AuthOption.clientId,
             "network" to web3AuthOption.network.name.lowercase(Locale.ROOT)
         )
-        if (web3AuthOption.redirectUrl != null) initParams["redirectUrl"] =
+        if (web3AuthOption.redirectUrl != null) initOptions["redirectUrl"] =
             web3AuthOption.redirectUrl.toString()
-        if (web3AuthOption.whiteLabel != null) initParams["whiteLabel"] =
+        if (web3AuthOption.whiteLabel != null) initOptions["whiteLabel"] =
             gson.toJson(web3AuthOption.whiteLabel)
-        if (web3AuthOption.loginConfig != null) initParams["loginConfig"] =
+        if (web3AuthOption.loginConfig != null) initOptions["loginConfig"] =
             gson.toJson(web3AuthOption.loginConfig)
+        if (web3AuthOption.buildEnv != null) initOptions["buildEnv"] =
+            web3AuthOption.buildEnv.toString().lowercase()
 
+        val initParams = mutableMapOf(
+            "loginProvider" to params?.loginProvider,
+            "redirectUrl" to web3AuthOption.redirectUrl.toString()
+        )
 
         val paramMap = mapOf(
-            "init" to initParams, "params" to params
+            "options" to initOptions, "params" to initParams, "actionType" to path
         )
+
         extraParams?.let { paramMap.plus("params" to extraParams) }
         val validParams = paramMap.filterValues { it != null }
 
-        val hash = gson.toJson(validParams).toByteArray(Charsets.UTF_8).toBase64URLString()
+        val loginIdCf = getLoginId(validParams)
 
-        val url = Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
-            .encodedPath(sdkUrl.encodedPath).appendPath(path).fragment(hash).build()
+        loginIdCf.whenComplete { loginId, error ->
+            if (error == null) {
+                val jsonObject = mapOf(
+                    "loginId" to loginId
+                )
+                val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
+                    .toBase64URLString()
 
-        val defaultBrowser = context.getDefaultBrowser()
-        val customTabsBrowsers = context.getCustomTabsBrowsers()
+                val url =
+                    Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
+                        .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
 
-        if (customTabsBrowsers.contains(defaultBrowser)) {
-            val customTabs = CustomTabsIntent.Builder().build()
-            customTabs.intent.setPackage(defaultBrowser)
-            customTabs.launchUrl(context, url)
-        } else if (customTabsBrowsers.isNotEmpty()) {
-            val customTabs = CustomTabsIntent.Builder().build()
-            customTabs.intent.setPackage(customTabsBrowsers[0])
-            customTabs.launchUrl(context, url)
-        } else {
-            // Open in browser externally
-            context.startActivity(Intent(Intent.ACTION_VIEW, url))
+                val defaultBrowser = context.getDefaultBrowser()
+                val customTabsBrowsers = context.getCustomTabsBrowsers()
+
+                if (customTabsBrowsers.contains(defaultBrowser)) {
+                    val customTabs = CustomTabsIntent.Builder().build()
+                    customTabs.intent.setPackage(defaultBrowser)
+                    customTabs.launchUrl(context, url)
+                } else if (customTabsBrowsers.isNotEmpty()) {
+                    val customTabs = CustomTabsIntent.Builder().build()
+                    customTabs.intent.setPackage(customTabsBrowsers[0])
+                    customTabs.launchUrl(context, url)
+                } else {
+                    // Open in browser externally
+                    context.startActivity(Intent(Intent.ACTION_VIEW, url))
+                }
+            }
         }
+
     }
 
     fun initialize(): CompletableFuture<Void> {
@@ -104,29 +123,50 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             loginCompletableFuture.completeExceptionally(UnKnownException(error))
         }
 
-        web3AuthResponse = gson.fromJson(
-            decodeBase64URLString(hash).toString(Charsets.UTF_8), Web3AuthResponse::class.java
-        )
+        val sessionId = hash.split("&")[0].split("=")[1]
 
-        if (web3AuthResponse?.error?.isNotBlank() == true) {
-            loginCompletableFuture.completeExceptionally(
-                UnKnownException(
-                    web3AuthResponse?.error ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
-                )
-            )
-        } else if (web3AuthResponse?.privKey.isNullOrBlank()) {
-            loginCompletableFuture.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)))
-        } else {
-            web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
+        if (sessionId != null) {
+            sessionManager.saveSessionId(sessionId)
 
-            if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
-                KeyStoreManagerUtils.encryptData(
-                    web3AuthResponse?.userInfo?.verifier.plus(" | ")
-                        .plus(web3AuthResponse?.userInfo?.verifierId),
-                    web3AuthResponse?.userInfo?.dappShare!!,
-                )
+            //Rehydrate Session
+            if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
+                this.authorizeSession().whenComplete { resp, error ->
+                    if (error == null) {
+                        web3AuthResponse = resp
+                        if (web3AuthResponse?.error?.isNotBlank() == true) {
+                            loginCompletableFuture.completeExceptionally(
+                                UnKnownException(
+                                    web3AuthResponse?.error
+                                        ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
+                                )
+                            )
+                        } else if (web3AuthResponse?.privKey.isNullOrBlank()) {
+                            loginCompletableFuture.completeExceptionally(
+                                Exception(
+                                    Web3AuthError.getError(
+                                        ErrorCode.SOMETHING_WENT_WRONG
+                                    )
+                                )
+                            )
+                        } else {
+                            web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
+
+                            if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
+                                KeyStoreManagerUtils.encryptData(
+                                    web3AuthResponse?.userInfo?.verifier.plus(" | ")
+                                        .plus(web3AuthResponse?.userInfo?.verifierId),
+                                    web3AuthResponse?.userInfo?.dappShare!!,
+                                )
+                            }
+                            loginCompletableFuture.complete(web3AuthResponse)
+                        }
+                    } else {
+                        print(error)
+                    }
+                }
             }
-            loginCompletableFuture.complete(web3AuthResponse)
+        } else {
+            loginCompletableFuture.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)))
         }
     }
 
@@ -171,7 +211,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      */
     private fun authorizeSession(): CompletableFuture<Web3AuthResponse> {
         val sessionCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
-        val sessionResponse: CompletableFuture<String> = sessionManager.authorizeSession(true)
+        val sessionResponse: CompletableFuture<String> = sessionManager.authorizeSession(false)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 val tempJson = JSONObject(response)
@@ -205,6 +245,23 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             }
         }
         return sessionCompletableFuture
+    }
+
+    private fun getLoginId(jsonObject: Map<String, Any?>): CompletableFuture<String> {
+        val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
+        if (this.sessionManager == null) {
+            createSessionCompletableFuture.completeExceptionally(Exception("Session Manager is not initialized"))
+        }
+        val sessionResponse: CompletableFuture<String> =
+            sessionManager.createSession(gson.toJson(jsonObject), 600)
+        sessionResponse.whenComplete { response, error ->
+            if (error == null) {
+                createSessionCompletableFuture.complete(response)
+            } else {
+                createSessionCompletableFuture.completeExceptionally(error)
+            }
+        }
+        return createSessionCompletableFuture
     }
 
     fun getPrivkey(): String {

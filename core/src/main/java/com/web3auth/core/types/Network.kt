@@ -13,5 +13,11 @@ enum class Network {
     CYAN,
 
     @SerializedName("aqua")
-    AQUA
+    AQUA,
+
+    @SerializedName("sapphire_devnet")
+    SAPPHIRE_DEVNET,
+
+    @SerializedName("sapphire_mainnet")
+    SAPPHIRE_MAINNET
 }
