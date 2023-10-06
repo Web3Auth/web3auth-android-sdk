@@ -7,7 +7,7 @@ public class MfaSetting
     public bool? mandatory { get; set; }
 
     // Constructor
-    public MfaSetting(bool? enable, int priority, bool? mandatory)
+    public MfaSetting(bool enable, int? priority, bool? mandatory)
     {
         enable = enable;
         priority = priority;
