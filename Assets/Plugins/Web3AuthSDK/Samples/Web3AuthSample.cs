@@ -73,7 +73,7 @@ public class Web3AuthSample : MonoBehaviour
             }
             */
             clientId = "BG4pe3aBso5SjVbpotFQGnXVHgxhgOxnqnNBKyjfEJ3izFvIVWUaMIzoCrAfYag8O6t6a6AOvdLcS4JR2sQMjR4",
-            buildEnv = BuildEnv.TESTING,
+            buildEnv = BuildEnv.PRODUCTION,
             redirectUrl = new Uri("torusapp://com.torus.Web3AuthUnity/auth"),
             network = Web3Auth.Network.SAPPHIRE_DEVNET
         });

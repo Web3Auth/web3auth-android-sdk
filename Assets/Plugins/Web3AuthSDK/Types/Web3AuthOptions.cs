@@ -5,7 +5,7 @@ public class Web3AuthOptions {
     public string clientId { get; set; }
     public Web3Auth.Network network { get; set; }
 
-    public Web3Auth.BuildEnv buildEnv { get; set; }
+    public Web3Auth.BuildEnv buildEnv { get; set; } = Web3Auth.BuildEnv.PRODUCTION;
     public Uri redirectUrl { get; set; }
     public string sdkUrl {
         get {
@@ -20,9 +20,9 @@ public class Web3AuthOptions {
     }
     public const string openLoginVersion = "v5";
 
-    public WhiteLabelData whiteLabel { get; set; }
-    public Dictionary<string, LoginConfigItem> loginConfig { get; set; }
+    public WhiteLabelData? whiteLabel { get; set; }
+    public Dictionary<string, LoginConfigItem>? loginConfig { get; set; }
     public bool? useCoreKitKey { get; set; } = false;
     public Web3Auth.ChainNamespace? chainNamespace { get; set; } = Web3Auth.ChainNamespace.EIP155;
-    public MfaSettings mfaSettings { get; set; } = null;
+    public MfaSettings? mfaSettings { get; set; } = null;
 }
