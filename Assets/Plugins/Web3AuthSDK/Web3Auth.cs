@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,12 +29,12 @@ public class Web3Auth : MonoBehaviour
 
     public enum ThemeModes
     {
-        LIGHT, DARK, AUTO
+        light, dark, auto
     }
 
     public enum Language
     {
-        EN, DE, JA, KO, ZH, ES, FR, PT, NL
+        en, de, ja, ko, zh, es, fr, pt, nl
     }
 
     private Web3AuthOptions web3AuthOptions;
@@ -89,6 +90,11 @@ public class Web3Auth : MonoBehaviour
 
     public void setOptions(Web3AuthOptions web3AuthOptions)
     {
+        JsonSerializerSettings settings = new JsonSerializerSettings
+        {
+            Converters = new List<JsonConverter> { new StringEnumConverter() },
+            Formatting = Formatting.Indented
+        };
 
         this.web3AuthOptions = web3AuthOptions;
 
@@ -96,19 +102,18 @@ public class Web3Auth : MonoBehaviour
             this.initParams["redirectUrl"] = this.web3AuthOptions.redirectUrl;
 
         if (this.web3AuthOptions.whiteLabel != null)
-            this.initParams["whiteLabel"] = JsonConvert.SerializeObject(this.web3AuthOptions.whiteLabel);
+            this.initParams["whiteLabel"] = JsonConvert.SerializeObject(this.web3AuthOptions.whiteLabel, settings);
 
         if (this.web3AuthOptions.loginConfig != null)
-            this.initParams["loginConfig"] = JsonConvert.SerializeObject(this.web3AuthOptions.loginConfig);
+            this.initParams["loginConfig"] = JsonConvert.SerializeObject(this.web3AuthOptions.loginConfig, settings);
 
         if (this.web3AuthOptions.clientId != null)
             this.initParams["clientId"] = this.web3AuthOptions.clientId;
 
-       if (this.web3AuthOptions.clientId != null)
+        if (this.web3AuthOptions.clientId != null)
             this.initParams["buildEnv"] = this.web3AuthOptions.buildEnv.ToString().ToLower();
 
         this.initParams["network"] = this.web3AuthOptions.network.ToString().ToLower();
-
 
         if (this.web3AuthOptions.useCoreKitKey.HasValue)
             this.initParams["useCoreKitKey"] = this.web3AuthOptions.useCoreKitKey.Value;

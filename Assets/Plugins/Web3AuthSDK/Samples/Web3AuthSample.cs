@@ -57,8 +57,8 @@ public class Web3AuthSample : MonoBehaviour
                 appName = "Web3Auth Sample App",
                 logoLight = null,
                 logoDark = null,
-                defaultLanguage = Language.EN.ToString().ToLower(),
-                mode = ThemeModes.LIGHT.ToString().ToLower(),
+                defaultLanguage = Language.en,
+                mode = ThemeModes.dark,
                 theme = new Dictionary<string, string>
                 {
                     { "primary", "#123456" }
