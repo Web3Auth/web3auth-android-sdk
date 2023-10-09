@@ -508,7 +508,7 @@ public class Web3Auth : MonoBehaviour
                 }
             }
         ));
-        await Task.Delay(300);
+        await Task.Delay(200);
         return newSessionKey;
     }
 
