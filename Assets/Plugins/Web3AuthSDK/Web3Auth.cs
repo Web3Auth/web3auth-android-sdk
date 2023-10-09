@@ -276,6 +276,8 @@ public class Web3Auth : MonoBehaviour
              uriBuilder.Fragment = "b64Params=" + hash;
 
              Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
+        } else {
+             throw new Exception("Some went wrong. Please try again later.");
         }
     }
 
@@ -503,6 +505,7 @@ public class Web3Auth : MonoBehaviour
                     }
                     catch (Exception ex)
                     {
+                        newSessionKey = null;
                         Debug.LogError(ex.Message);
                     }
                 }
