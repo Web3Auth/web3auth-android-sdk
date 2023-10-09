@@ -9,6 +9,7 @@ using System.Net;
 using System.Collections;
 using Org.BouncyCastle.Math;
 using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
 
 public class Web3Auth : MonoBehaviour
 {
@@ -237,7 +238,7 @@ public class Web3Auth : MonoBehaviour
     }
 #endif
 
-    private void request(string path, LoginParams loginParams = null, Dictionary<string, object> extraParams = null)
+    private async void request(string path, LoginParams loginParams = null, Dictionary<string, object> extraParams = null)
     {
 #if UNITY_STANDALONE || UNITY_EDITOR
         this.initParams["redirectUrl"] = StartLocalWebserver();
@@ -257,7 +258,7 @@ public class Web3Auth : MonoBehaviour
                 (paramMap["params"] as Dictionary<string, object>)[item.Key] = item.Value;
             }
 
-        string loginId = createSession(JsonConvert.SerializeObject(paramMap), 600);
+        string loginId = await createSession(JsonConvert.SerializeObject(paramMap), 600);
 
         if(!string.IsNullOrEmpty(loginId)) {
             var loginIdObject = new Dictionary<string, string>
@@ -462,7 +463,7 @@ public class Web3Auth : MonoBehaviour
         }
     }
 
-    private string createSession(string data, long sessionTime) {
+    private async Task<string> createSession(string data, long sessionTime) {
         var newSessionKey = KeyStoreManagerUtils.generateRandomSessionKey();
         var ephemKey = KeyStoreManagerUtils.getPubKey(newSessionKey);
         var ivKey = KeyStoreManagerUtils.generateRandomBytes();
@@ -507,6 +508,7 @@ public class Web3Auth : MonoBehaviour
                 }
             }
         ));
+        await Task.Delay(300);
         return newSessionKey;
     }
 
