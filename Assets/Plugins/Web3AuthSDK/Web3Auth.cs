@@ -258,7 +258,11 @@ public class Web3Auth : MonoBehaviour
                 (paramMap["params"] as Dictionary<string, object>)[item.Key] = item.Value;
             }
 
-        string loginId = await createSession(JsonConvert.SerializeObject(paramMap), 600);
+        string loginId = await createSession(JsonConvert.SerializeObject(paramMap, Newtonsoft.Json.Formatting.None,
+            new JsonSerializerSettings
+                {
+                     NullValueHandling = NullValueHandling.Ignore
+                }), 600);
 
         if(!string.IsNullOrEmpty(loginId)) {
             var loginIdObject = new Dictionary<string, string>
