@@ -47,6 +47,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
         val initParams = mutableMapOf(
             "loginProvider" to params?.loginProvider,
+            "extraLoginOptions" to params?.extraLoginOptions,
             "redirectUrl" to web3AuthOption.redirectUrl.toString()
         )
 
