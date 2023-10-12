@@ -36,9 +36,9 @@ public class MfaSettings
         MfaSetting socialBackupFactor = null,
         MfaSetting passwordFactor = null)
     {
-        deviceShareFactor = deviceShareFactor;
-        backUpShareFactor = backUpShareFactor;
-        socialBackupFactor = socialBackupFactor;
-        passwordFactor = passwordFactor;
+        this.deviceShareFactor = deviceShareFactor;
+        this.backUpShareFactor = backUpShareFactor;
+        this.socialBackupFactor = socialBackupFactor;
+        this.passwordFactor = passwordFactor;
     }
 }

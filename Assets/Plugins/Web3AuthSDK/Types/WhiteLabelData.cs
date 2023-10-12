@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
-
+#nullable enable
 public class WhiteLabelData {
     public string? appName { get; set; }
     public string? logoLight { get; set; }

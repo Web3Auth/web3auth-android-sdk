@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+#nullable enable
 
 public class Web3AuthOptions {
     public string clientId { get; set; }

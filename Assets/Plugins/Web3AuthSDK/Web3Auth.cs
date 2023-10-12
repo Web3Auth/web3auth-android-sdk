@@ -23,7 +23,7 @@ public class Web3Auth : MonoBehaviour
         EIP155, SOLANA
     }
 
-    public enum BuildEnv 
+    public enum BuildEnv
     {
         PRODUCTION, STAGING, TESTING
     }
@@ -246,7 +246,7 @@ public class Web3Auth : MonoBehaviour
         this.initParams["redirectUrl"] = Utils.GetCurrentURL();
 #endif
 
-        loginParams.redirectUrl = new Uri(StartLocalWebserver());
+        loginParams.redirectUrl = loginParams.redirectUrl ?? new Uri(this.initParams["redirectUrl"].ToString());
         Dictionary<string, object> paramMap = new Dictionary<string, object>();
         paramMap["options"] = this.initParams;
         paramMap["params"] = loginParams == null ? (object)new Dictionary<string, object>() : (object)loginParams;
@@ -258,30 +258,33 @@ public class Web3Auth : MonoBehaviour
                 (paramMap["params"] as Dictionary<string, object>)[item.Key] = item.Value;
             }
 
-        string loginId = await createSession(JsonConvert.SerializeObject(paramMap, Newtonsoft.Json.Formatting.None,
+        string loginId = await createSession(JsonConvert.SerializeObject(paramMap, Formatting.None,
             new JsonSerializerSettings
-                {
-                     NullValueHandling = NullValueHandling.Ignore
-                }), 600);
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            }), 600);
 
-        if(!string.IsNullOrEmpty(loginId)) {
+        if (!string.IsNullOrEmpty(loginId))
+        {
             var loginIdObject = new Dictionary<string, string>
              {
                   { "loginId", loginId }
              };
-             string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Newtonsoft.Json.Formatting.None,
-                 new JsonSerializerSettings
-                  {
-                      NullValueHandling = NullValueHandling.Ignore
-                  })));
+            string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Formatting.None,
+                new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                })));
 
-             UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
-             uriBuilder.Path = path;
-             uriBuilder.Fragment = "b64Params=" + hash;
+            UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
+            uriBuilder.Path = path;
+            uriBuilder.Fragment = "b64Params=" + hash;
 
-             Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
-        } else {
-             throw new Exception("Some went wrong. Please try again later.");
+            Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
+        }
+        else
+        {
+            throw new Exception("Some went wrong. Please try again later.");
         }
     }
 
@@ -353,10 +356,13 @@ public class Web3Auth : MonoBehaviour
     private void authorizeSession(string newSessionId)
     {
         string sessionId = "";
-        if(string.IsNullOrEmpty(newSessionId)) {
-           sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
-        } else {
-           sessionId = newSessionId;
+        if (string.IsNullOrEmpty(newSessionId))
+        {
+            sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
+        }
+        else
+        {
+            sessionId = newSessionId;
         }
 
         if (!string.IsNullOrEmpty(sessionId))
@@ -386,7 +392,8 @@ public class Web3Auth : MonoBehaviour
                             throw new UnKnownException(this.web3AuthResponse.error ?? "Something went wrong");
                         }
 
-                        if (!string.IsNullOrEmpty(this.web3AuthResponse.sessionId)) {
+                        if (!string.IsNullOrEmpty(this.web3AuthResponse.sessionId))
+                        {
                             KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, this.web3AuthResponse.sessionId);
                         }
 
@@ -469,7 +476,8 @@ public class Web3Auth : MonoBehaviour
         }
     }
 
-    private async Task<string> createSession(string data, long sessionTime) {
+    private async Task<string> createSession(string data, long sessionTime)
+    {
         TaskCompletionSource<string> createSessionResponse = new TaskCompletionSource<string>();
         var newSessionKey = KeyStoreManagerUtils.generateRandomSessionKey();
         var ephemKey = KeyStoreManagerUtils.getPubKey(newSessionKey);
@@ -514,7 +522,9 @@ public class Web3Auth : MonoBehaviour
                         createSessionResponse.SetException(new Exception("Something went wrong. Please try again later."));
                         Debug.LogError(ex.Message);
                     }
-                } else {
+                }
+                else
+                {
                     createSessionResponse.SetException(new Exception("Something went wrong. Please try again later."));
                 }
             }
