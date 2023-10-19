@@ -20,8 +20,14 @@ public class Web3AuthApi
     public IEnumerator authorizeSession(string key, Action<StoreApiResponse> callback)
     {
         var request = UnityWebRequest.Get($"{baseAddress}/store/get?key={key}");
+        
         yield return request.SendWebRequest();
-
+        Debug.Log("baseAddress =>" + baseAddress);
+        Debug.Log("key =>" + key);
+        Debug.Log("request URL =>"+ $"{baseAddress}/store/get?key={key}");
+        Debug.Log("request =>" + request);
+        Debug.Log("request.result =>" + request.result);
+        Debug.Log("request.downloadHandler.text =>" + request.downloadHandler.text);
         if (request.result == UnityWebRequest.Result.Success)
         {
             string result = request.downloadHandler.text;
