@@ -44,6 +44,7 @@ public class Web3AuthApi
         data.AddField("data", logoutApiRequest.data);
         data.AddField("signature", logoutApiRequest.signature);
         data.AddField("timeout", logoutApiRequest.timeout.ToString());
+        Debug.Log("key during logout session =>" + logoutApiRequest.key);
 
         var request = UnityWebRequest.Post($"{baseAddress}/store/set", data);
         yield return request.SendWebRequest();
@@ -64,7 +65,7 @@ public class Web3AuthApi
             data.AddField("data", logoutApiRequest.data);
             data.AddField("signature", logoutApiRequest.signature);
             data.AddField("timeout", logoutApiRequest.timeout.ToString());
-
+            Debug.Log("key during create session =>" + logoutApiRequest.key);
             var request = UnityWebRequest.Post($"{baseAddress}/store/set", data);
             yield return request.SendWebRequest();
 
