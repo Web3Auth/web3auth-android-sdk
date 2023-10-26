@@ -56,6 +56,15 @@ public class Web3AuthApi
         var request = UnityWebRequest.Post($"{baseAddress}/store/set", data);
         yield return request.SendWebRequest();
 
+        // Debug.Log("baseAddress =>" + baseAddress);
+        // Debug.Log("key =>" + logoutApiRequest.key);
+        // Debug.Log("request URL =>"+ requestURL);
+        // Debug.Log("request.isNetworkError =>" + request.isNetworkError);
+        // Debug.Log("request.isHttpError =>" + request.isHttpError);
+        // Debug.Log("request.isHttpError =>" + request.error);
+        // Debug.Log("request.result =>" + request.result);
+        // Debug.Log("request.downloadHandler.text =>" + request.downloadHandler.text);
+
         if (request.result == UnityWebRequest.Result.Success)
         {
             string result = request.downloadHandler.text;

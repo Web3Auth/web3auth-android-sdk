@@ -463,7 +463,8 @@ public class Web3Auth : MonoBehaviour
                                 try
                                 {
                                     KeyStoreManagerUtils.deletePreferencesData(KeyStoreManagerUtils.SESSION_ID);
-                                    KeyStoreManagerUtils.deletePreferencesData(web3AuthOptions.loginConfig?.Values.First()?.verifier);
+                                    if (web3AuthOptions.loginConfig != null)
+                                        KeyStoreManagerUtils.deletePreferencesData(web3AuthOptions.loginConfig?.Values.First()?.verifier);
 
                                     this.Enqueue(() => this.onLogout?.Invoke());
                                 }
