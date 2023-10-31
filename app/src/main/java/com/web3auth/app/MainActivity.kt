@@ -114,29 +114,32 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Configure Web3Auth
-        web3Auth = Web3Auth(
-            Web3AuthOptions(
-                context = this,
-                clientId = getString(R.string.web3auth_project_id),
-                network = Network.SAPPHIRE_DEVNET,
-                buildEnv = BuildEnv.TESTING,
-                redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
-                whiteLabel = WhiteLabelData(
-                    "Web3Auth Sample App", null, null, null,
-                    Language.EN, ThemeModes.LIGHT, true,
-                    hashMapOf(
-                        "primary" to "#123456"
-                    )
-                ),
-                loginConfig = hashMapOf(
-                    "loginConfig" to LoginConfigItem(
-                        "torus",
-                        typeOfLogin = TypeOfLogin.GOOGLE,
-                        name = ""
-                    )
+        val options = Web3AuthOptions(
+            context = this,
+            clientId = getString(R.string.web3auth_project_id),
+            network = Network.SAPPHIRE_DEVNET,
+            redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
+            whiteLabel = WhiteLabelData(
+                "Web3Auth Sample App", null, null, null,
+                Language.EN, ThemeModes.LIGHT, true,
+                hashMapOf(
+                    "primary" to "#123456"
+                )
+            ),
+            loginConfig = hashMapOf(
+                "loginConfig" to LoginConfigItem(
+                    "torus",
+                    typeOfLogin = TypeOfLogin.GOOGLE,
+                    name = ""
                 )
             )
+        )
+
+        println("params: $options")
+
+        // Configure Web3Auth
+        web3Auth = Web3Auth(
+            options
         )
 
         web3Auth.setResultUrl(intent.data)

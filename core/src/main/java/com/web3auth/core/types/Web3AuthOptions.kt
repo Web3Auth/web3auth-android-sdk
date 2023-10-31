@@ -7,7 +7,7 @@ data class Web3AuthOptions(
     var context: Context,
     val clientId: String,
     val network: Network,
-    var buildEnv: BuildEnv,
+    var buildEnv: BuildEnv? = BuildEnv.PRODUCTION,
     @Transient var redirectUrl: Uri? = null,
     var sdkUrl: String = getSdkUrl(buildEnv),
     val whiteLabel: WhiteLabelData? = null,
@@ -17,7 +17,7 @@ data class Web3AuthOptions(
     val mfaSettings: MfaSettings? = null
 )
 
-fun getSdkUrl(buildEnv: BuildEnv): String {
+fun getSdkUrl(buildEnv: BuildEnv?): String {
     val sdkUrl: String = when (buildEnv) {
         BuildEnv.STAGING -> {
             "https://staging-auth.web3auth.io/$openLoginVersion"
