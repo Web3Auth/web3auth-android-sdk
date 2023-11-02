@@ -52,7 +52,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
         val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(
-            LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions)
+            LoginParams(
+                selectedLoginProvider,
+                extraLoginOptions = extraLoginOptions,
+                mfaLevel = MFALevel.MANDATORY
+            )
         )
         loginCompletableFuture.whenComplete { _, error ->
             if (error == null) {
@@ -135,6 +139,12 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                         typeOfLogin = TypeOfLogin.GOOGLE,
                         name = ""
                     )
+                ),
+                mfaSettings = MfaSettings(
+                    MfaSetting(false, 4, false),
+                    MfaSetting(true, 2, true),
+                    MfaSetting(true, 1, false),
+                    MfaSetting(false, 3, false)
                 )
             )
         )
