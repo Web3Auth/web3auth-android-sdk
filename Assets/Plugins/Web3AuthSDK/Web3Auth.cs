@@ -249,6 +249,7 @@ public class Web3Auth : MonoBehaviour
         this.initParams["redirectUrl"] = Utils.GetCurrentURL();
 #endif
 
+        this.initParams["sessionTime"] = loginParams.sessionTime;
         loginParams.redirectUrl = loginParams.redirectUrl ?? new Uri(this.initParams["redirectUrl"].ToString());
         Dictionary<string, object> paramMap = new Dictionary<string, object>();
         paramMap["options"] = this.initParams;
@@ -260,7 +261,7 @@ public class Web3Auth : MonoBehaviour
             {
                 (paramMap["params"] as Dictionary<string, object>)[item.Key] = item.Value;
             }
-
+        //Debug.Log("paramMap: =>" + JsonConvert.SerializeObject(paramMap));
         string loginId = await createSession(JsonConvert.SerializeObject(paramMap, Formatting.None,
             new JsonSerializerSettings
             {
