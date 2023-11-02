@@ -121,6 +121,9 @@ public class Web3Auth : MonoBehaviour
 
         if (this.web3AuthOptions.chainNamespace != null)
             this.initParams["chainNamespace"] = this.web3AuthOptions.chainNamespace;
+
+        if (this.web3AuthOptions.mfaSettings != null)
+            this.initParams["mfaSettings"] = JsonConvert.SerializeObject(this.web3AuthOptions.mfaSettings, settings);
     }
 
     private void onDeepLinkActivated(string url)
