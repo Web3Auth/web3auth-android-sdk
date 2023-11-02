@@ -52,7 +52,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
         val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(
-            LoginParams(selectedLoginProvider, extraLoginOptions = extraLoginOptions)
+            LoginParams(
+                selectedLoginProvider,
+                extraLoginOptions = extraLoginOptions,
+                mfaLevel = MFALevel.OPTIONAL
+            )
         )
         loginCompletableFuture.whenComplete { _, error ->
             if (error == null) {
