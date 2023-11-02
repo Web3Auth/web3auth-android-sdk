@@ -44,11 +44,18 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             gson.toJson(web3AuthOption.loginConfig)
         if (web3AuthOption.buildEnv != null) initOptions["buildEnv"] =
             web3AuthOption.buildEnv.toString().lowercase()
+        if (web3AuthOption.mfaSettings != null) initOptions["mfaSettings"] =
+            gson.toJson(web3AuthOption.mfaSettings)
+        if (params?.sessionTime != null) initOptions["sessionTime"] =
+            params.sessionTime.toString()
 
         val initParams = mutableMapOf(
             "loginProvider" to params?.loginProvider,
             "extraLoginOptions" to params?.extraLoginOptions,
-            "redirectUrl" to if (params?.redirectUrl != null) params.redirectUrl.toString() else initOptions["redirectUrl"].toString()
+            "redirectUrl" to if (params?.redirectUrl != null) params.redirectUrl.toString() else initOptions["redirectUrl"].toString(),
+            "mfaLevel" to params?.mfaLevel,
+            "curve" to params?.curve,
+            "dappShare" to params?.dappShare
         )
 
         val paramMap = mapOf(
