@@ -51,7 +51,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             "loginProvider" to params?.loginProvider,
             "extraLoginOptions" to params?.extraLoginOptions,
             "redirectUrl" to if (params?.redirectUrl != null) params.redirectUrl.toString() else initOptions["redirectUrl"].toString(),
-            "mfaLevel" to params?.mfaLevel
+            "mfaLevel" to params?.mfaLevel,
+            "sessionTime" to params?.sessionTime,
+            "curve" to params?.curve,
+            "dappShare" to params?.dappShare
         )
 
         val paramMap = mapOf(
