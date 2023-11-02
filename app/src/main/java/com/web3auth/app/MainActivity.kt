@@ -134,7 +134,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 "loginConfig" to LoginConfigItem(
                     "torus",
                     typeOfLogin = TypeOfLogin.GOOGLE,
-                    name = ""
+                    name = "",
+                    clientId = ""
                 )
             )
         )

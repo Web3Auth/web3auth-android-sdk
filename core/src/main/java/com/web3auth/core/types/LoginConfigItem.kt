@@ -5,7 +5,7 @@ data class LoginConfigItem(
     private var typeOfLogin: TypeOfLogin,
     private var name: String? = null,
     private var description: String? = null,
-    private var clientId: String? = null,
+    private var clientId: String,
     private var verifierSubIdentifier: String? = null,
     private var logoHover: String? = null,
     private var logoLight: String? = null,
