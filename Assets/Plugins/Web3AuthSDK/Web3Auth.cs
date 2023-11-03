@@ -124,6 +124,9 @@ public class Web3Auth : MonoBehaviour
 
         if (this.web3AuthOptions.mfaSettings != null)
             this.initParams["mfaSettings"] = JsonConvert.SerializeObject(this.web3AuthOptions.mfaSettings, settings);
+
+        if (this.web3AuthOptions.sessionTime != null)
+            this.initParams["sessionTime"] = this.web3AuthOptions.sessionTime;
     }
 
     private void onDeepLinkActivated(string url)
@@ -249,7 +252,6 @@ public class Web3Auth : MonoBehaviour
         this.initParams["redirectUrl"] = Utils.GetCurrentURL();
 #endif
 
-        this.initParams["sessionTime"] = loginParams.sessionTime;
         loginParams.redirectUrl = loginParams.redirectUrl ?? new Uri(this.initParams["redirectUrl"].ToString());
         Dictionary<string, object> paramMap = new Dictionary<string, object>();
         paramMap["options"] = this.initParams;
