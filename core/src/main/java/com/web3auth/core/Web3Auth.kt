@@ -46,8 +46,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             web3AuthOption.buildEnv.toString().lowercase()
         if (web3AuthOption.mfaSettings != null) initOptions["mfaSettings"] =
             gson.toJson(web3AuthOption.mfaSettings)
-        if (params?.sessionTime != null) initOptions["sessionTime"] =
-            params.sessionTime.toString()
+        if (web3AuthOption.sessionTime != null) initOptions["sessionTime"] =
+            web3AuthOption.sessionTime.toString()
 
         val initParams = mutableMapOf(
             "loginProvider" to params?.loginProvider,
