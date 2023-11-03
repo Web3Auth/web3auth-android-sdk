@@ -9,6 +9,5 @@ data class LoginParams(
     @Transient var redirectUrl: Uri? = null,
     val appState: String? = null,
     val mfaLevel: MFALevel? = null,
-    val sessionTime: Int? = null,
     val curve: Curve? = null
 )

@@ -137,7 +137,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     name = "",
                     clientId = ""
                 )
-            )
+            ),
+            sessionTime = 86400
         )
 
         println("params: $options")
