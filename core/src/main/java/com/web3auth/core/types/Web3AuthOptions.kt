@@ -33,4 +33,4 @@ fun getSdkUrl(buildEnv: BuildEnv?): String {
     return sdkUrl
 }
 
-const val openLoginVersion = "v5"
+const val openLoginVersion = "v6"
