@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Torus Web3Auth</string>
-    <string name="web3auth_project_id">BG4pe3aBso5SjVbpotFQGnXVHgxhgOxnqnNBKyjfEJ3izFvIVWUaMIzoCrAfYag8O6t6a6AOvdLcS4JR2sQMjR4</string>
+    <string name="web3auth_project_id">BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ</string>
     <string name="sign_in">Sign in</string>
     <string name="not_logged_in">Not logged in</string>
     <string name="sign_out">Sign out</string>
