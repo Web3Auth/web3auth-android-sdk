@@ -138,6 +138,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     clientId = ""
                 )
             ),
+            buildEnv = BuildEnv.TESTING,
             sessionTime = 86400
         )
 

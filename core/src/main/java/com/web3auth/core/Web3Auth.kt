@@ -6,10 +6,18 @@ import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
-import com.web3auth.core.types.*
+import com.web3auth.core.types.ErrorCode
+import com.web3auth.core.types.LoginConfigItem
+import com.web3auth.core.types.LoginParams
+import com.web3auth.core.types.UnKnownException
+import com.web3auth.core.types.UserCancelledException
+import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.Web3AuthError
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
 import com.web3auth.session_manager_android.SessionManager
 import org.json.JSONObject
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
@@ -32,40 +40,52 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
         val context = web3AuthOption.context
 
-        val initOptions = mutableMapOf(
-            "clientId" to web3AuthOption.clientId,
-            "network" to web3AuthOption.network.name.lowercase(Locale.ROOT)
+        val initOptions = JSONObject()
+        initOptions.put("clientId", web3AuthOption.clientId)
+        initOptions.put("network", web3AuthOption.network.name.lowercase(Locale.ROOT))
+        if (web3AuthOption.redirectUrl != null) initOptions.put(
+            "redirectUrl", web3AuthOption.redirectUrl.toString()
         )
-        if (web3AuthOption.redirectUrl != null) initOptions["redirectUrl"] =
-            web3AuthOption.redirectUrl.toString()
-        if (web3AuthOption.whiteLabel != null) initOptions["whiteLabel"] =
-            gson.toJson(web3AuthOption.whiteLabel)
-        if (web3AuthOption.loginConfig != null) initOptions["loginConfig"] =
-            gson.toJson(web3AuthOption.loginConfig)
-        if (web3AuthOption.buildEnv != null) initOptions["buildEnv"] =
-            web3AuthOption.buildEnv.toString().lowercase()
-        if (web3AuthOption.mfaSettings != null) initOptions["mfaSettings"] =
-            gson.toJson(web3AuthOption.mfaSettings)
-        if (web3AuthOption.sessionTime != null) initOptions["sessionTime"] =
-            web3AuthOption.sessionTime.toString()
-
-        val initParams = mutableMapOf(
-            "loginProvider" to params?.loginProvider,
-            "extraLoginOptions" to params?.extraLoginOptions,
-            "redirectUrl" to if (params?.redirectUrl != null) params.redirectUrl.toString() else initOptions["redirectUrl"].toString(),
-            "mfaLevel" to params?.mfaLevel,
-            "curve" to params?.curve,
-            "dappShare" to params?.dappShare
+        if (web3AuthOption.whiteLabel != null) initOptions.put(
+            "whiteLabel", gson.toJson(web3AuthOption.whiteLabel)
+        )
+        if (web3AuthOption.loginConfig != null) initOptions.put(
+            "loginConfig", gson.toJson(web3AuthOption.loginConfig)
+        )
+        if (web3AuthOption.buildEnv != null) initOptions.put(
+            "buildEnv", web3AuthOption.buildEnv.toString().lowercase()
+        )
+        if (web3AuthOption.mfaSettings != null) initOptions.put(
+            "mfaSettings", gson.toJson(web3AuthOption.mfaSettings)
+        )
+        if (web3AuthOption.sessionTime != null) initOptions.put(
+            "sessionTime", web3AuthOption.sessionTime.toString()
         )
 
-        val paramMap = mapOf(
-            "options" to initOptions, "params" to initParams, "actionType" to path
+        val initParams = JSONObject()
+
+
+        initParams.put("loginProvider", params?.loginProvider.toString().lowercase())
+        initParams.put("extraLoginOptions", gson.toJson(params?.extraLoginOptions))
+        initParams.put(
+            "redirectUrl",
+            if (params?.redirectUrl != null) params.redirectUrl.toString() else initOptions["redirectUrl"].toString()
         )
+        initParams.put("mfaLevel", params?.mfaLevel.toString().lowercase())
+        initParams.put("curve", params?.curve.toString().lowercase())
+        initParams.put("dappShare", params?.dappShare)
 
-        extraParams?.let { paramMap.plus("params" to extraParams) }
-        val validParams = paramMap.filterValues { it != null }
 
-        val loginIdCf = getLoginId(validParams)
+        val paramMap = JSONObject()
+        paramMap.put(
+            "options", initOptions
+        )
+        paramMap.put("params", initParams)
+        paramMap.put("actionType", path)
+
+        extraParams?.let { paramMap.put("params", extraParams) }
+
+        val loginIdCf = getLoginId(paramMap)
 
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
@@ -126,14 +146,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             loginCompletableFuture.completeExceptionally(UserCancelledException())
             return
         }
+        val hashUri = Uri.parse(uri.host + "?" + uri.fragment)
         val error = uri.getQueryParameter("error")
         if (error != null) {
             loginCompletableFuture.completeExceptionally(UnKnownException(error))
         }
 
-        val sessionId = hash.split("&")[0].split("=")[1]
+        val sessionId = hashUri.getQueryParameter("sessionId")
 
-        if (sessionId != null) {
+        if (!sessionId.isNullOrBlank() && sessionId.isNotEmpty()) {
             sessionManager.saveSessionId(sessionId)
 
             //Rehydrate Session
@@ -223,8 +244,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 val tempJson = JSONObject(response)
-                web3AuthResponse =
-                    gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
+                web3AuthResponse = gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                 if (web3AuthResponse?.error?.isNotBlank() == true) {
                     sessionCompletableFuture.completeExceptionally(
                         UnKnownException(
@@ -255,13 +275,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return sessionCompletableFuture
     }
 
-    private fun getLoginId(jsonObject: Map<String, Any?>): CompletableFuture<String> {
+    private fun getLoginId(jsonObject: JSONObject): CompletableFuture<String> {
         val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
-        if (this.sessionManager == null) {
-            createSessionCompletableFuture.completeExceptionally(Exception("Session Manager is not initialized"))
-        }
         val sessionResponse: CompletableFuture<String> =
-            sessionManager.createSession(gson.toJson(jsonObject), 600)
+            sessionManager.createSession(jsonObject.toString(), 600)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 createSessionCompletableFuture.complete(response)
