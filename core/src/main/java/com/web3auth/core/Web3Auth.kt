@@ -270,7 +270,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private fun getLoginId(jsonObject: JSONObject): CompletableFuture<String> {
         val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
         val sessionResponse: CompletableFuture<String> =
-            sessionManager.createSession(jsonObject.toString(), 86400)
+            sessionManager.createSession(jsonObject.toString(), 600)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 createSessionCompletableFuture.complete(response)
