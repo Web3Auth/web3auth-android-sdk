@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val options = Web3AuthOptions(
             context = this,
             clientId = getString(R.string.web3auth_project_id),
-            network = Network.SAPPHIRE_DEVNET,
+            network = Network.SAPPHIRE_MAINNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
             whiteLabel = WhiteLabelData(
                 "Web3Auth Sample App", null, null, null,
@@ -138,6 +138,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     clientId = ""
                 )
             ),
+            buildEnv = BuildEnv.TESTING,
             sessionTime = 86400
         )
 

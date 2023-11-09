@@ -9,5 +9,5 @@ data class LoginParams(
     @Transient var redirectUrl: Uri? = null,
     val appState: String? = null,
     val mfaLevel: MFALevel? = null,
-    val curve: Curve? = null
+    val curve: Curve? = Curve.SECP256K1
 )
