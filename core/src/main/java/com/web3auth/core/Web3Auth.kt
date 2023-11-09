@@ -79,9 +79,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
-                val jsonObject = mapOf(
-                    "loginId" to loginId
-                )
+                val jsonObject = mapOf("loginId" to loginId)
                 val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
                     .toBase64URLString()
 
