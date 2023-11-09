@@ -19,7 +19,7 @@ public class Web3AuthOptions {
         }
         set { }
     }
-    public const string openLoginVersion = "v5";
+    public const string openLoginVersion = "v6";
 
     public WhiteLabelData? whiteLabel { get; set; }
     public Dictionary<string, LoginConfigItem>? loginConfig { get; set; }

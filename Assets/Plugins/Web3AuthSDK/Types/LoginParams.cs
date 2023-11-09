@@ -9,5 +9,5 @@ public class LoginParams
     public string appState { get; set; }
     public MFALevel mfaLevel { get; set; }
 
-    public Curve curve { get; set; }
+    public Curve curve { get; set; } = Curve.SECP256K1;
 }
