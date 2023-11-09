@@ -27,7 +27,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     private fun request(
-        path: String, params: LoginParams? = null, extraParams: Map<String, Any>? = null
+        path: String, params: LoginParams, extraParams: Map<String, Any>? = null
     ) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
         val context = web3AuthOption.context
@@ -55,15 +55,21 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         )
 
         val initParams = JSONObject()
-        initParams.put("loginProvider", params?.loginProvider?.name?.lowercase(Locale.ROOT))
-        initParams.put("extraLoginOptions", gson.toJson(params?.extraLoginOptions))
+        initParams.put("loginProvider", params.loginProvider.name.lowercase(Locale.ROOT))
+        if (params.extraLoginOptions != null) initParams.put(
+            "extraLoginOptions",
+            gson.toJson(params.extraLoginOptions)
+        )
         initParams.put(
             "redirectUrl",
-            if (params?.redirectUrl != null) params.redirectUrl.toString() else initOptions["redirectUrl"].toString()
+            if (params.redirectUrl != null) params.redirectUrl.toString() else initOptions["redirectUrl"].toString()
         )
-        initParams.put("mfaLevel", params?.mfaLevel?.name?.lowercase(Locale.ROOT))
-        initParams.put("curve", params?.curve?.name?.lowercase(Locale.ROOT))
-        initParams.put("dappShare", params?.dappShare)
+        if (params.mfaLevel != null) initParams.put(
+            "mfaLevel",
+            params.mfaLevel.name.lowercase(Locale.ROOT)
+        )
+        if (params.curve != null) initParams.put("curve", params.curve.name.lowercase(Locale.ROOT))
+        if (params.dappShare != null) initParams.put("dappShare", params.dappShare)
 
 
         val paramMap = JSONObject()
