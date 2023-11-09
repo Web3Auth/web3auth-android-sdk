@@ -45,7 +45,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             "loginConfig", gson.toJson(web3AuthOption.loginConfig)
         )
         if (web3AuthOption.buildEnv != null) initOptions.put(
-            "buildEnv", web3AuthOption.buildEnv.toString().lowercase(Locale.ROOT)
+            "buildEnv", web3AuthOption.buildEnv?.name?.lowercase(Locale.ROOT)
         )
         if (web3AuthOption.mfaSettings != null) initOptions.put(
             "mfaSettings", gson.toJson(web3AuthOption.mfaSettings)
@@ -55,16 +55,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         )
 
         val initParams = JSONObject()
-
-
-        initParams.put("loginProvider", params?.loginProvider.toString().lowercase(Locale.ROOT))
+        initParams.put("loginProvider", params?.loginProvider?.name?.lowercase(Locale.ROOT))
         initParams.put("extraLoginOptions", gson.toJson(params?.extraLoginOptions))
         initParams.put(
             "redirectUrl",
             if (params?.redirectUrl != null) params.redirectUrl.toString() else initOptions["redirectUrl"].toString()
         )
-        initParams.put("mfaLevel", params?.mfaLevel.toString().lowercase(Locale.ROOT))
-        initParams.put("curve", params?.curve.toString().lowercase(Locale.ROOT))
+        initParams.put("mfaLevel", params?.mfaLevel?.name?.lowercase(Locale.ROOT))
+        initParams.put("curve", params?.curve?.name?.lowercase(Locale.ROOT))
         initParams.put("dappShare", params?.dappShare)
 
 
