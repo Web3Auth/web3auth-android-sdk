@@ -15,7 +15,8 @@ data class Web3AuthOptions(
     val useCoreKitKey: Boolean? = false,
     val chainNamespace: ChainNamespace? = ChainNamespace.EIP155,
     val mfaSettings: MfaSettings? = null,
-    val sessionTime: Int? = 86400
+    val sessionTime: Int? = 86400,
+    var walletSdkUrl: String? = getWalletSdkUrl(buildEnv),
 )
 
 fun getSdkUrl(buildEnv: BuildEnv?): String {
@@ -23,11 +24,30 @@ fun getSdkUrl(buildEnv: BuildEnv?): String {
         BuildEnv.STAGING -> {
             "https://staging-auth.web3auth.io/$openLoginVersion"
         }
+
         BuildEnv.TESTING -> {
             "https://develop-auth.web3auth.io"
         }
+
         else -> {
             "https://auth.web3auth.io/$openLoginVersion"
+        }
+    }
+    return sdkUrl
+}
+
+fun getWalletSdkUrl(buildEnv: BuildEnv?): String {
+    val sdkUrl: String = when (buildEnv) {
+        BuildEnv.STAGING -> {
+            "https://staging-wallet.web3auth.io"
+        }
+
+        BuildEnv.TESTING -> {
+            "https://develop-wallet.web3auth.io"
+        }
+
+        else -> {
+            "https://wallet.web3auth.io"
         }
     }
     return sdkUrl

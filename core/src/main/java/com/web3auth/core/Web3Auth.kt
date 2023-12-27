@@ -2,14 +2,23 @@ package com.web3auth.core
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
-import com.web3auth.core.types.*
+import com.web3auth.core.types.ErrorCode
+import com.web3auth.core.types.LoginConfigItem
+import com.web3auth.core.types.LoginParams
+import com.web3auth.core.types.UnKnownException
+import com.web3auth.core.types.UserCancelledException
+import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.Web3AuthError
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
 import com.web3auth.session_manager_android.SessionManager
 import org.json.JSONObject
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
@@ -110,7 +119,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 }
             }
         }
-
     }
 
     fun initialize(): CompletableFuture<Void> {
@@ -281,6 +289,114 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             }
         }
         return createSessionCompletableFuture
+    }
+
+    fun launchWalletServices(
+        path: String? = null,
+        loginParams: LoginParams,
+        extraParams: Map<String, Any>? = null
+    ) {
+        val sessionId = sessionManager.getSessionId()
+        if (sessionId.isNotBlank()) {
+            val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
+            val context = web3AuthOption.context
+
+            val initOptions = JSONObject()
+            initOptions.put("clientId", web3AuthOption.clientId)
+            initOptions.put("network", web3AuthOption.network.name.lowercase(Locale.ROOT))
+            if (web3AuthOption.redirectUrl != null) initOptions.put(
+                "redirectUrl", web3AuthOption.redirectUrl.toString()
+            )
+            if (web3AuthOption.whiteLabel != null) initOptions.put(
+                "whiteLabel", gson.toJson(web3AuthOption.whiteLabel)
+            )
+            if (web3AuthOption.loginConfig != null) initOptions.put(
+                "loginConfig", gson.toJson(web3AuthOption.loginConfig)
+            )
+            if (web3AuthOption.buildEnv != null) initOptions.put(
+                "buildEnv", web3AuthOption.buildEnv?.name?.lowercase(Locale.ROOT)
+            )
+            if (web3AuthOption.mfaSettings != null) initOptions.put(
+                "mfaSettings", gson.toJson(web3AuthOption.mfaSettings)
+            )
+            if (web3AuthOption.sessionTime != null) initOptions.put(
+                "sessionTime", web3AuthOption.sessionTime
+            )
+
+            val initParams = JSONObject()
+            initParams.put("loginProvider", loginParams.loginProvider.name.lowercase(Locale.ROOT))
+            if (loginParams.extraLoginOptions != null) initParams.put(
+                "extraLoginOptions",
+                gson.toJson(loginParams.extraLoginOptions)
+            )
+            initParams.put(
+                "redirectUrl",
+                if (loginParams.redirectUrl != null) loginParams.redirectUrl.toString() else initOptions["redirectUrl"].toString()
+            )
+            if (loginParams.mfaLevel != null) initParams.put(
+                "mfaLevel",
+                loginParams.mfaLevel.name.lowercase(Locale.ROOT)
+            )
+            if (loginParams.curve != null) initParams.put(
+                "curve",
+                loginParams.curve.name.lowercase(Locale.ROOT)
+            )
+            if (loginParams.dappShare != null) initParams.put("dappShare", loginParams.dappShare)
+
+
+            val paramMap = JSONObject()
+            paramMap.put(
+                "options", initOptions
+            )
+            paramMap.put("params", initParams)
+            paramMap.put("actionType", path)
+
+            extraParams?.let { paramMap.put("params", extraParams) }
+
+            val loginIdCf = getLoginId(paramMap)
+
+            loginIdCf.whenComplete { loginId, error ->
+                if (error == null) {
+                    val walletMap = JSONObject()
+                    walletMap.put(
+                        "loginId", loginId
+                    )
+                    walletMap.put("sessionId", sessionId)
+                    //val loginObject = mapOf("loginId" to sessionId)
+                    val walletHash =
+                        "b64Params=" + gson.toJson(walletMap).toByteArray(Charsets.UTF_8)
+                            .toBase64URLString()
+
+                    val url =
+                        Uri.Builder().scheme(sdkUrl.scheme)
+                            .encodedAuthority(sdkUrl.encodedAuthority)
+                            .encodedPath(sdkUrl.encodedPath).appendPath("start")
+                            .fragment(walletHash).build()
+                    print("wallet launch url: => $url")
+                    val defaultBrowser = context.getDefaultBrowser()
+                    val customTabsBrowsers = context.getCustomTabsBrowsers()
+
+                    if (customTabsBrowsers.contains(defaultBrowser)) {
+                        val customTabs = CustomTabsIntent.Builder().build()
+                        customTabs.intent.setPackage(defaultBrowser)
+                        customTabs.launchUrl(context, url)
+                    } else if (customTabsBrowsers.isNotEmpty()) {
+                        val customTabs = CustomTabsIntent.Builder().build()
+                        customTabs.intent.setPackage(customTabsBrowsers[0])
+                        customTabs.launchUrl(context, url)
+                    } else {
+                        // Open in browser externally
+                        context.startActivity(Intent(Intent.ACTION_VIEW, url))
+                    }
+                }
+            }
+        } else {
+            Toast.makeText(
+                web3AuthOption.context,
+                "Please login first to launch wallet",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     fun getPrivkey(): String {
