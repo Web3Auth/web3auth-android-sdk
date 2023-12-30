@@ -294,6 +294,64 @@ public class Web3Auth : MonoBehaviour
         }
     }
 
+    private async void launchWalletServices(string path, LoginParams loginParams = null, Dictionary<string, object> extraParams = null)
+        {
+            string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+    #if UNITY_STANDALONE || UNITY_EDITOR
+            this.initParams["redirectUrl"] = StartLocalWebserver();
+    #elif UNITY_WEBGL
+            this.initParams["redirectUrl"] = Utils.GetCurrentURL();
+    #endif
+
+            loginParams.redirectUrl = loginParams.redirectUrl ?? new Uri(this.initParams["redirectUrl"].ToString());
+            Dictionary<string, object> paramMap = new Dictionary<string, object>();
+            paramMap["options"] = this.initParams;
+            paramMap["params"] = loginParams == null ? (object)new Dictionary<string, object>() : (object)loginParams;
+            paramMap["actionType"] = "login";
+
+            if (extraParams != null && extraParams.Count > 0)
+                foreach (KeyValuePair<string, object> item in extraParams)
+                {
+                    (paramMap["params"] as Dictionary<string, object>)[item.Key] = item.Value;
+                }
+            //Debug.Log("paramMap: =>" + JsonConvert.SerializeObject(paramMap));
+            string loginId = await createSession(JsonConvert.SerializeObject(paramMap, Formatting.None,
+                new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                }), 600);
+
+            if (!string.IsNullOrEmpty(loginId))
+            {
+                var loginIdObject = new Dictionary<string, string>
+                 {
+                      { "loginId", loginId }
+                      { "sessionId", sessionId }
+                 };
+                string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Formatting.None,
+                    new JsonSerializerSettings
+                    {
+                        NullValueHandling = NullValueHandling.Ignore
+                    })));
+
+                UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
+                uriBuilder.Path = path;
+                uriBuilder.Fragment = "b64Params=" + hash;
+
+                Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
+            }
+            else
+            {
+                throw new Exception("Some went wrong. Please try again later.");
+            }
+        } else
+        {
+            throw new Exception("SessionId not found. Please login first.");
+        }
+    }
+
     public void setResultUrl(Uri uri)
     {
         string hash = uri.Fragment;

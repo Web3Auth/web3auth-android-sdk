@@ -21,6 +21,17 @@ public class Web3AuthOptions {
     }
     public const string openLoginVersion = "v6";
 
+    public string walletSdkUrl {
+         get {
+            if (buildEnv == Web3Auth.BuildEnv.STAGING)
+                return "https://staging-wallet.web3auth.io";
+            else if (buildEnv == Web3Auth.BuildEnv.TESTING)
+                return "https://develop-wallet.web3auth.io";
+            else
+                return "https://wallet.web3auth.io";
+         }
+         set { }
+    }
     public WhiteLabelData? whiteLabel { get; set; }
     public Dictionary<string, LoginConfigItem>? loginConfig { get; set; }
     public bool? useCoreKitKey { get; set; } = false;
