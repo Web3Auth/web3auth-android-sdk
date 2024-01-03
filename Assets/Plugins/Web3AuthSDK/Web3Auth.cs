@@ -336,7 +336,7 @@ public class Web3Auth : MonoBehaviour
                         NullValueHandling = NullValueHandling.Ignore
                     })));
 
-                UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
+                UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
                 uriBuilder.Path = path;
                 uriBuilder.Fragment = "b64Params=" + hash;
 
