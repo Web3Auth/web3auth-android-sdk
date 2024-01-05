@@ -13,6 +13,7 @@ import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.UnKnownException
 import com.web3auth.core.types.UserCancelledException
 import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.WALLET_URL
 import com.web3auth.core.types.Web3AuthError
 import com.web3auth.core.types.Web3AuthOptions
 import com.web3auth.core.types.Web3AuthResponse
@@ -21,11 +22,13 @@ import org.json.JSONObject
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
+
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     private var loginCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
+    private var setupMfaCompletableFuture: CompletableFuture<Boolean> = CompletableFuture()
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
@@ -88,6 +91,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         paramMap.put("params", initParams)
         paramMap.put("actionType", path)
 
+        if (path == "enable_mfa") {
+            paramMap.put("sessionId", sessionManager.getSessionId())
+        }
+
         extraParams?.let { paramMap.put("params", extraParams) }
 
         val loginIdCf = getLoginId(paramMap)
@@ -146,12 +153,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val hash = uri?.fragment
         if (hash == null) {
             loginCompletableFuture.completeExceptionally(UserCancelledException())
+            setupMfaCompletableFuture.completeExceptionally(UserCancelledException())
             return
         }
         val hashUri = Uri.parse(uri.host + "?" + uri.fragment)
         val error = uri.getQueryParameter("error")
         if (error != null) {
             loginCompletableFuture.completeExceptionally(UnKnownException(error))
+            setupMfaCompletableFuture.completeExceptionally(UnKnownException(error))
         }
 
         val sessionId = hashUri.getQueryParameter("sessionId")
@@ -171,8 +180,21 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                         ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
                                 )
                             )
+                            setupMfaCompletableFuture.completeExceptionally(
+                                UnKnownException(
+                                    web3AuthResponse?.error
+                                        ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
+                                )
+                            )
                         } else if (web3AuthResponse?.privKey.isNullOrBlank()) {
                             loginCompletableFuture.completeExceptionally(
+                                Exception(
+                                    Web3AuthError.getError(
+                                        ErrorCode.SOMETHING_WENT_WRONG
+                                    )
+                                )
+                            )
+                            setupMfaCompletableFuture.completeExceptionally(
                                 Exception(
                                     Web3AuthError.getError(
                                         ErrorCode.SOMETHING_WENT_WRONG
@@ -190,6 +212,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                 )
                             }
                             loginCompletableFuture.complete(web3AuthResponse)
+                            setupMfaCompletableFuture.complete(true)
                         }
                     } else {
                         print(error)
@@ -198,6 +221,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             }
         } else {
             loginCompletableFuture.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)))
+            setupMfaCompletableFuture.completeExceptionally(
+                Exception(
+                    Web3AuthError.getError(
+                        ErrorCode.SOMETHING_WENT_WRONG
+                    )
+                )
+            )
         }
     }
 
@@ -235,6 +265,23 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
         web3AuthResponse = Web3AuthResponse()
         return logoutCompletableFuture
+    }
+
+    fun setupMFA(loginParams: LoginParams): CompletableFuture<Boolean> {
+        setupMfaCompletableFuture = CompletableFuture()
+        val sessionId = sessionManager.getSessionId()
+        if (sessionId.isBlank()) {
+            setupMfaCompletableFuture.completeExceptionally(
+                Exception(
+                    Web3AuthError.getError(
+                        ErrorCode.NOUSERFOUND
+                    )
+                )
+            )
+            return setupMfaCompletableFuture
+        }
+        request("enable_mfa", loginParams)
+        return setupMfaCompletableFuture
     }
 
     /**
@@ -292,7 +339,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     fun launchWalletServices(
-        path: String? = null,
         loginParams: LoginParams,
         extraParams: Map<String, Any>? = null
     ) {
@@ -349,7 +395,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 "options", initOptions
             )
             paramMap.put("params", initParams)
-            paramMap.put("actionType", path)
+            paramMap.put("actionType", "login")
 
             extraParams?.let { paramMap.put("params", extraParams) }
 
@@ -362,7 +408,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         "loginId", loginId
                     )
                     walletMap.put("sessionId", sessionId)
-                    //val loginObject = mapOf("loginId" to sessionId)
                     val walletHash =
                         "b64Params=" + gson.toJson(walletMap).toByteArray(Charsets.UTF_8)
                             .toBase64URLString()
@@ -373,21 +418,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                             .encodedPath(sdkUrl.encodedPath).appendPath("start")
                             .fragment(walletHash).build()
                     print("wallet launch url: => $url")
-                    val defaultBrowser = context.getDefaultBrowser()
-                    val customTabsBrowsers = context.getCustomTabsBrowsers()
-
-                    if (customTabsBrowsers.contains(defaultBrowser)) {
-                        val customTabs = CustomTabsIntent.Builder().build()
-                        customTabs.intent.setPackage(defaultBrowser)
-                        customTabs.launchUrl(context, url)
-                    } else if (customTabsBrowsers.isNotEmpty()) {
-                        val customTabs = CustomTabsIntent.Builder().build()
-                        customTabs.intent.setPackage(customTabsBrowsers[0])
-                        customTabs.launchUrl(context, url)
-                    } else {
-                        // Open in browser externally
-                        context.startActivity(Intent(Intent.ACTION_VIEW, url))
-                    }
+                    val intent = Intent(context, WebViewActivity::class.java)
+                    intent.putExtra(WALLET_URL, url.toString())
+                    context.startActivity(intent)
                 }
             }
         } else {

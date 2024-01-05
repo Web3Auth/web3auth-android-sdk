@@ -54,3 +54,4 @@ fun getWalletSdkUrl(buildEnv: BuildEnv?): String {
 }
 
 const val openLoginVersion = "v6"
+const val WALLET_URL = "walletUrl"

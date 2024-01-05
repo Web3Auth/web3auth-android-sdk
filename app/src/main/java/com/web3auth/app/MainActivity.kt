@@ -36,6 +36,7 @@ import org.json.JSONObject
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
+
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
     private val isLoginCompleted = AtomicBoolean(false)
@@ -104,6 +105,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
+        val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
+        val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
         var key: String? = null
@@ -122,6 +125,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
+            launchWalletButton.visibility = View.VISIBLE
+            btnSetUpMfa.visibility = View.VISIBLE
             spinner.visibility = View.GONE
             hintEmailEditText.visibility = View.GONE
         } else {
@@ -129,6 +134,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             contentTextView.visibility = View.GONE
             signInButton.visibility = View.VISIBLE
             signOutButton.visibility = View.GONE
+            btnSetUpMfa.visibility = View.GONE
+            launchWalletButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
     }
@@ -190,9 +197,20 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         signOutButton.setOnClickListener { signOut() }
 
-        val launchWallet = findViewById<Button>(R.id.launchWalletButton)
-        launchWallet.setOnClickListener {
+        val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
+        launchWalletButton.setOnClickListener {
             web3Auth.launchWalletServices(
+                loginParams = LoginParams(
+                    selectedLoginProvider,
+                    extraLoginOptions = null,
+                    mfaLevel = MFALevel.NONE
+                )
+            )
+        }
+
+        val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
+        btnSetUpMfa.setOnClickListener {
+            web3Auth.setupMFA(
                 loginParams = LoginParams(
                     selectedLoginProvider,
                     extraLoginOptions = null,

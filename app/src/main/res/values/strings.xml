@@ -5,4 +5,5 @@
     <string name="not_logged_in">Not logged in</string>
     <string name="sign_out">Sign out</string>
     <string name="launch_wallet_services">Launch Wallet Services</string>
+    <string name="mfa">SetUp MFA</string>
 </resources>
