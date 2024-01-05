@@ -45,6 +45,7 @@ public class Web3Auth : MonoBehaviour
 
     public event Action<Web3AuthResponse> onLogin;
     public event Action onLogout;
+    public event Action<bool> onMFASetup;
 
     [SerializeField]
     private string clientId;
@@ -256,7 +257,13 @@ public class Web3Auth : MonoBehaviour
         Dictionary<string, object> paramMap = new Dictionary<string, object>();
         paramMap["options"] = this.initParams;
         paramMap["params"] = loginParams == null ? (object)new Dictionary<string, object>() : (object)loginParams;
-        paramMap["actionType"] = "login";
+        paramMap["actionType"] = path;
+
+        if (path == "enable_mfa")
+        {
+            string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
+            paramMap["sessionId"] = sessionId;
+        }
 
         if (extraParams != null && extraParams.Count > 0)
             foreach (KeyValuePair<string, object> item in extraParams)
@@ -283,7 +290,7 @@ public class Web3Auth : MonoBehaviour
                 })));
 
             UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
-            uriBuilder.Path = path;
+            uriBuilder.Path = "start";
             uriBuilder.Fragment = "b64Params=" + hash;
 
             Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
@@ -398,7 +405,7 @@ public class Web3Auth : MonoBehaviour
             }
         }
 
-        request("start", loginParams);
+        request("login", loginParams);
     }
 
     public void logout(Dictionary<string, object> extraParams)
@@ -417,6 +424,28 @@ public class Web3Auth : MonoBehaviour
 
         logout(extraParams);
     }
+
+    public void setupMFA(LoginParams loginParams)
+        {
+            string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+                if (web3AuthOptions.loginConfig != null)
+                {
+                   var loginConfigItem = web3AuthOptions.loginConfig?.Values.First();
+                   var share = KeyStoreManagerUtils.getPreferencesData(loginConfigItem?.verifier);
+                   if (!string.IsNullOrEmpty(share))
+                       {
+                           loginParams.dappShare = share;
+                       }
+                }
+                request("enable_mfa", loginParams);
+            }
+            else
+            {
+                throw new Exception("SessionId not found. Please login first.");
+            }
+        }
 
     private void authorizeSession(string newSessionId)
     {
@@ -475,6 +504,7 @@ public class Web3Auth : MonoBehaviour
                             this.Enqueue(() => this.onLogout?.Invoke());
                         else
                             this.Enqueue(() => this.onLogin?.Invoke(this.web3AuthResponse));
+                            this.Enqueue(() => this.onMFASetup?.Invoke(true));
                     }
                 }
 

@@ -80,6 +80,7 @@ public class Web3AuthSample : MonoBehaviour
         });
         web3Auth.onLogin += onLogin;
         web3Auth.onLogout += onLogout;
+        web3Auth.onMFASetup += onMFASetup;
 
         emailAddressField.gameObject.SetActive(false);
         logoutButton.gameObject.SetActive(false);
@@ -110,6 +111,10 @@ public class Web3AuthSample : MonoBehaviour
         logoutButton.gameObject.SetActive(false);
 
         loginResponseText.text = "";
+    }
+
+    private void onMFASetup(bool response) {
+        Debug.Log("MFA Setup: " + response);
     }
 
 
