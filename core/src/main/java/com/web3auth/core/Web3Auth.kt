@@ -2,7 +2,6 @@ package com.web3auth.core
 
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
 import com.web3auth.core.api.ApiHelper
@@ -341,7 +340,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     fun launchWalletServices(
         loginParams: LoginParams,
         extraParams: Map<String, Any>? = null
-    ) {
+    ): CompletableFuture<Void> {
+        val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
@@ -421,15 +421,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     val intent = Intent(context, WebViewActivity::class.java)
                     intent.putExtra(WALLET_URL, url.toString())
                     context.startActivity(intent)
+                    launchWalletServiceCF.complete(null)
                 }
             }
         } else {
-            Toast.makeText(
-                web3AuthOption.context,
-                "Please login first to launch wallet",
-                Toast.LENGTH_SHORT
-            ).show()
+            launchWalletServiceCF.completeExceptionally(Exception("Please login first to launch wallet"))
         }
+        return launchWalletServiceCF
     }
 
     fun getPrivkey(): String {

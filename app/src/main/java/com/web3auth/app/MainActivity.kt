@@ -199,13 +199,20 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         launchWalletButton.setOnClickListener {
-            web3Auth.launchWalletServices(
+            val launchWalletCompletableFuture = web3Auth.launchWalletServices(
                 loginParams = LoginParams(
                     selectedLoginProvider,
                     extraLoginOptions = null,
                     mfaLevel = MFALevel.NONE
                 )
             )
+            launchWalletCompletableFuture.whenComplete { _, error ->
+                if (error == null) {
+                    Log.d("MainActivity_Web3Auth", "Wallet launched successfully")
+                } else {
+                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+                }
+            }
         }
 
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
