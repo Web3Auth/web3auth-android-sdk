@@ -13,8 +13,8 @@ class WebViewActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(android.R.style.Theme_Light_NoTitleBar)
         super.onCreate(savedInstanceState)
-
         val extras = intent.extras
         if (extras != null) {
             val walletUrl = extras.getString(WALLET_URL)
