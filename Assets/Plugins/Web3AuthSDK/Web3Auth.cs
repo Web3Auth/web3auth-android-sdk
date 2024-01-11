@@ -62,14 +62,14 @@ public class Web3Auth : MonoBehaviour
         this.initParams = new Dictionary<string, object>();
 
         this.initParams["clientId"] = clientId;
-        this.initParams["network"] = network.ToString().ToLower();
+        this.initParams["network"] = network.ToString().ToLowerInvariant();
 
         if (!string.IsNullOrEmpty(redirectUri))
             this.initParams["redirectUrl"] = redirectUri;
 
         Application.deepLinkActivated += onDeepLinkActivated;
         if (!string.IsNullOrEmpty(Application.absoluteURL))
-            onDeepLinkActivated(Application.absoluteURL);
+            onDeepLinkActivated(Application.absoluteURL);C
 
 #if UNITY_EDITOR
         Web3AuthSDK.Editor.Web3AuthDebug.onURLRecieved += (Uri url) =>
@@ -112,9 +112,9 @@ public class Web3Auth : MonoBehaviour
             this.initParams["clientId"] = this.web3AuthOptions.clientId;
 
         if (this.web3AuthOptions.buildEnv != null)
-            this.initParams["buildEnv"] = this.web3AuthOptions.buildEnv.ToString().ToLower();
+            this.initParams["buildEnv"] = this.web3AuthOptions.buildEnv.ToString().ToLowerInvariant();
 
-        this.initParams["network"] = this.web3AuthOptions.network.ToString().ToLower();
+        this.initParams["network"] = this.web3AuthOptions.network.ToString().ToLowerInvariant();
 
         if (this.web3AuthOptions.useCoreKitKey.HasValue)
             this.initParams["useCoreKitKey"] = this.web3AuthOptions.useCoreKitKey.Value;
