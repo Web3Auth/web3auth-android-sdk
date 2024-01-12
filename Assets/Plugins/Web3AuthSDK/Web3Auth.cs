@@ -69,7 +69,7 @@ public class Web3Auth : MonoBehaviour
 
         Application.deepLinkActivated += onDeepLinkActivated;
         if (!string.IsNullOrEmpty(Application.absoluteURL))
-            onDeepLinkActivated(Application.absoluteURL);C
+            onDeepLinkActivated(Application.absoluteURL);
 
 #if UNITY_EDITOR
         Web3AuthSDK.Editor.Web3AuthDebug.onURLRecieved += (Uri url) =>
