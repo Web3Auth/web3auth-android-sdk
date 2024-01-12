@@ -6,19 +6,18 @@ import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
-import com.web3auth.core.types.ErrorCode
-import com.web3auth.core.types.LoginConfigItem
-import com.web3auth.core.types.LoginParams
-import com.web3auth.core.types.UnKnownException
-import com.web3auth.core.types.UserCancelledException
-import com.web3auth.core.types.UserInfo
-import com.web3auth.core.types.WALLET_URL
-import com.web3auth.core.types.Web3AuthError
-import com.web3auth.core.types.Web3AuthOptions
-import com.web3auth.core.types.Web3AuthResponse
+import com.web3auth.core.types.*
 import com.web3auth.session_manager_android.SessionManager
 import org.json.JSONObject
-import java.util.Locale
+import org.web3j.crypto.Credentials
+import org.web3j.crypto.Hash
+import org.web3j.crypto.RawTransaction
+import org.web3j.protocol.Web3j
+import org.web3j.protocol.core.DefaultBlockParameterName
+import org.web3j.protocol.http.HttpService
+import org.web3j.utils.Convert
+import java.math.BigInteger
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 
@@ -281,6 +280,117 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
         request("enable_mfa", loginParams)
         return setupMfaCompletableFuture
+    }
+
+    fun signMessage(privateKey: String, message: String): String {
+        try {
+            val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
+            val context = web3AuthOption.context
+            val credentials: Credentials = Credentials.create(privateKey)
+            val hashedData = Hash.sha3(message.toByteArray(Charsets.UTF_8))
+            val jsonObject = mapOf("hashedMessage" to hashedData)
+            val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
+                .toBase64URLString()
+
+            val url =
+                Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
+                    .encodedPath(sdkUrl.encodedPath).appendPath("signMessage").fragment(hash)
+                    .build()
+            print("url: => $url")
+            val defaultBrowser = context.getDefaultBrowser()
+            val customTabsBrowsers = context.getCustomTabsBrowsers()
+
+            if (customTabsBrowsers.contains(defaultBrowser)) {
+                val customTabs = CustomTabsIntent.Builder().build()
+                customTabs.intent.setPackage(defaultBrowser)
+                customTabs.launchUrl(context, url)
+            } else if (customTabsBrowsers.isNotEmpty()) {
+                val customTabs = CustomTabsIntent.Builder().build()
+                customTabs.intent.setPackage(customTabsBrowsers[0])
+                customTabs.launchUrl(context, url)
+            } else {
+                // Open in browser externally
+                context.startActivity(Intent(Intent.ACTION_VIEW, url))
+            }
+        } catch (ex: Exception) {
+            "error"
+        }
+        return ""
+    }
+
+    fun sendTransaction(
+        rpcUrl: String,
+        privateKey: String,
+        amount: Double,
+        minerTip: Double,
+        toAddress: String,
+        data: String?,
+        gasLimit: BigInteger
+    ): String {
+        val web3j = Web3j.build(HttpService(rpcUrl))
+        val credentials: Credentials = Credentials.create(privateKey)
+        val chainIdResponse = web3j.ethChainId().sendAsync().get()
+        val chainId = chainIdResponse.chainId
+        val countResponse = web3j.ethGetTransactionCount(
+            credentials.address, DefaultBlockParameterName.LATEST
+        ).sendAsync().get()
+        val nonce = countResponse.transactionCount
+        val gasPriceResponse = web3j.ethGasPrice().send()
+        val gasPrice = gasPriceResponse.gasPrice
+        val value =
+            Convert.toWei(amount.toString(), Convert.Unit.ETHER).toBigInteger()
+        val maxPriorityFeePerGas =
+            Convert.toWei(minerTip.toString(), Convert.Unit.ETHER).toBigInteger()
+        val maxFeePerGas = gasPrice.add(maxPriorityFeePerGas)
+
+        var txData: String? = ""
+        if (data != null) {
+            txData = data
+        }
+
+        // Raw Transaction
+        val rawTransaction = RawTransaction.createTransaction(
+            chainId.toLong(),
+            nonce,
+            gasLimit,
+            toAddress,
+            value,
+            txData,
+            maxPriorityFeePerGas,
+            maxFeePerGas
+        )
+
+        try {
+            val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
+            val context = web3AuthOption.context
+            val jsonObject = mapOf("rawTransaction" to rawTransaction)
+            val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
+                .toBase64URLString()
+
+            val url =
+                Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
+                    .encodedPath(sdkUrl.encodedPath).appendPath("sendTransaction").fragment(hash)
+                    .build()
+            print("url: => $url")
+            val defaultBrowser = context.getDefaultBrowser()
+            val customTabsBrowsers = context.getCustomTabsBrowsers()
+
+            if (customTabsBrowsers.contains(defaultBrowser)) {
+                val customTabs = CustomTabsIntent.Builder().build()
+                customTabs.intent.setPackage(defaultBrowser)
+                customTabs.launchUrl(context, url)
+            } else if (customTabsBrowsers.isNotEmpty()) {
+                val customTabs = CustomTabsIntent.Builder().build()
+                customTabs.intent.setPackage(customTabsBrowsers[0])
+                customTabs.launchUrl(context, url)
+            } else {
+                // Open in browser externally
+                context.startActivity(Intent(Intent.ACTION_VIEW, url))
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
+        return ""
     }
 
     /**
