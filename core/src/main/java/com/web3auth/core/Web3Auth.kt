@@ -525,7 +525,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     val url =
                         Uri.Builder().scheme(sdkUrl.scheme)
                             .encodedAuthority(sdkUrl.encodedAuthority)
-                            .encodedPath(sdkUrl.encodedPath).appendPath("start")
+                            .encodedPath(sdkUrl.encodedPath).appendPath("wallet")
                             .fragment(walletHash).build()
                     print("wallet launch url: => $url")
                     val intent = Intent(context, WebViewActivity::class.java)
