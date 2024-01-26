@@ -40,6 +40,9 @@ public class Web3AuthSample : MonoBehaviour
     [SerializeField]
     Button logoutButton;
 
+    [SerializeField]
+    Button mfaSetupButton;
+
     void Start()
     {
         var loginConfigItem = new LoginConfigItem()
@@ -149,5 +152,25 @@ public class Web3AuthSample : MonoBehaviour
     private void logout()
     {
         web3Auth.logout();
+    }
+
+    private void mfaSetup()
+    {
+        var selectedProvider = verifierList[verifierDropdown.value].loginProvider;
+
+        var options = new LoginParams()
+        {
+            loginProvider = selectedProvider,
+            mfaLevel = MFALevel.MANDATORY
+        };
+
+        if (selectedProvider == Provider.EMAIL_PASSWORDLESS)
+        {
+            options.extraLoginOptions = new ExtraLoginOptions()
+            {
+                login_hint = emailAddressField.text
+            };
+        }
+        web3Auth.setupMFA(options);
     }
 }
