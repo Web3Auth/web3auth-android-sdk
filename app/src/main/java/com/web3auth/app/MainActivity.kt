@@ -88,7 +88,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
-        val btnClaim = findViewById<Button>(R.id.btnClaim)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
         var key: String? = null
@@ -109,7 +108,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             signOutButton.visibility = View.VISIBLE
             launchWalletButton.visibility = View.VISIBLE
             btnSetUpMfa.visibility = View.VISIBLE
-            btnClaim.visibility = View.VISIBLE
             spinner.visibility = View.GONE
             hintEmailEditText.visibility = View.GONE
         } else {
@@ -118,7 +116,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             signInButton.visibility = View.VISIBLE
             signOutButton.visibility = View.GONE
             btnSetUpMfa.visibility = View.GONE
-            btnClaim.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
@@ -199,12 +196,23 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
         }
 
-        val btnClaim = findViewById<Button>(R.id.btnClaim)
-        btnClaim.setOnClickListener {
-            web3Auth.launchClaimFlow(sdkUrl = "https://mocaverse-auth.web3auth.com")
-        }
-
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
+        btnSetUpMfa.setOnClickListener {
+            val setupMfaCf = web3Auth.setupMFA(
+                loginParams = LoginParams(
+                    selectedLoginProvider,
+                    extraLoginOptions = null,
+                    mfaLevel = MFALevel.NONE
+                )
+            )
+            setupMfaCf.whenComplete { _, error ->
+                if (error == null) {
+                    Log.d("MainActivity_Web3Auth", "MFA setup successfully")
+                } else {
+                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+                }
+            }
+        }
 
         val spinner = findViewById<AutoCompleteTextView>(R.id.spinnerTextView)
         val loginVerifierList: List<String> = verifierList.map { item ->

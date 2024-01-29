@@ -4,19 +4,12 @@ import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
 import com.web3auth.core.types.*
 import com.web3auth.session_manager_android.SessionManager
 import org.json.JSONObject
-import org.web3j.crypto.Credentials
-import org.web3j.crypto.Hash
-import org.web3j.crypto.RawTransaction
-import org.web3j.protocol.Web3j
-import org.web3j.protocol.core.DefaultBlockParameterName
-import org.web3j.protocol.http.HttpService
-import org.web3j.utils.Convert
-import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
@@ -279,118 +272,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             return setupMfaCompletableFuture
         }
         request("enable_mfa", loginParams)
+
+        setupMfaCompletableFuture = CompletableFuture()
         return setupMfaCompletableFuture
-    }
-
-    fun signMessage(privateKey: String, message: String): String {
-        try {
-            val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
-            val context = web3AuthOption.context
-            val credentials: Credentials = Credentials.create(privateKey)
-            val hashedData = Hash.sha3(message.toByteArray(Charsets.UTF_8))
-            val jsonObject = mapOf("hashedMessage" to hashedData)
-            val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
-                .toBase64URLString()
-
-            val url =
-                Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
-                    .encodedPath(sdkUrl.encodedPath).appendPath("signMessage").fragment(hash)
-                    .build()
-            print("url: => $url")
-            val defaultBrowser = context.getDefaultBrowser()
-            val customTabsBrowsers = context.getCustomTabsBrowsers()
-
-            if (customTabsBrowsers.contains(defaultBrowser)) {
-                val customTabs = CustomTabsIntent.Builder().build()
-                customTabs.intent.setPackage(defaultBrowser)
-                customTabs.launchUrl(context, url)
-            } else if (customTabsBrowsers.isNotEmpty()) {
-                val customTabs = CustomTabsIntent.Builder().build()
-                customTabs.intent.setPackage(customTabsBrowsers[0])
-                customTabs.launchUrl(context, url)
-            } else {
-                // Open in browser externally
-                context.startActivity(Intent(Intent.ACTION_VIEW, url))
-            }
-        } catch (ex: Exception) {
-            "error"
-        }
-        return ""
-    }
-
-    fun sendTransaction(
-        rpcUrl: String,
-        privateKey: String,
-        amount: Double,
-        minerTip: Double,
-        toAddress: String,
-        data: String?,
-        gasLimit: BigInteger
-    ): String {
-        val web3j = Web3j.build(HttpService(rpcUrl))
-        val credentials: Credentials = Credentials.create(privateKey)
-        val chainIdResponse = web3j.ethChainId().sendAsync().get()
-        val chainId = chainIdResponse.chainId
-        val countResponse = web3j.ethGetTransactionCount(
-            credentials.address, DefaultBlockParameterName.LATEST
-        ).sendAsync().get()
-        val nonce = countResponse.transactionCount
-        val gasPriceResponse = web3j.ethGasPrice().send()
-        val gasPrice = gasPriceResponse.gasPrice
-        val value =
-            Convert.toWei(amount.toString(), Convert.Unit.ETHER).toBigInteger()
-        val maxPriorityFeePerGas =
-            Convert.toWei(minerTip.toString(), Convert.Unit.ETHER).toBigInteger()
-        val maxFeePerGas = gasPrice.add(maxPriorityFeePerGas)
-
-        var txData: String? = ""
-        if (data != null) {
-            txData = data
-        }
-
-        // Raw Transaction
-        val rawTransaction = RawTransaction.createTransaction(
-            chainId.toLong(),
-            nonce,
-            gasLimit,
-            toAddress,
-            value,
-            txData,
-            maxPriorityFeePerGas,
-            maxFeePerGas
-        )
-
-        try {
-            val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
-            val context = web3AuthOption.context
-            val jsonObject = mapOf("rawTransaction" to rawTransaction)
-            val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
-                .toBase64URLString()
-
-            val url =
-                Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
-                    .encodedPath(sdkUrl.encodedPath).appendPath("sendTransaction").fragment(hash)
-                    .build()
-            print("url: => $url")
-            val defaultBrowser = context.getDefaultBrowser()
-            val customTabsBrowsers = context.getCustomTabsBrowsers()
-
-            if (customTabsBrowsers.contains(defaultBrowser)) {
-                val customTabs = CustomTabsIntent.Builder().build()
-                customTabs.intent.setPackage(defaultBrowser)
-                customTabs.launchUrl(context, url)
-            } else if (customTabsBrowsers.isNotEmpty()) {
-                val customTabs = CustomTabsIntent.Builder().build()
-                customTabs.intent.setPackage(customTabsBrowsers[0])
-                customTabs.launchUrl(context, url)
-            } else {
-                // Open in browser externally
-                context.startActivity(Intent(Intent.ACTION_VIEW, url))
-            }
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        }
-        return ""
     }
 
     /**
@@ -454,7 +338,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
-            val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
+            val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
             val context = web3AuthOption.context
 
             val initOptions = JSONObject()
@@ -513,11 +397,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
-                    val walletMap = JSONObject()
-                    walletMap.put(
+                    val walletMap = JsonObject()
+                    walletMap.addProperty(
                         "loginId", loginId
                     )
-                    walletMap.put("sessionId", sessionId)
+                    walletMap.addProperty("sessionId", sessionId)
+                    walletMap.addProperty("redirectPath", "/claim")
                     val walletHash =
                         "b64Params=" + gson.toJson(walletMap).toByteArray(Charsets.UTF_8)
                             .toBase64URLString()
@@ -525,7 +410,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     val url =
                         Uri.Builder().scheme(sdkUrl.scheme)
                             .encodedAuthority(sdkUrl.encodedAuthority)
-                            .encodedPath(sdkUrl.encodedPath).appendPath("wallet")
+                            .encodedPath(sdkUrl.encodedPath).appendPath("login")
                             .fragment(walletHash).build()
                     print("wallet launch url: => $url")
                     val intent = Intent(context, WebViewActivity::class.java)
@@ -538,31 +423,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             launchWalletServiceCF.completeExceptionally(Exception("Please login first to launch wallet"))
         }
         return launchWalletServiceCF
-    }
-
-    fun launchClaimFlow(sdkUrl: String) {
-        val sessionId = sessionManager.getSessionId()
-        if (sessionId.isNotBlank()) {
-            val sdkUrl = Uri.parse(sdkUrl)
-            val context = web3AuthOption.context
-            val walletMap = JSONObject()
-            walletMap.put("sessionId", sessionId)
-            val walletHash =
-                "b64Params=" + gson.toJson(walletMap).toByteArray(Charsets.UTF_8)
-                    .toBase64URLString()
-
-            val url =
-                Uri.Builder().scheme(sdkUrl.scheme)
-                    .encodedAuthority(sdkUrl.encodedAuthority)
-                    .encodedPath(sdkUrl.encodedPath).appendPath("claim")
-                    .fragment(walletHash).build()
-            print("claim url: => $url")
-            val intent = Intent(context, WebViewActivity::class.java)
-            intent.putExtra(WALLET_URL, url.toString())
-            context.startActivity(intent)
-        } else {
-            throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
-        }
     }
 
     fun getPrivkey(): String {
