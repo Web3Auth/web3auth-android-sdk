@@ -88,6 +88,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
+        val btnClaim = findViewById<Button>(R.id.btnClaim)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
         var key: String? = null
@@ -99,8 +100,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             print(ex)
         }
 
-        if (key != null && userInfo != null && key.isNotEmpty()) {
-            val jsonObject = JSONObject(gson.toJson(userInfo))
+        if (userInfo != null) {
+            val jsonObject = JSONObject(gson.toJson(web3Auth.getWeb3AuthResponse()))
             contentTextView.text = jsonObject.toString(4) + "\n Private Key: " + key
             contentTextView.movementMethod = ScrollingMovementMethod()
             contentTextView.visibility = View.VISIBLE
@@ -108,6 +109,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             signOutButton.visibility = View.VISIBLE
             launchWalletButton.visibility = View.VISIBLE
             btnSetUpMfa.visibility = View.VISIBLE
+            btnClaim.visibility = View.VISIBLE
             spinner.visibility = View.GONE
             hintEmailEditText.visibility = View.GONE
         } else {
@@ -116,6 +118,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             signInButton.visibility = View.VISIBLE
             signOutButton.visibility = View.GONE
             btnSetUpMfa.visibility = View.GONE
+            btnClaim.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
@@ -127,9 +130,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         val options = Web3AuthOptions(
             context = this,
-            clientId = getString(R.string.web3auth_project_id),
-            network = Network.SAPPHIRE_MAINNET,
+            clientId = "BHgArYmWwSeq21czpcarYh0EVq2WWOzflX-NTK-tY1-1pauPzHKRRLgpABkmYiIV_og9jAvoIxQ8L3Smrwe04Lw",
+            network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
+            sdkUrl = "https://mocaverse-auth.web3auth.com",
             whiteLabel = WhiteLabelData(
                 "Web3Auth Sample App", null, null, null,
                 Language.EN, ThemeModes.LIGHT, true,
@@ -139,10 +143,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             ),
             loginConfig = hashMapOf(
                 "loginConfig" to LoginConfigItem(
-                    "torus",
-                    typeOfLogin = TypeOfLogin.GOOGLE,
-                    name = "",
-                    clientId = ""
+                    "web3auth-auth0-email-passwordless-sapphire-devnet",
+                    typeOfLogin = TypeOfLogin.JWT,
+                    clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C"
                 )
             ),
             buildEnv = BuildEnv.TESTING,
@@ -196,16 +199,12 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
         }
 
-        val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
-        btnSetUpMfa.setOnClickListener {
-            web3Auth.setupMFA(
-                loginParams = LoginParams(
-                    selectedLoginProvider,
-                    extraLoginOptions = null,
-                    mfaLevel = MFALevel.MANDATORY
-                )
-            )
+        val btnClaim = findViewById<Button>(R.id.btnClaim)
+        btnClaim.setOnClickListener {
+            web3Auth.launchClaimFlow(sdkUrl = "https://mocaverse-auth.web3auth.com")
         }
+
+        val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
 
         val spinner = findViewById<AutoCompleteTextView>(R.id.spinnerTextView)
         val loginVerifierList: List<String> = verifierList.map { item ->

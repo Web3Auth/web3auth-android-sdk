@@ -184,7 +184,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                         ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
                                 )
                             )
-                        } else if (web3AuthResponse?.privKey.isNullOrBlank()) {
+                        } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
                             loginCompletableFuture.completeExceptionally(
                                 Exception(
                                     Web3AuthError.getError(
@@ -411,7 +411,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                             )
                         )
                     )
-                } else if (web3AuthResponse?.privKey.isNullOrBlank()) {
+                } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
                     sessionCompletableFuture.completeExceptionally(
                         Exception(
                             Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
@@ -540,6 +540,31 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return launchWalletServiceCF
     }
 
+    fun launchClaimFlow(sdkUrl: String) {
+        val sessionId = sessionManager.getSessionId()
+        if (sessionId.isNotBlank()) {
+            val sdkUrl = Uri.parse(sdkUrl)
+            val context = web3AuthOption.context
+            val walletMap = JSONObject()
+            walletMap.put("sessionId", sessionId)
+            val walletHash =
+                "b64Params=" + gson.toJson(walletMap).toByteArray(Charsets.UTF_8)
+                    .toBase64URLString()
+
+            val url =
+                Uri.Builder().scheme(sdkUrl.scheme)
+                    .encodedAuthority(sdkUrl.encodedAuthority)
+                    .encodedPath(sdkUrl.encodedPath).appendPath("claim")
+                    .fragment(walletHash).build()
+            print("claim url: => $url")
+            val intent = Intent(context, WebViewActivity::class.java)
+            intent.putExtra(WALLET_URL, url.toString())
+            context.startActivity(intent)
+        } else {
+            throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
+        }
+    }
+
     fun getPrivkey(): String {
         val privKey: String? = if (web3AuthResponse == null) {
             ""
@@ -571,6 +596,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
         } else {
             web3AuthResponse?.userInfo
+        }
+    }
+
+    fun getWeb3AuthResponse(): Web3AuthResponse? {
+        return if (web3AuthResponse == null) {
+            throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
+        } else {
+            web3AuthResponse
         }
     }
 }
