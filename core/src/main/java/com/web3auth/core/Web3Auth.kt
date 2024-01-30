@@ -338,7 +338,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
-            val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
+            val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
             val context = web3AuthOption.context
 
             val initOptions = JSONObject()

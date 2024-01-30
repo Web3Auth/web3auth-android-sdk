@@ -131,6 +131,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
             sdkUrl = "https://mocaverse-auth.web3auth.com",
+            walletSdkUrl = "https://mocaverse-wallet.web3auth.com",
             whiteLabel = WhiteLabelData(
                 "Web3Auth Sample App", null, null, null,
                 Language.EN, ThemeModes.LIGHT, true,
@@ -202,7 +203,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 loginParams = LoginParams(
                     selectedLoginProvider,
                     extraLoginOptions = null,
-                    mfaLevel = MFALevel.NONE
+                    mfaLevel = MFALevel.MANDATORY
                 )
             )
             setupMfaCf.whenComplete { _, error ->
