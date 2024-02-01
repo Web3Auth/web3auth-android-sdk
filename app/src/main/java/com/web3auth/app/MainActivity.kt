@@ -17,7 +17,6 @@ import org.json.JSONObject
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
-
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
     private val isLoginCompleted = AtomicBoolean(false)
