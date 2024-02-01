@@ -19,7 +19,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     private var loginCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
-    private var setupMfaCompletableFuture: CompletableFuture<Boolean> = CompletableFuture()
+    private lateinit var setupMfaCompletableFuture: CompletableFuture<Boolean>
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
@@ -144,7 +144,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val hash = uri?.fragment
         if (hash == null) {
             loginCompletableFuture.completeExceptionally(UserCancelledException())
-            setupMfaCompletableFuture.completeExceptionally(UserCancelledException())
             return
         }
         val hashUri = Uri.parse(uri.host + "?" + uri.fragment)
@@ -272,8 +271,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             return setupMfaCompletableFuture
         }
         request("enable_mfa", loginParams)
-
-        setupMfaCompletableFuture = CompletableFuture()
         return setupMfaCompletableFuture
     }
 
