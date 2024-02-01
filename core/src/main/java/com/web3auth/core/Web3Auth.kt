@@ -13,7 +13,6 @@ import org.json.JSONObject
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
-
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
