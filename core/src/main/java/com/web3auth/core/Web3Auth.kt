@@ -333,7 +333,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     fun launchWalletServices(
         loginParams: LoginParams,
-        extraParams: Map<String, Any>? = null
+        extraParams: Map<String, Any>? = null,
+        chainConfig: ChainConfig
     ): CompletableFuture<Void> {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
@@ -389,7 +390,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 "options", initOptions
             )
             paramMap.put("params", initParams)
-            paramMap.put("actionType", "login")
+            paramMap.put("chainConfig", gson.toJson(chainConfig))
+            if (web3AuthOption.walletSdkUrl?.contains("mocaverse") == true) {
+                paramMap.put("actionType", "login") // used for mocaverse only
+            }
 
             extraParams?.let { paramMap.put("params", extraParams) }
 
@@ -402,15 +406,25 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         "loginId", loginId
                     )
                     walletMap.addProperty("sessionId", sessionId)
-                    walletMap.addProperty("redirectPath", "/claim")
+                    if (web3AuthOption.walletSdkUrl?.contains("mocaverse") == true) {
+                        walletMap.addProperty("redirectPath", "/claim") //used for mocaverse only
+                    }
+
                     val walletHash =
                         "b64Params=" + gson.toJson(walletMap).toByteArray(Charsets.UTF_8)
                             .toBase64URLString()
 
+                    val path: String =
+                        if (web3AuthOption.walletSdkUrl?.contains("mocaverse") == true) {
+                            "claim" // used for mocaverse only
+                        } else {
+                            "wallet"
+                        }
+
                     val url =
                         Uri.Builder().scheme(sdkUrl.scheme)
                             .encodedAuthority(sdkUrl.encodedAuthority)
-                            .encodedPath(sdkUrl.encodedPath).appendPath("login")
+                            .encodedPath(sdkUrl.encodedPath).appendPath(path)
                             .fragment(walletHash).build()
                     print("wallet launch url: => $url")
                     val intent = Intent(context, WebViewActivity::class.java)
