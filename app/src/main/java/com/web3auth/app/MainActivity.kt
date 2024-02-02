@@ -146,7 +146,13 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 )
             ),*/
             buildEnv = BuildEnv.TESTING,
-            sessionTime = 86400
+            sessionTime = 86400,
+            chainConfig = ChainConfig(
+                chainId = "0x1",
+                rpcTarget = "https://mainnet.infura.io/v3/1d7f0c9a5c9a4b6e8b3a2b0a2b7b3f0d",
+                ticker = "ETH",
+                chainNamespace = ChainNamespace.EIP155
+            )
         )
 
         println("params: $options")
@@ -185,12 +191,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     selectedLoginProvider,
                     extraLoginOptions = null,
                     mfaLevel = MFALevel.NONE
-                ),
-                chainConfig = ChainConfig(
-                    chainId = "0x1",
-                    rpcTarget = "https://mainnet.infura.io/v3/1d7f0c9a5c9a4b6e8b3a2b0a2b7b3f0d",
-                    ticker = "ETH",
-                    chainNamespace = ChainNamespace.EIP155
                 )
             )
             launchWalletCompletableFuture.whenComplete { _, error ->

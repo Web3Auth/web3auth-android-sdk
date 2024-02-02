@@ -55,6 +55,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (web3AuthOption.sessionTime != null) initOptions.put(
             "sessionTime", web3AuthOption.sessionTime
         )
+        if (web3AuthOption.chainConfig != null) initOptions.put(
+            "chainConfig", web3AuthOption.chainConfig
+        )
 
         val initParams = JSONObject()
         initParams.put("loginProvider", params.loginProvider.name.lowercase(Locale.ROOT))
@@ -329,8 +332,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     fun launchWalletServices(
         loginParams: LoginParams,
-        extraParams: Map<String, Any>? = null,
-        chainConfig: ChainConfig
+        extraParams: Map<String, Any>? = null
     ): CompletableFuture<Void> {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
@@ -359,6 +361,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             if (web3AuthOption.sessionTime != null) initOptions.put(
                 "sessionTime", web3AuthOption.sessionTime
             )
+            if (web3AuthOption.chainConfig != null) initOptions.put(
+                "chainConfig", web3AuthOption.chainConfig
+            )
 
             val initParams = JSONObject()
             initParams.put("loginProvider", loginParams.loginProvider.name.lowercase(Locale.ROOT))
@@ -380,13 +385,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             )
             if (loginParams.dappShare != null) initParams.put("dappShare", loginParams.dappShare)
 
-
             val paramMap = JSONObject()
             paramMap.put(
                 "options", initOptions
             )
             paramMap.put("params", initParams)
-            paramMap.put("chainConfig", gson.toJson(chainConfig))
             if (web3AuthOption.walletSdkUrl?.contains("mocaverse") == true) {
                 paramMap.put("actionType", "login") // used for mocaverse only
             }
@@ -412,7 +415,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
                     val path: String =
                         if (web3AuthOption.walletSdkUrl?.contains("mocaverse") == true) {
-                            "claim" // used for mocaverse only
+                            "login" // used for mocaverse only
                         } else {
                             "wallet"
                         }

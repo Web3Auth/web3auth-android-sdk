@@ -17,7 +17,7 @@ data class Web3AuthOptions(
     val mfaSettings: MfaSettings? = null,
     val sessionTime: Int? = 86400,
     var walletSdkUrl: String? = getWalletSdkUrl(buildEnv),
-    val chainConfig: String? = null,
+    val chainConfig: ChainConfig
 )
 
 fun getSdkUrl(buildEnv: BuildEnv?): String {
