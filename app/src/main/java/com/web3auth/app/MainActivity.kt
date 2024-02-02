@@ -129,8 +129,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             clientId = "BHgArYmWwSeq21czpcarYh0EVq2WWOzflX-NTK-tY1-1pauPzHKRRLgpABkmYiIV_og9jAvoIxQ8L3Smrwe04Lw",
             network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
-            //sdkUrl = "https://mocaverse-auth.web3auth.com",
-            //walletSdkUrl = "https://mocaverse-wallet.web3auth.com",
+            sdkUrl = "https://auth.mocaverse.xyz",
+            walletSdkUrl = "https://lrc-mocaverse.web3auth.io",
             whiteLabel = WhiteLabelData(
                 "Web3Auth Sample App", null, null, null,
                 Language.EN, ThemeModes.LIGHT, true,
@@ -138,18 +138,18 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     "primary" to "#123456"
                 )
             ),
-            /*loginConfig = hashMapOf(
+            loginConfig = hashMapOf(
                 "loginConfig" to LoginConfigItem(
                     "web3auth-auth0-email-passwordless-sapphire-devnet",
                     typeOfLogin = TypeOfLogin.JWT,
                     clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C"
                 )
-            ),*/
+            ),
             buildEnv = BuildEnv.TESTING,
             sessionTime = 86400,
             chainConfig = ChainConfig(
                 chainId = "0x1",
-                rpcTarget = "https://mainnet.infura.io/v3/1d7f0c9a5c9a4b6e8b3a2b0a2b7b3f0d",
+                rpcTarget = "https://mainnet.infura.io/v3/daeee53504be4cd3a997d4f2718d33e0",
                 ticker = "ETH",
                 chainNamespace = ChainNamespace.EIP155
             )

@@ -362,7 +362,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 "sessionTime", web3AuthOption.sessionTime
             )
             if (web3AuthOption.chainConfig != null) initOptions.put(
-                "chainConfig", web3AuthOption.chainConfig
+                "chainConfig", gson.toJson(web3AuthOption.chainConfig)
             )
 
             val initParams = JSONObject()
@@ -406,7 +406,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     )
                     walletMap.addProperty("sessionId", sessionId)
                     if (web3AuthOption.walletSdkUrl?.contains("mocaverse") == true) {
-                        walletMap.addProperty("redirectPath", "/claim") //used for mocaverse only
+                        walletMap.addProperty("redirectPath", "/wallet") //used for mocaverse only
                     }
 
                     val walletHash =
