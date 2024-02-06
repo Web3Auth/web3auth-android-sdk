@@ -128,6 +128,9 @@ public class Web3Auth : MonoBehaviour
 
         if (this.web3AuthOptions.sessionTime != null)
             this.initParams["sessionTime"] = this.web3AuthOptions.sessionTime;
+
+        if (this.web3AuthOptions.chainConfig != null)
+            this.initParams["chainConfig"] = JsonConvert.SerializeObject(this.web3AuthOptions.chainConfig, settings);
     }
 
     private void onDeepLinkActivated(string url)
@@ -301,7 +304,7 @@ public class Web3Auth : MonoBehaviour
         }
     }
 
-    private async void launchWalletServices(string path, LoginParams loginParams = null, Dictionary<string, object> extraParams = null)
+    public async void launchWalletServices(LoginParams loginParams, Dictionary<string, object> extraParams = null)
         {
             string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
             if (!string.IsNullOrEmpty(sessionId))
@@ -316,7 +319,6 @@ public class Web3Auth : MonoBehaviour
             Dictionary<string, object> paramMap = new Dictionary<string, object>();
             paramMap["options"] = this.initParams;
             paramMap["params"] = loginParams == null ? (object)new Dictionary<string, object>() : (object)loginParams;
-            paramMap["actionType"] = "login";
 
             if (extraParams != null && extraParams.Count > 0)
                 foreach (KeyValuePair<string, object> item in extraParams)
@@ -344,7 +346,7 @@ public class Web3Auth : MonoBehaviour
                     })));
 
                 UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
-                uriBuilder.Path = path;
+                uriBuilder.Path = "wallet";
                 uriBuilder.Fragment = "b64Params=" + hash;
 
                 Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
