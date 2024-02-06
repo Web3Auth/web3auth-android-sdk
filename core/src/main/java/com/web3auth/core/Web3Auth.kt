@@ -56,7 +56,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             "sessionTime", web3AuthOption.sessionTime
         )
         if (web3AuthOption.chainConfig != null) initOptions.put(
-            "chainConfig", web3AuthOption.chainConfig
+            "chainConfig", gson.toJson(web3AuthOption.chainConfig)
         )
 
         val initParams = JSONObject()
