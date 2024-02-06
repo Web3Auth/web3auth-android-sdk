@@ -43,6 +43,9 @@ public class Web3AuthSample : MonoBehaviour
     [SerializeField]
     Button mfaSetupButton;
 
+    [SerializeField]
+    Button launchWalletServicesButton;
+
     void Start()
     {
         var loginConfigItem = new LoginConfigItem()
@@ -94,11 +97,13 @@ public class Web3AuthSample : MonoBehaviour
 
         emailAddressField.gameObject.SetActive(false);
         logoutButton.gameObject.SetActive(false);
-        //mfaSetupButton.gameObject.SetActive(false);
+        mfaSetupButton.gameObject.SetActive(false);
+        launchWalletServicesButton.gameObject.SetActive(false);
 
         loginButton.onClick.AddListener(login);
         logoutButton.onClick.AddListener(logout);
-        //mfaSetupButton.onClick.AddListener(setupMFA);
+        mfaSetupButton.onClick.AddListener(setupMFA);
+        launchWalletServicesButton.onClick.AddListener(launchWalletServices);
 
         verifierDropdown.AddOptions(verifierList.Select(x => x.name).ToList());
         verifierDropdown.onValueChanged.AddListener(onVerifierDropDownChange);
@@ -114,7 +119,8 @@ public class Web3AuthSample : MonoBehaviour
         verifierDropdown.gameObject.SetActive(false);
         emailAddressField.gameObject.SetActive(false);
         logoutButton.gameObject.SetActive(true);
-        //mfaSetupButton.gameObject.SetActive(true);
+        mfaSetupButton.gameObject.SetActive(true);
+        launchWalletServicesButton.gameObject.SetActive(true);
     }
 
     private void onLogout()
@@ -122,7 +128,8 @@ public class Web3AuthSample : MonoBehaviour
         loginButton.gameObject.SetActive(true);
         verifierDropdown.gameObject.SetActive(true);
         logoutButton.gameObject.SetActive(false);
-        //mfaSetupButton.gameObject.SetActive(false);
+        mfaSetupButton.gameObject.SetActive(false);
+        launchWalletServicesButton.gameObject.SetActive(false);
 
         loginResponseText.text = "";
     }
