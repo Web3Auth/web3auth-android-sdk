@@ -22,6 +22,9 @@ object Web3AuthError {
             ErrorCode.APP_CANCELLED -> {
                 "App Cancelled"
             }
+            ErrorCode.INVALID_LOGIN -> {
+                "Invalid Login"
+            }
         }
     }
 }
@@ -33,4 +36,5 @@ enum class ErrorCode {
     RUNTIME_ERROR,
     APP_CANCELLED,
     SOMETHING_WENT_WRONG,
+    INVALID_LOGIN
 }

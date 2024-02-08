@@ -18,7 +18,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     private var loginCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
-    private lateinit var setupMfaCompletableFuture: CompletableFuture<Boolean>
+    private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
@@ -165,15 +165,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val error = uri.getQueryParameter("error")
         if (error != null) {
             loginCompletableFuture.completeExceptionally(UnKnownException(error))
-            setupMfaCompletableFuture.completeExceptionally(UnKnownException(error))
-            return;
+            if (::enableMfaCompletableFuture.isInitialized) enableMfaCompletableFuture.completeExceptionally(
+                UnKnownException(error)
+            )
+            return
         }
 
         val b64Params = hashUri.getQueryParameter("b64Params")
         if (b64Params.isNullOrBlank()) {
             loginCompletableFuture.completeExceptionally(UnKnownException("Invalid Login"))
-            setupMfaCompletableFuture.completeExceptionally(UnKnownException("Invalid Login"))
-            return;
+            throwEnableMFAError(ErrorCode.INVALID_LOGIN)
+            return
         }
         val b64ParamString = decodeBase64URLString(b64Params).toString(Charsets.UTF_8)
         val sessionResponse = gson.fromJson(b64ParamString, SessionResponse::class.java)
@@ -194,12 +196,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                         ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
                                 )
                             )
-                            setupMfaCompletableFuture.completeExceptionally(
-                                UnKnownException(
-                                    web3AuthResponse?.error
-                                        ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
-                                )
-                            )
+                            throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                         } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
                             loginCompletableFuture.completeExceptionally(
                                 Exception(
@@ -208,13 +205,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                     )
                                 )
                             )
-                            setupMfaCompletableFuture.completeExceptionally(
-                                Exception(
-                                    Web3AuthError.getError(
-                                        ErrorCode.SOMETHING_WENT_WRONG
-                                    )
-                                )
-                            )
+                            throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                         } else {
                             web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
 
@@ -226,7 +217,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                 )
                             }
                             loginCompletableFuture.complete(web3AuthResponse)
-                            setupMfaCompletableFuture.complete(true)
+                            enableMfaCompletableFuture.complete(true)
                         }
                     } else {
                         print(error)
@@ -235,15 +226,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             }
         } else {
             loginCompletableFuture.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)))
-            if (::setupMfaCompletableFuture.isInitialized) {
-                setupMfaCompletableFuture.completeExceptionally(
-                    Exception(
-                        Web3AuthError.getError(
-                            ErrorCode.SOMETHING_WENT_WRONG
-                        )
-                    )
-                )
-            }
+            throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
         }
     }
 
@@ -284,20 +267,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     fun enableMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
-        setupMfaCompletableFuture = CompletableFuture()
+        enableMfaCompletableFuture = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isBlank()) {
-            setupMfaCompletableFuture.completeExceptionally(
-                Exception(
-                    Web3AuthError.getError(
-                        ErrorCode.NOUSERFOUND
-                    )
-                )
-            )
-            return setupMfaCompletableFuture
+            throwEnableMFAError(ErrorCode.NOUSERFOUND)
+            return enableMfaCompletableFuture
         }
         request("enable_mfa", loginParams)
-        return setupMfaCompletableFuture
+        return enableMfaCompletableFuture
     }
 
     /**
@@ -408,6 +385,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             launchWalletServiceCF.completeExceptionally(Exception("Please login first to launch wallet"))
         }
         return launchWalletServiceCF
+    }
+
+    private fun throwEnableMFAError(error: ErrorCode) {
+        if (::enableMfaCompletableFuture.isInitialized)
+            enableMfaCompletableFuture.completeExceptionally(
+                Exception(
+                    Web3AuthError.getError(
+                        error
+                    )
+                )
+            )
     }
 
     fun getPrivkey(): String {
