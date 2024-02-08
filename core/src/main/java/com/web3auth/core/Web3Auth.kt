@@ -213,13 +213,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             }
         } else {
             loginCompletableFuture.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)))
-            setupMfaCompletableFuture.completeExceptionally(
-                Exception(
-                    Web3AuthError.getError(
-                        ErrorCode.SOMETHING_WENT_WRONG
+            if (::setupMfaCompletableFuture.isInitialized) {
+                setupMfaCompletableFuture.completeExceptionally(
+                    Exception(
+                        Web3AuthError.getError(
+                            ErrorCode.SOMETHING_WENT_WRONG
+                        )
                     )
                 )
-            )
+            }
         }
     }
 

@@ -43,7 +43,7 @@ class WebViewActivity : AppCompatActivity() {
             val webSettings: WebSettings = webView.settings
             webSettings.javaScriptEnabled = true
             webSettings.domStorageEnabled = true
-            webSettings.userAgentString = "Web3Auth"
+            webSettings.userAgentString = null
 
             if (walletUrl != null) {
                 webView.loadUrl(walletUrl)
