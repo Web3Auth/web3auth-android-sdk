@@ -28,12 +28,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         KeyStoreManagerUtils.getKeyGenerator()
     }
 
-    private fun request(
-        path: String, params: LoginParams, extraParams: Map<String, Any>? = null
-    ) {
-        val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
-        val context = web3AuthOption.context
-
+    private fun getInitOptions(): JSONObject {
         val initOptions = JSONObject()
         initOptions.put("clientId", web3AuthOption.clientId)
         initOptions.put("network", web3AuthOption.network.name.lowercase(Locale.ROOT))
@@ -55,40 +50,58 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (web3AuthOption.sessionTime != null) initOptions.put(
             "sessionTime", web3AuthOption.sessionTime
         )
-        if (web3AuthOption.chainConfig != null) initOptions.put(
-            "chainConfig", gson.toJson(web3AuthOption.chainConfig)
-        )
+        return initOptions
+    }
 
+    private fun getInitParams(params: LoginParams?): JSONObject {
         val initParams = JSONObject()
-        initParams.put("loginProvider", params.loginProvider.name.lowercase(Locale.ROOT))
-        if (params.extraLoginOptions != null) initParams.put(
+        if (params?.loginProvider != null) initParams.put("loginProvider", params.loginProvider.name.lowercase(Locale.ROOT))
+        if (params?.extraLoginOptions != null) initParams.put(
             "extraLoginOptions",
             gson.toJson(params.extraLoginOptions)
         )
         initParams.put(
             "redirectUrl",
-            if (params.redirectUrl != null) params.redirectUrl.toString() else initOptions["redirectUrl"].toString()
+            if (params?.redirectUrl != null) params.redirectUrl.toString() else web3AuthOption.redirectUrl.toString()
         )
-        if (params.mfaLevel != null) initParams.put(
+        if (params?.mfaLevel != null) initParams.put(
             "mfaLevel",
             params.mfaLevel.name.lowercase(Locale.ROOT)
         )
-        if (params.curve != null) initParams.put("curve", params.curve.name.lowercase(Locale.ROOT))
-        if (params.dappShare != null) initParams.put("dappShare", params.dappShare)
+        if (params?.curve != null) initParams.put("curve", params.curve.name.lowercase(Locale.ROOT))
+        if (params?.dappShare != null) initParams.put("dappShare", params.dappShare)
+        return initParams
+    }
 
+    private fun request(
+        actionType: String, params: LoginParams?
+    ) {
+        val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
+        val context = web3AuthOption.context
+        val initOptions = getInitOptions()
+        val initParams = getInitParams(params)
 
         val paramMap = JSONObject()
         paramMap.put(
             "options", initOptions
         )
-        paramMap.put("params", initParams)
-        paramMap.put("actionType", path)
+        paramMap.put("actionType", actionType)
 
-        if (path == "enable_mfa") {
+        if (actionType == "enable_mfa") {
+            val userInfo = web3AuthResponse?.userInfo
+            initParams.put("loginProvider", userInfo?.typeOfLogin)
+            var extraOptionsString = ""
+            var existingExtraLoginOptions = ExtraLoginOptions()
+            if (initParams.has("extraLoginOptions")) {
+                extraOptionsString = initParams.getString("extraLoginOptions")
+                existingExtraLoginOptions = gson.fromJson(extraOptionsString, ExtraLoginOptions::class.java)
+            }
+            existingExtraLoginOptions.login_hint = userInfo?.verifierId
+            initParams.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
+            initParams.put("mfaLevel", MFALevel.MANDATORY.name.lowercase(Locale.ROOT))
             paramMap.put("sessionId", sessionManager.getSessionId())
         }
-
-        extraParams?.let { paramMap.put("params", extraParams) }
+        paramMap.put("params", initParams)
 
         val loginIdCf = getLoginId(paramMap)
 
@@ -153,11 +166,20 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (error != null) {
             loginCompletableFuture.completeExceptionally(UnKnownException(error))
             setupMfaCompletableFuture.completeExceptionally(UnKnownException(error))
+            return;
         }
 
-        val sessionId = hashUri.getQueryParameter("sessionId")
+        val b64Params = hashUri.getQueryParameter("b64Params")
+        if (b64Params.isNullOrBlank()) {
+            loginCompletableFuture.completeExceptionally(UnKnownException("Invalid Login"))
+            setupMfaCompletableFuture.completeExceptionally(UnKnownException("Invalid Login"))
+            return;
+        }
+        val b64ParamString = decodeBase64URLString(b64Params).toString(Charsets.UTF_8)
+        val sessionResponse = gson.fromJson(b64ParamString, SessionResponse::class.java)
+        val sessionId = sessionResponse.sessionId
 
-        if (!sessionId.isNullOrBlank() && sessionId.isNotEmpty()) {
+        if (sessionId.isNotBlank() && sessionId.isNotEmpty()) {
             sessionManager.saveSessionId(sessionId)
 
             //Rehydrate Session
@@ -261,7 +283,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return logoutCompletableFuture
     }
 
-    fun setupMFA(loginParams: LoginParams): CompletableFuture<Boolean> {
+    fun enableMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
         setupMfaCompletableFuture = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isBlank()) {
@@ -334,7 +356,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     fun launchWalletServices(
         loginParams: LoginParams,
-        extraParams: Map<String, Any>? = null
+        chainConfig: ChainConfig,
+        path: String? = "wallet"
     ): CompletableFuture<Void> {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
@@ -342,61 +365,18 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
             val context = web3AuthOption.context
 
-            val initOptions = JSONObject()
-            initOptions.put("clientId", web3AuthOption.clientId)
-            initOptions.put("network", web3AuthOption.network.name.lowercase(Locale.ROOT))
-            if (web3AuthOption.redirectUrl != null) initOptions.put(
-                "redirectUrl", web3AuthOption.redirectUrl.toString()
-            )
-            if (web3AuthOption.whiteLabel != null) initOptions.put(
-                "whiteLabel", gson.toJson(web3AuthOption.whiteLabel)
-            )
-            if (web3AuthOption.loginConfig != null) initOptions.put(
-                "loginConfig", gson.toJson(web3AuthOption.loginConfig)
-            )
-            if (web3AuthOption.buildEnv != null) initOptions.put(
-                "buildEnv", web3AuthOption.buildEnv?.name?.lowercase(Locale.ROOT)
-            )
-            if (web3AuthOption.mfaSettings != null) initOptions.put(
-                "mfaSettings", gson.toJson(web3AuthOption.mfaSettings)
-            )
-            if (web3AuthOption.sessionTime != null) initOptions.put(
-                "sessionTime", web3AuthOption.sessionTime
-            )
-            if (web3AuthOption.chainConfig != null) initOptions.put(
-                "chainConfig", gson.toJson(web3AuthOption.chainConfig)
+            val initOptions = getInitOptions()
+            initOptions.put(
+                "chainConfig", gson.toJson(chainConfig)
             )
 
-            val initParams = JSONObject()
-            initParams.put("loginProvider", loginParams.loginProvider.name.lowercase(Locale.ROOT))
-            if (loginParams.extraLoginOptions != null) initParams.put(
-                "extraLoginOptions",
-                gson.toJson(loginParams.extraLoginOptions)
-            )
-            initParams.put(
-                "redirectUrl",
-                if (loginParams.redirectUrl != null) loginParams.redirectUrl.toString() else initOptions["redirectUrl"].toString()
-            )
-            if (loginParams.mfaLevel != null) initParams.put(
-                "mfaLevel",
-                loginParams.mfaLevel.name.lowercase(Locale.ROOT)
-            )
-            if (loginParams.curve != null) initParams.put(
-                "curve",
-                loginParams.curve.name.lowercase(Locale.ROOT)
-            )
-            if (loginParams.dappShare != null) initParams.put("dappShare", loginParams.dappShare)
+            val initParams = getInitParams(loginParams)
 
             val paramMap = JSONObject()
             paramMap.put(
                 "options", initOptions
             )
             paramMap.put("params", initParams)
-            if (web3AuthOption.walletSdkUrl?.contains("mocaverse") == true) {
-                paramMap.put("actionType", "login") // used for mocaverse only
-            }
-
-            extraParams?.let { paramMap.put("params", extraParams) }
 
             val loginIdCf = getLoginId(paramMap)
 
@@ -407,20 +387,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         "loginId", loginId
                     )
                     walletMap.addProperty("sessionId", sessionId)
-                    if (web3AuthOption.walletSdkUrl?.contains("mocaverse") == true) {
-                        walletMap.addProperty("redirectPath", "/wallet") //used for mocaverse only
-                    }
 
                     val walletHash =
                         "b64Params=" + gson.toJson(walletMap).toByteArray(Charsets.UTF_8)
                             .toBase64URLString()
-
-                    val path: String =
-                        if (web3AuthOption.walletSdkUrl?.contains("mocaverse") == true) {
-                            "login" // used for mocaverse only
-                        } else {
-                            "wallet"
-                        }
 
                     val url =
                         Uri.Builder().scheme(sdkUrl.scheme)

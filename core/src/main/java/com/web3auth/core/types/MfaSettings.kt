@@ -5,4 +5,6 @@ data class MfaSettings(
     private var backUpShareFactor: MfaSetting? = null,
     private var socialBackupFactor: MfaSetting? = null,
     private var passwordFactor: MfaSetting? = null,
+    private var passkeysFactor: MfaSetting? = null,
+    private var authenticatorFactor: MfaSetting? = null,
 )

@@ -129,8 +129,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             clientId = "BHgArYmWwSeq21czpcarYh0EVq2WWOzflX-NTK-tY1-1pauPzHKRRLgpABkmYiIV_og9jAvoIxQ8L3Smrwe04Lw",
             network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
-            sdkUrl = "https://auth.mocaverse.xyz",
-            walletSdkUrl = "https://lrc-mocaverse.web3auth.io",
+//            sdkUrl = "https://auth.mocaverse.xyz",
+//            walletSdkUrl = "https://lrc-mocaverse.web3auth.io",
             whiteLabel = WhiteLabelData(
                 "Web3Auth Sample App", null, null, null,
                 Language.EN, ThemeModes.LIGHT, true,
@@ -147,12 +147,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             ),
             buildEnv = BuildEnv.TESTING,
             sessionTime = 86400,
-            chainConfig = ChainConfig(
-                chainId = "0x1",
-                rpcTarget = "https://mainnet.infura.io/v3/daeee53504be4cd3a997d4f2718d33e0",
-                ticker = "ETH",
-                chainNamespace = ChainNamespace.EIP155
-            )
         )
 
         println("params: $options")
@@ -190,7 +184,13 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 loginParams = LoginParams(
                     selectedLoginProvider,
                     extraLoginOptions = null,
-                    mfaLevel = MFALevel.NONE
+                    mfaLevel = MFALevel.NONE,
+                ),
+                chainConfig = ChainConfig(
+                    chainId = "0x1",
+                    rpcTarget = "https://mainnet.infura.io/v3/daeee53504be4cd3a997d4f2718d33e0",
+                    ticker = "ETH",
+                    chainNamespace = ChainNamespace.EIP155
                 )
             )
             launchWalletCompletableFuture.whenComplete { _, error ->
@@ -204,13 +204,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         btnSetUpMfa.setOnClickListener {
-            val setupMfaCf = web3Auth.setupMFA(
-                loginParams = LoginParams(
-                    selectedLoginProvider,
-                    extraLoginOptions = null,
-                    mfaLevel = MFALevel.MANDATORY
-                )
-            )
+            val setupMfaCf = web3Auth.enableMFA()
             setupMfaCf.whenComplete { _, error ->
                 if (error == null) {
                     Log.d("MainActivity_Web3Auth", "MFA setup successfully")

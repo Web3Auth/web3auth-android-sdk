@@ -29,4 +29,7 @@ enum class Language {
 
     @SerializedName("nl") //Dutch
     NL,
+
+    @SerializedName("tr") //Turkish
+    TR,
 }
