@@ -101,7 +101,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 val url =
                     Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
                         .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
-                print("url: => $url")
+                //print("url: => $url")
                 val defaultBrowser = context.getDefaultBrowser()
                 val customTabsBrowsers = context.getCustomTabsBrowsers()
 
@@ -425,7 +425,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                             .encodedAuthority(sdkUrl.encodedAuthority)
                             .encodedPath(sdkUrl.encodedPath).appendPath(path)
                             .fragment(walletHash).build()
-                    print("wallet launch url: => $url")
+                    //print("wallet launch url: => $url")
                     val intent = Intent(context, WebViewActivity::class.java)
                     intent.putExtra(WALLET_URL, url.toString())
                     context.startActivity(intent)
