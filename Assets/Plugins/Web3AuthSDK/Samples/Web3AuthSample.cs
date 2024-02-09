@@ -82,14 +82,7 @@ public class Web3AuthSample : MonoBehaviour
             buildEnv = BuildEnv.TESTING,
             redirectUrl = new Uri("torusapp://com.torus.Web3AuthUnity/auth"),
             network = Web3Auth.Network.SAPPHIRE_MAINNET,
-            sessionTime = 86400,
-            chainConfig = new ChainConfig()
-            {
-                chainId = "0x1",
-                rpcTarget = "https://mainnet.infura.io/v3/daeee53504be4cd3a997d4f2718d33e0",
-                ticker = "ETH",
-                chainNamespace = Web3Auth.ChainNamespace.EIP155
-            }
+            sessionTime = 86400
         });
         web3Auth.onLogin += onLogin;
         web3Auth.onLogout += onLogout;
@@ -102,7 +95,7 @@ public class Web3AuthSample : MonoBehaviour
 
         loginButton.onClick.AddListener(login);
         logoutButton.onClick.AddListener(logout);
-        mfaSetupButton.onClick.AddListener(setupMFA);
+        mfaSetupButton.onClick.AddListener(enableMFA);
         launchWalletServicesButton.onClick.AddListener(launchWalletServices);
 
         verifierDropdown.AddOptions(verifierList.Select(x => x.name).ToList());
@@ -172,7 +165,7 @@ public class Web3AuthSample : MonoBehaviour
         web3Auth.logout();
     }
 
-    private void setupMFA()
+    private void enableMFA()
     {
         var selectedProvider = verifierList[verifierDropdown.value].loginProvider;
 
@@ -189,7 +182,7 @@ public class Web3AuthSample : MonoBehaviour
                 login_hint = emailAddressField.text
             };
         }
-        web3Auth.setupMFA(options);
+        web3Auth.enableMFA(options);
     }
 
     private void launchWalletServices() {
@@ -208,6 +201,13 @@ public class Web3AuthSample : MonoBehaviour
             };
         }
 
-        web3Auth.launchWalletServices(options);
+        var chainConfig = new ChainConfig()
+        {
+            chainId = "0x1",
+            rpcTarget = "https://mainnet.infura.io/v3/daeee53504be4cd3a997d4f2718d33e0",
+            ticker = "ETH",
+            chainNamespace = Web3Auth.ChainNamespace.EIP155
+        };
+        web3Auth.launchWalletServices(options, chainConfig);
     }
 }
