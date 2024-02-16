@@ -129,8 +129,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             clientId = "BHgArYmWwSeq21czpcarYh0EVq2WWOzflX-NTK-tY1-1pauPzHKRRLgpABkmYiIV_og9jAvoIxQ8L3Smrwe04Lw",
             network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
-//            sdkUrl = "https://auth.mocaverse.xyz",
-//            walletSdkUrl = "https://lrc-mocaverse.web3auth.io",
+            //sdkUrl = "https://auth.mocaverse.xyz",
+            //walletSdkUrl = "https://lrc-mocaverse.web3auth.io",
             whiteLabel = WhiteLabelData(
                 "Web3Auth Sample App", null, null, null,
                 Language.EN, ThemeModes.LIGHT, true,

@@ -18,5 +18,5 @@ data class Web3AuthResponse(
     val tssShare: String? = null,
     val tssNonce: Int? = null,
     val nodeIndexes: List<Int>? = null,
-    val keyMode: String? = null,
+    val keyMode: String? = null
 )
