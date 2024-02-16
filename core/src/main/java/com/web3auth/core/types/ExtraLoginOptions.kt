@@ -13,7 +13,7 @@ data class ExtraLoginOptions(
     private var ui_locales : String? = null,
     private var id_token : String? = null,
     private var id_token_hint : String? = null,
-    private var login_hint : String? = null,
+    var login_hint : String? = null,
     private var acr_values : String? = null,
     private var scope : String? = null,
     private var audience : String? = null,

@@ -85,6 +85,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val contentTextView = findViewById<TextView>(R.id.contentTextView)
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
+        val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
+        val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
         var key: String? = null
@@ -96,13 +98,15 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             print(ex)
         }
 
-        if (key != null && userInfo != null && key.isNotEmpty()) {
-            val jsonObject = JSONObject(gson.toJson(userInfo))
+        if (userInfo != null) {
+            val jsonObject = JSONObject(gson.toJson(web3Auth.getWeb3AuthResponse()))
             contentTextView.text = jsonObject.toString(4) + "\n Private Key: " + key
             contentTextView.movementMethod = ScrollingMovementMethod()
             contentTextView.visibility = View.VISIBLE
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
+            launchWalletButton.visibility = View.VISIBLE
+            btnSetUpMfa.visibility = View.VISIBLE
             spinner.visibility = View.GONE
             hintEmailEditText.visibility = View.GONE
         } else {
@@ -110,6 +114,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             contentTextView.visibility = View.GONE
             signInButton.visibility = View.VISIBLE
             signOutButton.visibility = View.GONE
+            btnSetUpMfa.visibility = View.GONE
+            launchWalletButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
     }
@@ -120,9 +126,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         val options = Web3AuthOptions(
             context = this,
-            clientId = getString(R.string.web3auth_project_id),
-            network = Network.SAPPHIRE_MAINNET,
+            clientId = "BHgArYmWwSeq21czpcarYh0EVq2WWOzflX-NTK-tY1-1pauPzHKRRLgpABkmYiIV_og9jAvoIxQ8L3Smrwe04Lw",
+            network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
+//            sdkUrl = "https://auth.mocaverse.xyz",
+//            walletSdkUrl = "https://lrc-mocaverse.web3auth.io",
             whiteLabel = WhiteLabelData(
                 "Web3Auth Sample App", null, null, null,
                 Language.EN, ThemeModes.LIGHT, true,
@@ -132,14 +140,13 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             ),
             loginConfig = hashMapOf(
                 "loginConfig" to LoginConfigItem(
-                    "torus",
-                    typeOfLogin = TypeOfLogin.GOOGLE,
-                    name = "",
-                    clientId = ""
+                    "web3auth-auth0-email-passwordless-sapphire-devnet",
+                    typeOfLogin = TypeOfLogin.JWT,
+                    clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C"
                 )
             ),
             buildEnv = BuildEnv.TESTING,
-            sessionTime = 86400
+            sessionTime = 86400,
         )
 
         println("params: $options")
@@ -170,6 +177,42 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         signOutButton.setOnClickListener { signOut() }
+
+        val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
+        launchWalletButton.setOnClickListener {
+            val launchWalletCompletableFuture = web3Auth.launchWalletServices(
+                loginParams = LoginParams(
+                    selectedLoginProvider,
+                    extraLoginOptions = null,
+                    mfaLevel = MFALevel.NONE,
+                ),
+                chainConfig = ChainConfig(
+                    chainId = "0x1",
+                    rpcTarget = "https://mainnet.infura.io/v3/daeee53504be4cd3a997d4f2718d33e0",
+                    ticker = "ETH",
+                    chainNamespace = ChainNamespace.EIP155
+                )
+            )
+            launchWalletCompletableFuture.whenComplete { _, error ->
+                if (error == null) {
+                    Log.d("MainActivity_Web3Auth", "Wallet launched successfully")
+                } else {
+                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+                }
+            }
+        }
+
+        val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
+        btnSetUpMfa.setOnClickListener {
+            val setupMfaCf = web3Auth.enableMFA()
+            setupMfaCf.whenComplete { _, error ->
+                if (error == null) {
+                    Log.d("MainActivity_Web3Auth", "MFA setup successfully")
+                } else {
+                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+                }
+            }
+        }
 
         val spinner = findViewById<AutoCompleteTextView>(R.id.spinnerTextView)
         val loginVerifierList: List<String> = verifierList.map { item ->

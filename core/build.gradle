@@ -42,6 +42,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.5.0'
+    implementation 'com.google.android.material:material:1.6.1'
 
     // Completable Futures support
     api 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.4'
@@ -69,6 +70,8 @@ dependencies {
 
     //session-manager-sdk
     implementation 'com.github.Web3Auth:session-manager-android:1.2.0'
+
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01"
 
     // Test
     testImplementation 'junit:junit:4.+'
