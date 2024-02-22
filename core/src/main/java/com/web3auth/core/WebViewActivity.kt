@@ -67,4 +67,11 @@ class WebViewActivity : AppCompatActivity() {
         super.onStop()
         swipeRefreshLayout?.viewTreeObserver?.removeOnScrollChangedListener(mOnScrollChangedListener);
     }
+
+    override fun onBackPressed() {
+        when {
+            webView.canGoBack() -> webView.goBack()
+            else -> super.onBackPressed()
+        }
+    }
 }
