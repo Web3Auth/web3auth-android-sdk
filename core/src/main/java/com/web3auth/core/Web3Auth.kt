@@ -364,6 +364,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         "loginId", loginId
                     )
                     walletMap.addProperty("sessionId", sessionId)
+                    walletMap.addProperty("isAndroid", true)
 
                     val walletHash =
                         "b64Params=" + gson.toJson(walletMap).toByteArray(Charsets.UTF_8)
