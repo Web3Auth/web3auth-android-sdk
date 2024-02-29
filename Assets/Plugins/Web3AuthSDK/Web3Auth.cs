@@ -233,11 +233,10 @@ public class Web3Auth : MonoBehaviour
             System.IO.Stream output = httpResponse.OutputStream;
             output.Write(buffer, 0, buffer.Length);
             output.Close();
-
-            string code = httpRequest.QueryString.Get("code");
+            string code = httpRequest.QueryString.Get("b64Params");
             if (!string.IsNullOrEmpty(code))
             {
-                this.setResultUrl(new Uri($"http://localhost#{code}"));
+                this.setResultUrl(new Uri($"http://localhost#state=&b64Params={code}"));
             }
 
             httpListener.Close();
