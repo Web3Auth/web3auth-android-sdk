@@ -1,8 +1,13 @@
 package com.web3auth.core
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.Message
 import android.view.ViewTreeObserver.OnScrollChangedListener
+import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -44,6 +49,7 @@ class WebViewActivity : AppCompatActivity() {
             webSettings.javaScriptEnabled = true
             webSettings.domStorageEnabled = true
             webSettings.userAgentString = null
+            webSettings.setSupportMultipleWindows(true)
 
             if (walletUrl != null) {
                 webView.loadUrl(walletUrl)
@@ -52,6 +58,22 @@ class WebViewActivity : AppCompatActivity() {
 
         swipeRefreshLayout?.setOnRefreshListener {
             webView.reload()
+        }
+
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onCreateWindow(
+                view: WebView,
+                dialog: Boolean,
+                userGesture: Boolean,
+                resultMsg: Message
+            ): Boolean {
+                val result = view.hitTestResult
+                val data = result.extra
+                val context: Context = view.context
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(data))
+                context.startActivity(browserIntent)
+                return false
+            }
         }
     }
 
