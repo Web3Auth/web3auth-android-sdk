@@ -7,10 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Message
 import android.view.ViewTreeObserver.OnScrollChangedListener
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.webkit.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.web3auth.core.types.WALLET_URL
@@ -37,11 +34,7 @@ class WebViewActivity : AppCompatActivity() {
                     if (walletUrl != null) {
                         view?.loadUrl(walletUrl)
                     }
-                    return false;
-                }
-
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    swipeRefreshLayout?.isRefreshing = false
+                    return false
                 }
             }
 
@@ -75,6 +68,8 @@ class WebViewActivity : AppCompatActivity() {
                 return false
             }
         }
+
+        webView.addJavascriptInterface(this, "AndroidBridge");
     }
 
     override fun onStart() {
@@ -95,5 +90,15 @@ class WebViewActivity : AppCompatActivity() {
             webView.canGoBack() -> webView.goBack()
             else -> super.onBackPressed()
         }
+    }
+
+    @JavascriptInterface
+    fun enablePullToRefresh() {
+        swipeRefreshLayout?.isEnabled = true
+    }
+
+    @JavascriptInterface
+    fun disablePullToRefresh() {
+        swipeRefreshLayout?.isEnabled = false
     }
 }
