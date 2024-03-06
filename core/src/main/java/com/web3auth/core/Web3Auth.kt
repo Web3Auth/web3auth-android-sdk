@@ -591,7 +591,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) : SigningListener {
     }
 
     fun getTransactionHash(): String {
-        return
+        return transactionHash
     }
 }
 
