@@ -1,6 +1,7 @@
 package com.web3auth.core
 
 import android.annotation.SuppressLint
+import android.net.Uri
 import android.os.Bundle
 import android.view.ViewTreeObserver.OnScrollChangedListener
 import android.webkit.WebSettings
@@ -8,7 +9,11 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.web3auth.core.types.WALLET_URL
+import com.google.gson.GsonBuilder
+import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.WEB3AUTH_OPTIONS
+import com.web3auth.core.types.WEBVIEW_URL
+import com.web3auth.core.types.Web3AuthOptions
 
 class WebViewActivity : AppCompatActivity() {
 
@@ -25,14 +30,29 @@ class WebViewActivity : AppCompatActivity() {
 
         val extras = intent.extras
         if (extras != null) {
-            val walletUrl = extras.getString(WALLET_URL)
+            val webViewUrl = extras.getString(WEBVIEW_URL)
+            val redirectUrl = extras.getString(REDIRECT_URL)
 
             webView.webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                    if (walletUrl != null) {
-                        view?.loadUrl(walletUrl)
+                    if (redirectUrl?.isNotEmpty() == true) {
+                        val uri = Uri.parse(url)
+                        val host = uri.host
+                        if (host != null && host.contains(redirectUrl.toString())) {
+                            return false
+                        }
+                        val web3AuthOptions = GsonBuilder().disableHtmlEscaping().create().fromJson(
+                            intent.getStringExtra(
+                                WEB3AUTH_OPTIONS
+                            ), Web3AuthOptions::class.java
+                        )
+                        val web3Auth = Web3Auth(web3AuthOptions)
+                        web3Auth.getSigningHash("https://web3auth.io")
                     }
-                    return false;
+                    if (webViewUrl != null) {
+                        view?.loadUrl(webViewUrl)
+                    }
+                    return false
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
@@ -45,8 +65,8 @@ class WebViewActivity : AppCompatActivity() {
             webSettings.domStorageEnabled = true
             webSettings.userAgentString = null
 
-            if (walletUrl != null) {
-                webView.loadUrl(walletUrl)
+            if (webViewUrl != null) {
+                webView.loadUrl(webViewUrl)
             }
         }
 

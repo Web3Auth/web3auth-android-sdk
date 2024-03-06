@@ -55,4 +55,6 @@ fun getWalletSdkUrl(buildEnv: BuildEnv?): String {
 
 const val openLoginVersion = "v7"
 const val walletServicesVersion = "v1"
-const val WALLET_URL = "walletUrl"
+const val WEBVIEW_URL = "walletUrl"
+const val REDIRECT_URL = "redirectUrl"
+const val WEB3AUTH_OPTIONS = "web3AuthOptions"
