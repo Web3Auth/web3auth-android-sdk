@@ -36,6 +36,10 @@ class WebViewActivity : AppCompatActivity() {
                     }
                     return false
                 }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    swipeRefreshLayout?.isRefreshing = false
+                }
             }
 
             val webSettings: WebSettings = webView.settings
