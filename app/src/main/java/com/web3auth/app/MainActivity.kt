@@ -90,7 +90,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
-        val sendTxButton = findViewById<Button>(R.id.sendTxButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
@@ -112,7 +111,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             signOutButton.visibility = View.VISIBLE
             launchWalletButton.visibility = View.VISIBLE
             signMsgButton.visibility = View.VISIBLE
-            sendTxButton.visibility = View.VISIBLE
             btnSetUpMfa.visibility = View.VISIBLE
             spinner.visibility = View.GONE
             hintEmailEditText.visibility = View.GONE
@@ -121,7 +119,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             contentTextView.visibility = View.GONE
             signInButton.visibility = View.VISIBLE
             signOutButton.visibility = View.GONE
-            sendTxButton.visibility = View.GONE
             btnSetUpMfa.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             signMsgButton.visibility = View.GONE
@@ -243,29 +240,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             showAlertDialog("Sign Result", signResult.toString())
         }
 
-        val sendTxButton = findViewById<Button>(R.id.sendTxButton)
-        sendTxButton.setOnClickListener {
-            val sendTxCompletableFuture = web3Auth.sendTransaction(
-                loginParams = LoginParams(
-                    selectedLoginProvider,
-                    extraLoginOptions = null,
-                    mfaLevel = MFALevel.NONE,
-                ),
-                toAddress = "0x9975947291ccEEC4fd61269c1487502A40AD3529",
-                value = "100",
-                gasLimit = "21000",
-                gasPrice = "200",
-                transactionType = "legacy"
-            )
-            sendTxCompletableFuture.whenComplete { _, error ->
-                if (error == null) {
-                    Log.d("MainActivity_Web3Auth", "Transaction sent successfully")
-                } else {
-                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
-                }
-            }
-        }
-
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         btnSetUpMfa.setOnClickListener {
             val setupMfaCf = web3Auth.enableMFA()
@@ -301,6 +275,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             count = 0
         } else {
             if (count > 0) {
+                if (Web3Auth.getSignResponse() != null) {
+                    return
+                }
                 Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
                 web3Auth.setResultUrl(null)
             }

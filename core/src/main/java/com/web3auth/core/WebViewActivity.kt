@@ -12,7 +12,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.gson.GsonBuilder
 import com.web3auth.core.types.*
 
-
 class WebViewActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
