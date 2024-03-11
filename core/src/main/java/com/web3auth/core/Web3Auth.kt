@@ -10,13 +10,12 @@ import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
 import com.web3auth.core.types.*
 import com.web3auth.session_manager_android.SessionManager
-import org.json.JSONArray
 import org.json.JSONObject
 import org.web3j.crypto.Credentials
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
-class Web3Auth(web3AuthOptions: Web3AuthOptions) : SigningListener {
+class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
@@ -26,7 +25,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) : SigningListener {
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
     private var sessionManager: SessionManager = SessionManager(web3AuthOption.context)
-    private var transactionHash = ""
 
     private fun initiateKeyStoreManager() {
         KeyStoreManagerUtils.getKeyGenerator()
@@ -324,7 +322,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) : SigningListener {
     private fun getLoginId(jsonObject: JSONObject): CompletableFuture<String> {
         val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
         val sessionResponse: CompletableFuture<String> =
-            sessionManager.createSession(jsonObject.toString(), 604800, false)
+            sessionManager.createSession(jsonObject.toString(), 600, false)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 createSessionCompletableFuture.complete(response)
@@ -394,69 +392,59 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) : SigningListener {
 
     fun signMessage(
         loginParams: LoginParams,
-        message: String,
+        method: String,
+        requestParams: JsonArray,
         path: String? = "wallet/request"
-    ): String {
-        try {
-            val signMsgCF: CompletableFuture<Void> = CompletableFuture()
-            val sessionId = sessionManager.getSessionId()
-            if (sessionId.isNotBlank()) {
-                val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
-                val context = web3AuthOption.context
-                val credentials: Credentials = Credentials.create(getPrivkey())
-                val initOptions = getInitOptions()
-                val initParams = getInitParams(loginParams)
-                val paramMap = JSONObject()
-                paramMap.put(
-                    "options", initOptions
-                )
-                paramMap.put("params", initParams)
+    ): CompletableFuture<Void> {
+        val signMsgCF: CompletableFuture<Void> = CompletableFuture()
+        val sessionId = sessionManager.getSessionId()
+        if (sessionId.isNotBlank()) {
+            val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
+            val context = web3AuthOption.context
+            val initOptions = getInitOptions()
+            val initParams = getInitParams(loginParams)
+            val paramMap = JSONObject()
+            paramMap.put(
+                "options", initOptions
+            )
+            paramMap.put("params", initParams)
 
-                val loginIdCf = getLoginId(paramMap)
+            val loginIdCf = getLoginId(paramMap)
 
-                loginIdCf.whenComplete { loginId, error ->
-                    if (error == null) {
-                        val signMessageMap = JSONObject()
-                        signMessageMap.put("loginId", loginId)
-                        signMessageMap.put("sessionId", sessionId)
+            loginIdCf.whenComplete { loginId, error ->
+                if (error == null) {
+                    val signMessageMap = JsonObject()
+                    signMessageMap.addProperty("loginId", loginId)
+                    signMessageMap.addProperty("sessionId", sessionId)
 
-                        val requestParams = JSONArray().apply {
-                            put(message)
-                            put(credentials.address)
-                            put("Android")
-                        }
-                        val requestData = JSONObject().apply {
-                            put("method", "personal_sign")
-                            put("params", requestParams)
-                        }
-
-                        signMessageMap.put("params", requestData)
-
-                        val signMessageHash =
-                            "b64Params=" + gson.toJson(signMessageMap).toByteArray(Charsets.UTF_8)
-                                .toBase64URLString()
-
-                        val url =
-                            Uri.Builder().scheme(sdkUrl.scheme)
-                                .encodedAuthority(sdkUrl.encodedAuthority)
-                                .encodedPath(sdkUrl.encodedPath).appendPath(path)
-                                .fragment(signMessageHash).build()
-                        //print("message signing url: => $url")
-                        val intent = Intent(context, WebViewActivity::class.java)
-                        intent.putExtra(WEBVIEW_URL, url.toString())
-                        intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
-                        intent.putExtra(WEB3AUTH_OPTIONS, gson.toJson(web3AuthOption))
-                        context.startActivity(intent)
-                        signMsgCF.complete(null)
+                    val requestData = JsonObject().apply {
+                        addProperty("method", method)
+                        addProperty("params", gson.toJson(requestParams))
                     }
+
+                    signMessageMap.addProperty("request", gson.toJson(requestData))
+
+                    val signMessageHash =
+                        "b64Params=" + gson.toJson(signMessageMap).toByteArray(Charsets.UTF_8)
+                            .toBase64URLString()
+
+                    val url =
+                        Uri.Builder().scheme(sdkUrl.scheme)
+                            .encodedAuthority(sdkUrl.encodedAuthority)
+                            .encodedPath(sdkUrl.encodedPath).appendEncodedPath(path)
+                            .fragment(signMessageHash).build()
+                    print("message signing url: => $url")
+                    val intent = Intent(context, WebViewActivity::class.java)
+                    intent.putExtra(WEBVIEW_URL, url.toString())
+                    intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
+                    context.startActivity(intent)
+                    signMsgCF.complete(null)
                 }
-            } else {
-                signMsgCF.completeExceptionally(Exception("Please login first to launch wallet"))
             }
-        } catch (ex: Exception) {
-            "error"
+        } else {
+            signMsgCF.completeExceptionally(Exception("Please login first to launch wallet"))
         }
-        return ""
+        return signMsgCF
     }
 
     fun sendTransaction(
@@ -466,71 +454,67 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) : SigningListener {
         gasLimit: String,
         gasPrice: String,
         transactionType: String,
-        path: String? = "wallet"
-    ): String {
-        try {
-            val sendTransactionCF: CompletableFuture<Void> = CompletableFuture()
-            val sessionId = sessionManager.getSessionId()
-            if (sessionId.isNotBlank()) {
-                val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
-                val context = web3AuthOption.context
-                val credentials: Credentials = Credentials.create(getPrivkey())
-                val initOptions = getInitOptions()
-                val initParams = getInitParams(loginParams)
-                val paramMap = JSONObject()
-                paramMap.put(
-                    "options", initOptions
-                )
-                paramMap.put("params", initParams)
-                val loginIdCf = getLoginId(paramMap)
+        path: String? = "wallet/request"
+    ): CompletableFuture<Void> {
+        val sendTransactionCF: CompletableFuture<Void> = CompletableFuture()
+        val sessionId = sessionManager.getSessionId()
+        if (sessionId.isNotBlank()) {
+            val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
+            val context = web3AuthOption.context
+            val credentials: Credentials = Credentials.create(getPrivkey())
+            val initOptions = getInitOptions()
+            val initParams = getInitParams(loginParams)
+            val paramMap = JSONObject()
+            paramMap.put(
+                "options", initOptions
+            )
+            paramMap.put("params", initParams)
+            val loginIdCf = getLoginId(paramMap)
 
-                loginIdCf.whenComplete { loginId, error ->
-                    if (error == null) {
-                        val paramsObject = JsonObject().apply {
-                            addProperty("from", credentials.address)
-                            addProperty("to", toAddress)
-                            addProperty("value", value)
-                            addProperty("gasLimit", gasLimit)
-                            addProperty("gasPrice", gasPrice)
-                            addProperty("type", transactionType)
-                        }
-
-                        val paramsArray = JsonArray().apply {
-                            add(paramsObject)
-                        }
-
-                        val signTransactionData = JsonObject().apply {
-                            addProperty("method", "eth_sendTransaction")
-                            add("params", paramsArray)
-                            addProperty("loginId", loginId)
-                            addProperty("sessionId", sessionId)
-                        }
-
-                        val sendTransactionHash =
-                            "b64Params=" + gson.toJson(signTransactionData)
-                                .toByteArray(Charsets.UTF_8)
-                                .toBase64URLString()
-
-                        val url =
-                            Uri.Builder().scheme(sdkUrl.scheme)
-                                .encodedAuthority(sdkUrl.encodedAuthority)
-                                .encodedPath(sdkUrl.encodedPath).appendPath(path)
-                                .fragment(sendTransactionHash).build()
-                        //print("transaction signing url: => $url")
-                        val intent = Intent(context, WebViewActivity::class.java)
-                        intent.putExtra(WEBVIEW_URL, url.toString())
-                        intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
-                        context.startActivity(intent)
-                        sendTransactionCF.complete(null)
+            loginIdCf.whenComplete { loginId, error ->
+                if (error == null) {
+                    val paramsObject = JsonObject().apply {
+                        addProperty("from", credentials.address)
+                        addProperty("to", toAddress)
+                        addProperty("value", value)
+                        addProperty("gasLimit", gasLimit)
+                        addProperty("gasPrice", gasPrice)
+                        addProperty("type", transactionType)
                     }
+
+                    val paramsArray = JsonArray().apply {
+                        add(paramsObject)
+                    }
+
+                    val signTransactionData = JsonObject().apply {
+                        addProperty("method", "eth_sendTransaction")
+                        add("request", paramsArray)
+                        addProperty("loginId", loginId)
+                        addProperty("sessionId", sessionId)
+                    }
+
+                    val sendTransactionHash =
+                        "b64Params=" + gson.toJson(signTransactionData)
+                            .toByteArray(Charsets.UTF_8)
+                            .toBase64URLString()
+
+                    val url =
+                        Uri.Builder().scheme(sdkUrl.scheme)
+                            .encodedAuthority(sdkUrl.encodedAuthority)
+                            .encodedPath(sdkUrl.encodedPath).appendEncodedPath(path)
+                            .fragment(sendTransactionHash).build()
+                    print("transaction signing url: => $url")
+                    val intent = Intent(context, WebViewActivity::class.java)
+                    intent.putExtra(WEBVIEW_URL, url.toString())
+                    intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
+                    context.startActivity(intent)
+                    sendTransactionCF.complete(null)
                 }
-            } else {
-                sendTransactionCF.completeExceptionally(Exception("Please login first to launch wallet"))
             }
-        } catch (ex: Exception) {
-            "error"
+        } else {
+            sendTransactionCF.completeExceptionally(Exception("Please login first to launch wallet"))
         }
-        return ""
+        return sendTransactionCF
     }
 
     private fun throwEnableMFAError(error: ErrorCode) {
@@ -586,12 +570,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) : SigningListener {
         }
     }
 
-    override fun getSigningHash(hashString: String) {
-        transactionHash = hashString
-    }
+    companion object {
 
-    fun getTransactionHash(): String {
-        return transactionHash
+        private var signResponse: SignResponse? = null
+        fun setSignResponse(hashString: SignResponse) {
+            signResponse = hashString
+        }
+
+        fun getSignResponse(): SignResponse? {
+            return signResponse
+        }
     }
 }
 

@@ -10,16 +10,15 @@ import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.gson.GsonBuilder
-import com.web3auth.core.types.REDIRECT_URL
-import com.web3auth.core.types.WEB3AUTH_OPTIONS
-import com.web3auth.core.types.WEBVIEW_URL
-import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.*
+
 
 class WebViewActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private var swipeRefreshLayout: SwipeRefreshLayout? = null
     private var mOnScrollChangedListener: OnScrollChangedListener? = null
+    private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,17 +36,13 @@ class WebViewActivity : AppCompatActivity() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                     if (redirectUrl?.isNotEmpty() == true) {
                         val uri = Uri.parse(url)
-                        val host = uri.host
-                        if (host != null && host.contains(redirectUrl.toString())) {
-                            return false
-                        }
-                        val web3AuthOptions = GsonBuilder().disableHtmlEscaping().create().fromJson(
-                            intent.getStringExtra(
-                                WEB3AUTH_OPTIONS
-                            ), Web3AuthOptions::class.java
-                        )
-                        val web3Auth = Web3Auth(web3AuthOptions)
-                        web3Auth.getSigningHash("https://web3auth.io")
+                        val hashUri = Uri.parse(uri.host + "?" + uri.fragment)
+                        val b64Params = hashUri.getQueryParameter("b64Params")
+                        val b64ParamString =
+                            decodeBase64URLString(b64Params!!).toString(Charsets.UTF_8)
+                        val signResponse = gson.fromJson(b64ParamString, SignResponse::class.java)
+                        Web3Auth.setSignResponse(signResponse)
+                        finish()
                     }
                     if (webViewUrl != null) {
                         view?.loadUrl(webViewUrl)

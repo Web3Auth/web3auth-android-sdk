@@ -63,7 +63,3 @@ fun Context.getCustomTabsBrowsers(): List<String> {
     }
     return customTabsBrowsers
 }
-
-interface SigningListener {
-    fun getSigningHash(hashString: String)
-}
