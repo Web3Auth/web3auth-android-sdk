@@ -34,14 +34,17 @@ class WebViewActivity : AppCompatActivity() {
             webView.webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                     if (redirectUrl?.isNotEmpty() == true) {
-                        val uri = Uri.parse(url)
-                        val hashUri = Uri.parse(uri.host + "?" + uri.fragment)
-                        val b64Params = hashUri.getQueryParameter("b64Params")
-                        val b64ParamString =
-                            decodeBase64URLString(b64Params!!).toString(Charsets.UTF_8)
-                        val signResponse = gson.fromJson(b64ParamString, SignResponse::class.java)
-                        Web3Auth.setSignResponse(signResponse)
-                        finish()
+                        if (url?.contains(redirectUrl) == true) {
+                            val uri = Uri.parse(url)
+                            val hashUri = Uri.parse(uri.host + "?" + uri.fragment)
+                            val b64Params = hashUri.getQueryParameter("b64Params")
+                            val b64ParamString =
+                                decodeBase64URLString(b64Params!!).toString(Charsets.UTF_8)
+                            val signResponse =
+                                gson.fromJson(b64ParamString, SignResponse::class.java)
+                            Web3Auth.setSignResponse(signResponse)
+                            finish()
+                        }
                     }
                     if (webViewUrl != null) {
                         view?.loadUrl(webViewUrl)
