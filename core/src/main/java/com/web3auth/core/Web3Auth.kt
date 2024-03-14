@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.keystore.KeyStoreManagerUtils
@@ -24,6 +25,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private var web3AuthOption = web3AuthOptions
     private var sessionManager: SessionManager = SessionManager(web3AuthOption.context)
 
+    /**
+     * Initializes the KeyStoreManager.
+     */
     private fun initiateKeyStoreManager() {
         KeyStoreManagerUtils.getKeyGenerator()
     }
@@ -53,9 +57,18 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return initOptions
     }
 
+    /**
+     * Retrieves the initialization parameters as a JSONObject.
+     *
+     * @param params The optional login parameters required for initialization. Default is null.
+     * @return The initialization parameters as a JSONObject.
+     */
     private fun getInitParams(params: LoginParams?): JSONObject {
         val initParams = JSONObject()
-        if (params?.loginProvider != null) initParams.put("loginProvider", params.loginProvider.name.lowercase(Locale.ROOT))
+        if (params?.loginProvider != null) initParams.put(
+            "loginProvider",
+            params.loginProvider.name.lowercase(Locale.ROOT)
+        )
         if (params?.extraLoginOptions != null) initParams.put(
             "extraLoginOptions",
             gson.toJson(params.extraLoginOptions)
@@ -73,6 +86,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return initParams
     }
 
+    /**
+     * Makes a request with the specified action type and login parameters.
+     *
+     * @param actionType The type of action to perform.
+     * @param params The login parameters required for the request.
+     */
     private fun request(
         actionType: String, params: LoginParams?
     ) {
@@ -134,6 +153,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
     }
 
+    /**
+     * Initializes the Web3Auth class asynchronously.
+     *
+     * @return A CompletableFuture<Void> representing the asynchronous operation.
+     */
     fun initialize(): CompletableFuture<Void> {
         val initializeCf = CompletableFuture<Void>()
         KeyStoreManagerUtils.initializePreferences(web3AuthOption.context.applicationContext)
@@ -155,6 +179,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return initializeCf
     }
 
+    /**
+     * Sets the result URL.
+     *
+     * @param uri The URI representing the result URL.
+     */
     fun setResultUrl(uri: Uri?) {
         val hash = uri?.fragment
         if (hash == null) {
@@ -230,6 +259,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
     }
 
+    /**
+     * Performs a login operation asynchronously.
+     *
+     * @param loginParams The login parameters required for authentication.
+     * @return A CompletableFuture<Web3AuthResponse> representing the asynchronous operation, containing the Web3AuthResponse upon successful login.
+     */
     fun login(loginParams: LoginParams): CompletableFuture<Web3AuthResponse> {
         //check for share
         if (web3AuthOption.loginConfig != null) {
@@ -248,6 +283,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return loginCompletableFuture
     }
 
+    /**
+     * Logs out the user asynchronously.
+     *
+     * @return A CompletableFuture<Void> representing the asynchronous operation.
+     */
     fun logout(): CompletableFuture<Void> {
         val logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
         if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
@@ -266,6 +306,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return logoutCompletableFuture
     }
 
+    /**
+     * Enables Multi-Factor Authentication (MFA) asynchronously.
+     *
+     * @param loginParams The optional login parameters required for authentication. Default is null.
+     * @return A CompletableFuture<Boolean> representing the asynchronous operation, indicating whether MFA was successfully enabled.
+     */
     fun enableMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
         enableMfaCompletableFuture = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
@@ -317,6 +363,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return sessionCompletableFuture
     }
 
+    /**
+     * Retrieves the login ID from the provided JSONObject asynchronously.
+     *
+     * @param jsonObject The JSONObject from which to retrieve the login ID.
+     * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
+     */
     private fun getLoginId(jsonObject: JSONObject): CompletableFuture<String> {
         val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
         val sessionResponse: CompletableFuture<String> =
@@ -331,6 +383,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return createSessionCompletableFuture
     }
 
+    /**
+     * Launches the wallet services asynchronously.
+     *
+     * @param loginParams The login parameters required for authentication.
+     * @param chainConfig The configuration details of the blockchain network.
+     * @param path The path where the wallet services will be launched. Default value is "wallet".
+     * @return A CompletableFuture<Void> representing the asynchronous operation.
+     */
     fun launchWalletServices(
         loginParams: LoginParams,
         chainConfig: ChainConfig,
@@ -377,7 +437,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                             .fragment(walletHash).build()
                     //print("wallet launch url: => $url")
                     val intent = Intent(context, WebViewActivity::class.java)
-                    intent.putExtra(WALLET_URL, url.toString())
+                    intent.putExtra(WEBVIEW_URL, url.toString())
                     context.startActivity(intent)
                     launchWalletServiceCF.complete(null)
                 }
@@ -386,6 +446,72 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             launchWalletServiceCF.completeExceptionally(Exception("Please login first to launch wallet"))
         }
         return launchWalletServiceCF
+    }
+
+    /**
+     * Signs a message asynchronously.
+     *
+     * @param loginParams The login parameters required for authentication.
+     * @param method The method name of the request.
+     * @param requestParams The parameters of the request in JSON array format.
+     * @param path The path where the signing service is located. Default value is "wallet/request".
+     * @return A CompletableFuture<Void> representing the asynchronous operation.
+     */
+    fun signMessage(
+        loginParams: LoginParams,
+        method: String,
+        requestParams: JsonArray,
+        path: String? = "wallet/request"
+    ): CompletableFuture<Void> {
+        val signMsgCF: CompletableFuture<Void> = CompletableFuture()
+        val sessionId = sessionManager.getSessionId()
+        if (sessionId.isNotBlank()) {
+            val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
+            val context = web3AuthOption.context
+            val initOptions = getInitOptions()
+            val initParams = getInitParams(loginParams)
+            val paramMap = JSONObject()
+            paramMap.put(
+                "options", initOptions
+            )
+            paramMap.put("params", initParams)
+
+            val loginIdCf = getLoginId(paramMap)
+
+            loginIdCf.whenComplete { loginId, error ->
+                if (error == null) {
+                    val signMessageMap = JsonObject()
+                    signMessageMap.addProperty("loginId", loginId)
+                    signMessageMap.addProperty("sessionId", sessionId)
+
+                    val requestData = JsonObject().apply {
+                        addProperty("method", method)
+                        addProperty("params", gson.toJson(requestParams))
+                    }
+
+                    signMessageMap.addProperty("request", gson.toJson(requestData))
+
+                    val signMessageHash =
+                        "b64Params=" + gson.toJson(signMessageMap).toByteArray(Charsets.UTF_8)
+                            .toBase64URLString()
+
+                    val url =
+                        Uri.Builder().scheme(sdkUrl.scheme)
+                            .encodedAuthority(sdkUrl.encodedAuthority)
+                            .encodedPath(sdkUrl.encodedPath).appendEncodedPath(path)
+                            .fragment(signMessageHash).build()
+                    //print("message signing url: => $url")
+                    val intent = Intent(context, WebViewActivity::class.java)
+                    intent.putExtra(WEBVIEW_URL, url.toString())
+                    intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
+                    context.startActivity(intent)
+                    signMsgCF.complete(null)
+                }
+            }
+        } else {
+            signMsgCF.completeExceptionally(Exception("Please login first to launch wallet"))
+        }
+        return signMsgCF
     }
 
     private fun throwEnableMFAError(error: ErrorCode) {
@@ -399,6 +525,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             )
     }
 
+    /**
+     * Retrieves the private key as a string.
+     *
+     * @return The private key as a string.
+     */
     fun getPrivkey(): String {
         val privKey: String? = if (web3AuthResponse == null) {
             ""
@@ -412,6 +543,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return privKey ?: ""
     }
 
+    /**
+     * Retrieves the Ed25519 private key as a string.
+     *
+     * @return The Ed25519 private key as a string.
+     */
     fun getEd25519PrivKey(): String {
         val ed25519Key: String? = if (web3AuthResponse == null) {
             ""
@@ -425,6 +561,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return ed25519Key ?: ""
     }
 
+    /**
+     * Retrieves user information if available.
+     *
+     * @return The user information if available, or null if not available.
+     */
     fun getUserInfo(): UserInfo? {
         return if (web3AuthResponse == null) {
             throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
@@ -433,6 +574,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
     }
 
+    /**
+     * Retrieves the Web3AuthResponse if available.
+     *
+     * @return The Web3AuthResponse if available, or null if not available.
+     */
     fun getWeb3AuthResponse(): Web3AuthResponse? {
         return if (web3AuthResponse == null) {
             throw Error(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
@@ -440,4 +586,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             web3AuthResponse
         }
     }
+
+    companion object {
+
+        private var signResponse: SignResponse? = null
+        fun setSignResponse(_response: SignResponse?) {
+            signResponse = _response
+        }
+
+        fun getSignResponse(): SignResponse? {
+            return signResponse
+        }
+    }
 }
+
