@@ -15,7 +15,9 @@
         android:allowBackup="true"
         android:supportsRtl="true">
 
-        <activity android:name="com.web3auth.core.WebViewActivity" />
+        <activity
+            android:name="com.web3auth.core.WebViewActivity"
+            android:theme="@style/Theme.AppCompat" />
 
     </application>
 
