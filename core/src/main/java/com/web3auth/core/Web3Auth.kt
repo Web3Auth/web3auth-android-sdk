@@ -457,7 +457,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      * @param path The path where the signing service is located. Default value is "wallet/request".
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
-    fun signMessage(
+    fun request(
         loginParams: LoginParams,
         method: String,
         requestParams: JsonArray,
