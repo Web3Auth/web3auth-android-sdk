@@ -6,5 +6,8 @@
     <string name="sign_out">Sign out</string>
     <string name="claim">Claim Flow</string>
     <string name="launch_wallet_services">Launch Wallet Services</string>
+    <string name="sign_msg">Sign Message</string>
+    <string name="send_tx">Send Transaction</string>
+    <string name="sign_result">Get Sign Result</string>
     <string name="mfa">SetUp MFA</string>
 </resources>

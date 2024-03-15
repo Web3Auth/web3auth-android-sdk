@@ -7,13 +7,16 @@ import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
+import com.google.gson.JsonArray
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
 import com.web3auth.core.types.*
 import org.json.JSONObject
+import org.web3j.crypto.Credentials
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -86,6 +89,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signInButton = findViewById<Button>(R.id.signInButton)
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
+        val signMsgButton = findViewById<Button>(R.id.signMsgButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
@@ -106,6 +110,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             signInButton.visibility = View.GONE
             signOutButton.visibility = View.VISIBLE
             launchWalletButton.visibility = View.VISIBLE
+            signMsgButton.visibility = View.VISIBLE
             btnSetUpMfa.visibility = View.VISIBLE
             spinner.visibility = View.GONE
             hintEmailEditText.visibility = View.GONE
@@ -116,6 +121,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             signOutButton.visibility = View.GONE
             btnSetUpMfa.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
+            signMsgButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
     }
@@ -202,6 +208,38 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
         }
 
+        val signResultButton = findViewById<Button>(R.id.signResultButton)
+        val signMsgButton = findViewById<Button>(R.id.signMsgButton)
+        signMsgButton.setOnClickListener {
+            val credentials: Credentials = Credentials.create(web3Auth.getPrivkey())
+            val params = JsonArray().apply {
+                add("Hello, World!")
+                add(credentials.address)
+                add("Android")
+            }
+            val signMsgCompletableFuture = web3Auth.request(
+                loginParams = LoginParams(
+                    selectedLoginProvider,
+                    extraLoginOptions = null,
+                    mfaLevel = MFALevel.NONE,
+                ), "personal_sign", requestParams = params
+            )
+            signMsgCompletableFuture.whenComplete { _, error ->
+                if (error == null) {
+                    Log.d("MainActivity_Web3Auth", "Message signed successfully")
+                    signResultButton.visibility = View.VISIBLE
+                } else {
+                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+                    signResultButton.visibility = View.GONE
+                }
+            }
+        }
+
+        signResultButton.setOnClickListener {
+            val signResult = Web3Auth.getSignResponse()
+            showAlertDialog("Sign Result", signResult.toString())
+        }
+
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         btnSetUpMfa.setOnClickListener {
             val setupMfaCf = web3Auth.enableMFA()
@@ -237,6 +275,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             count = 0
         } else {
             if (count > 0) {
+                if (Web3Auth.getSignResponse() != null) {
+                    return
+                }
                 Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
                 web3Auth.setResultUrl(null)
             }
@@ -253,5 +294,15 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         } else {
             hintEmailEditText.visibility = View.GONE
         }
+    }
+
+    private fun showAlertDialog(title: String, message: String) {
+        val builder = AlertDialog.Builder(this@MainActivity)
+        builder.setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 }

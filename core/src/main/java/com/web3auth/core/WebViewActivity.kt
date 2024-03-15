@@ -10,13 +10,17 @@ import android.view.ViewTreeObserver.OnScrollChangedListener
 import android.webkit.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.web3auth.core.types.WALLET_URL
+import com.google.gson.GsonBuilder
+import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.SignResponse
+import com.web3auth.core.types.WEBVIEW_URL
 
 class WebViewActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private var swipeRefreshLayout: SwipeRefreshLayout? = null
     private var mOnScrollChangedListener: OnScrollChangedListener? = null
+    private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,12 +31,26 @@ class WebViewActivity : AppCompatActivity() {
 
         val extras = intent.extras
         if (extras != null) {
-            val walletUrl = extras.getString(WALLET_URL)
+            val webViewUrl = extras.getString(WEBVIEW_URL)
+            val redirectUrl = extras.getString(REDIRECT_URL)
 
             webView.webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                    if (walletUrl != null) {
-                        view?.loadUrl(walletUrl)
+                    if (redirectUrl?.isNotEmpty() == true) {
+                        if (url?.contains(redirectUrl) == true) {
+                            val uri = Uri.parse(url)
+                            val hashUri = Uri.parse(uri.host + "?" + uri.fragment)
+                            val b64Params = hashUri.getQueryParameter("b64Params")
+                            val b64ParamString =
+                                decodeBase64URLString(b64Params!!).toString(Charsets.UTF_8)
+                            val signResponse =
+                                gson.fromJson(b64ParamString, SignResponse::class.java)
+                            Web3Auth.setSignResponse(signResponse)
+                            finish()
+                        }
+                    }
+                    if (webViewUrl != null) {
+                        view?.loadUrl(webViewUrl)
                     }
                     return false
                 }
@@ -48,8 +66,8 @@ class WebViewActivity : AppCompatActivity() {
             webSettings.userAgentString = null
             webSettings.setSupportMultipleWindows(true)
 
-            if (walletUrl != null) {
-                webView.loadUrl(walletUrl)
+            if (webViewUrl != null) {
+                webView.loadUrl(webViewUrl)
             }
         }
 
