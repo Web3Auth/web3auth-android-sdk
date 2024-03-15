@@ -92,7 +92,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      * @param actionType The type of action to perform.
      * @param params The login parameters required for the request.
      */
-    private fun request(
+    private fun processRequest(
         actionType: String, params: LoginParams?
     ) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
@@ -277,7 +277,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
 
         //login
-        request("login", loginParams)
+        processRequest("login", loginParams)
 
         loginCompletableFuture = CompletableFuture()
         return loginCompletableFuture
@@ -319,7 +319,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             throwEnableMFAError(ErrorCode.NOUSERFOUND)
             return enableMfaCompletableFuture
         }
-        request("enable_mfa", loginParams)
+        processRequest("enable_mfa", loginParams)
         return enableMfaCompletableFuture
     }
 
@@ -457,7 +457,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      * @param path The path where the signing service is located. Default value is "wallet/request".
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
-    fun signMessage(
+    fun request(
         loginParams: LoginParams,
         method: String,
         requestParams: JsonArray,

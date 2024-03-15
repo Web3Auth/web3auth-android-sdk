@@ -1,16 +1,19 @@
 package com.web3auth.core
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Message
 import android.view.ViewTreeObserver.OnScrollChangedListener
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.webkit.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.gson.GsonBuilder
-import com.web3auth.core.types.*
+import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.SignResponse
+import com.web3auth.core.types.WEBVIEW_URL
 
 class WebViewActivity : AppCompatActivity() {
 
@@ -61,6 +64,7 @@ class WebViewActivity : AppCompatActivity() {
             webSettings.javaScriptEnabled = true
             webSettings.domStorageEnabled = true
             webSettings.userAgentString = null
+            webSettings.setSupportMultipleWindows(true)
 
             if (webViewUrl != null) {
                 webView.loadUrl(webViewUrl)
@@ -70,6 +74,24 @@ class WebViewActivity : AppCompatActivity() {
         swipeRefreshLayout?.setOnRefreshListener {
             webView.reload()
         }
+
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onCreateWindow(
+                view: WebView,
+                dialog: Boolean,
+                userGesture: Boolean,
+                resultMsg: Message
+            ): Boolean {
+                val result = view.hitTestResult
+                val data = result.extra
+                val context: Context = view.context
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(data))
+                context.startActivity(browserIntent)
+                return false
+            }
+        }
+
+        webView.addJavascriptInterface(this, "AndroidBridge");
     }
 
     override fun onStart() {
@@ -90,5 +112,15 @@ class WebViewActivity : AppCompatActivity() {
             webView.canGoBack() -> webView.goBack()
             else -> super.onBackPressed()
         }
+    }
+
+    @JavascriptInterface
+    fun enablePullToRefresh() {
+        swipeRefreshLayout?.isEnabled = true
+    }
+
+    @JavascriptInterface
+    fun disablePullToRefresh() {
+        swipeRefreshLayout?.isEnabled = false
     }
 }

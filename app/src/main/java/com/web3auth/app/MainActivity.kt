@@ -217,7 +217,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 add(credentials.address)
                 add("Android")
             }
-            val signMsgCompletableFuture = web3Auth.signMessage(
+            val signMsgCompletableFuture = web3Auth.request(
                 loginParams = LoginParams(
                     selectedLoginProvider,
                     extraLoginOptions = null,
