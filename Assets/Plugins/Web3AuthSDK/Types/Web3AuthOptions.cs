@@ -19,7 +19,7 @@ public class Web3AuthOptions {
         }
         set { }
     }
-    public const string openLoginVersion = "v7";
+    public const string openLoginVersion = "v8";
 
     public const string walletServicesVersion = "v1";
     public string walletSdkUrl {
