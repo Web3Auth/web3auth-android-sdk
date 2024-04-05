@@ -8,6 +8,6 @@ public class ChainConfig {
     public string displayName { get; set; } = null;
     public string logo { get; set; } = null;
     public string rpcTarget { get; set; }
-    public string ticker { get; set; }
+    public string ticker { get; set; } = null;
     public string tickerName { get; set; } = null;
 }
