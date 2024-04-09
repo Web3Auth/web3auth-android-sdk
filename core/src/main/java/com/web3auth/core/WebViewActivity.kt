@@ -92,7 +92,7 @@ class WebViewActivity : AppCompatActivity() {
             }
         }
 
-        webView.addJavascriptInterface(this, "AndroidBridge");
+        webView.addJavascriptInterface(this, "JSBridge")
     }
 
     override fun onStart() {
@@ -106,6 +106,11 @@ class WebViewActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         swipeRefreshLayout?.viewTreeObserver?.removeOnScrollChangedListener(mOnScrollChangedListener);
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        webView.removeJavascriptInterface("JSBridge")
     }
 
     override fun onBackPressed() {
@@ -123,5 +128,10 @@ class WebViewActivity : AppCompatActivity() {
     @JavascriptInterface
     fun disablePullToRefresh() {
         swipeRefreshLayout?.isEnabled = false
+    }
+
+    @JavascriptInterface
+    fun closeWalletServices() {
+        finish()
     }
 }
