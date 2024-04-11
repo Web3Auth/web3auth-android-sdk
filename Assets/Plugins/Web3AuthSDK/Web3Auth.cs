@@ -236,7 +236,7 @@ public class Web3Auth : MonoBehaviour
             string code = httpRequest.QueryString.Get("code");
             if (!string.IsNullOrEmpty(code))
             {
-                this.setResultUrl(new Uri($"http://localhost#state=&{code}"));
+                this.setResultUrl(new Uri($"http://localhost#{code}"));
             }
 
             httpListener.Close();
@@ -336,6 +336,7 @@ public class Web3Auth : MonoBehaviour
                 UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
                 uriBuilder.Path = path;
                 uriBuilder.Fragment = "b64Params=" + hash;
+                //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
 
                 Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
             }
@@ -365,7 +366,7 @@ public class Web3Auth : MonoBehaviour
         if (queryParameters.Keys.Contains("error"))
             throw new UnKnownException(queryParameters["error"]);
 
-        string b64Params = hash.Split('&')[1].Split('=')[1];
+        string b64Params = hash.Split('=')[1];
         string decodedString = decodeBase64Params(b64Params);
         SessionResponse sessionResponse = null;
         try
