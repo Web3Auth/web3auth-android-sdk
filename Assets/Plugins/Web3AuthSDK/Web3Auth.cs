@@ -443,6 +443,10 @@ public class Web3Auth : MonoBehaviour
 
     public void enableMFA(LoginParams loginParams)
     {
+        if(web3AuthResponse.userInfo.isMfaEnabled == true)
+        {
+            throw new Exception("MFA is already enabled for this user.");
+        }
         string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
         if (!string.IsNullOrEmpty(sessionId))
         {
