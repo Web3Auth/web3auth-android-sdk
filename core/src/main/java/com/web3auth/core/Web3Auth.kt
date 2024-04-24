@@ -314,6 +314,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      */
     fun enableMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
         enableMfaCompletableFuture = CompletableFuture()
+        if (web3AuthResponse?.userInfo?.isMfaEnabled == true) {
+            throwEnableMFAError(ErrorCode.MFA_ALREADY_ENABLED)
+            return enableMfaCompletableFuture
+        }
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isBlank()) {
             throwEnableMFAError(ErrorCode.NOUSERFOUND)

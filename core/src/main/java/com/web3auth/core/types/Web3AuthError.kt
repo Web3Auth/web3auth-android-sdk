@@ -25,6 +25,9 @@ object Web3AuthError {
             ErrorCode.INVALID_LOGIN -> {
                 "Invalid Login"
             }
+            ErrorCode.MFA_ALREADY_ENABLED -> {
+                "MFA already enabled"
+            }
         }
     }
 }
@@ -36,5 +39,6 @@ enum class ErrorCode {
     RUNTIME_ERROR,
     APP_CANCELLED,
     SOMETHING_WENT_WRONG,
-    INVALID_LOGIN
+    INVALID_LOGIN,
+    MFA_ALREADY_ENABLED
 }
