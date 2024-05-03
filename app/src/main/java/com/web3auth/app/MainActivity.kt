@@ -14,6 +14,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
+import com.web3auth.core.isPhoneNumberValid
 import com.web3auth.core.types.*
 import org.json.JSONObject
 import org.web3j.crypto.Credentials
@@ -36,7 +37,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         LoginVerifier("LinkedIn", Provider.LINKEDIN),
         LoginVerifier("Twitter", Provider.TWITTER),
         LoginVerifier("Line", Provider.LINE),
-        LoginVerifier("Hosted Email Passwordless", Provider.EMAIL_PASSWORDLESS)
+        LoginVerifier("Hosted Email Passwordless", Provider.EMAIL_PASSWORDLESS),
+        LoginVerifier("SMS Passwordless", Provider.SMS_PASSWORDLESS),
+        LoginVerifier("JWT", Provider.JWT),
+        LoginVerifier("Farcaster", Provider.FARCASTER)
     )
 
     private var selectedLoginProvider: Provider = Provider.GOOGLE
@@ -54,6 +58,16 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
+
+        if (selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
+            val hintPhNo = hintEmailEditText.text.toString()
+            if (hintPhNo.isBlank() || !hintPhNo.isPhoneNumberValid()) {
+                Toast.makeText(this, "Please enter a valid Number.", Toast.LENGTH_LONG).show()
+                return
+            }
+            extraLoginOptions = ExtraLoginOptions(login_hint = hintPhNo)
+        }
+
         val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(
             LoginParams(
                 selectedLoginProvider,
@@ -148,7 +162,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 "loginConfig" to LoginConfigItem(
                     "web3auth-auth0-email-passwordless-sapphire-devnet",
                     typeOfLogin = TypeOfLogin.JWT,
-                    clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C"
+                    clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C",
                 )
             ),
             buildEnv = BuildEnv.TESTING,
@@ -288,7 +302,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         selectedLoginProvider = verifierList[p2].loginProvider
 
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
-        if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS) {
+        if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS || selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
             hintEmailEditText.visibility = View.VISIBLE
         } else {
             hintEmailEditText.visibility = View.GONE

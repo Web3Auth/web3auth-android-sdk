@@ -7,6 +7,7 @@ import android.net.Uri
 import android.util.Base64
 import android.util.Patterns
 import androidx.browser.customtabs.CustomTabsService
+import com.web3auth.core.types.WhiteLabelData
 
 const val BASE64_URL_FLAGS = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
 
@@ -41,6 +42,10 @@ fun String.isEmailValid(): Boolean {
     return Patterns.EMAIL_ADDRESS.matcher(this).matches()
 }
 
+fun String.isPhoneNumberValid(): Boolean {
+    return Patterns.PHONE.matcher(this).matches()
+}
+
 fun Context.getDefaultBrowser(): String? {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://web3auth.io"))
     val resolveInfo = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
@@ -62,4 +67,17 @@ fun Context.getCustomTabsBrowsers(): List<String> {
         }
     }
     return customTabsBrowsers
+}
+
+fun WhiteLabelData.merge(other: WhiteLabelData): WhiteLabelData {
+    return WhiteLabelData(
+        appName = other.appName ?: this.appName,
+        appUrl = other.appUrl ?: this.appUrl,
+        logoLight = other.logoLight ?: this.logoLight,
+        logoDark = other.logoDark ?: this.logoDark,
+        defaultLanguage = other.defaultLanguage ?: this.defaultLanguage,
+        mode = other.mode ?: this.mode,
+        useLogoLoader = other.useLogoLoader ?: this.useLogoLoader,
+        theme = other.theme ?: this.theme
+    )
 }

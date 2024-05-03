@@ -2,14 +2,20 @@ package com.web3auth.core
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.os.postDelayed
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.web3auth.core.api.ApiHelper
+import com.web3auth.core.api.ApiService
 import com.web3auth.core.keystore.KeyStoreManagerUtils
 import com.web3auth.core.types.*
 import com.web3auth.session_manager_android.SessionManager
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -24,6 +30,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
     private var sessionManager: SessionManager = SessionManager(web3AuthOption.context)
+    private var projectConfigResponse: ProjectConfigResponse? = null
 
     /**
      * Initializes the KeyStoreManager.
@@ -100,6 +107,25 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val initOptions = getInitOptions()
         val initParams = getInitParams(params)
 
+        if (params?.loginProvider == Provider.SMS_PASSWORDLESS) {
+            if (initOptions.has("loginConfig")) {
+                val loginConfigJson = initOptions.getString("loginConfig")
+                val jsonObject = JSONObject(loginConfigJson)
+                val loginConfigObject = jsonObject.getJSONObject("loginConfig")
+                val loginConfigItem =
+                    gson.fromJson(loginConfigObject.toString(), LoginConfigItem::class.java)
+                projectConfigResponse?.sms_otp_enabled?.let { smsOtpEnabled ->
+                    loginConfigItem.showOnMobile = smsOtpEnabled
+                    loginConfigItem.showOnDesktop = smsOtpEnabled
+                    loginConfigItem.showOnModal = smsOtpEnabled
+                    initOptions.put(
+                        "loginConfig",
+                        gson.toJson(mapOf("loginConfig" to loginConfigItem))
+                    )
+                }
+            }
+        }
+
         val paramMap = JSONObject()
         paramMap.put(
             "options", initOptions
@@ -164,6 +190,19 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
         //initiate keyStore
         initiateKeyStoreManager()
+
+        //fetch project config
+        fetchProjectConfig().whenComplete { response, error ->
+            if (error == null) {
+                projectConfigResponse = response
+                if (response?.whiteLabelData != null) {
+                    web3AuthOption.whiteLabel =
+                        web3AuthOption.whiteLabel?.merge(response.whiteLabelData)
+                }
+            } else {
+                initializeCf.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)))
+            }
+        }
 
         //authorize session
         if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
@@ -365,6 +404,44 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             }
         }
         return sessionCompletableFuture
+    }
+
+    private fun fetchProjectConfig(): CompletableFuture<ProjectConfigResponse> {
+        val projectConfigCompletableFuture: CompletableFuture<ProjectConfigResponse> =
+            CompletableFuture()
+        val web3AuthApi =
+            ApiHelper.getInstance(web3AuthOption.network.name).create(ApiService::class.java)
+        GlobalScope.launch {
+            try {
+                val result = web3AuthApi.fetchProjectConfig(
+                    web3AuthOption.clientId,
+                    web3AuthOption.network.name
+                )
+                if (result.isSuccessful && result.body() != null) {
+                    Handler(Looper.getMainLooper()).postDelayed(10) {
+                        projectConfigCompletableFuture.complete(result.body())
+                    }
+                } else {
+                    projectConfigCompletableFuture.completeExceptionally(
+                        Exception(
+                            Web3AuthError.getError(
+                                ErrorCode.RUNTIME_ERROR
+                            )
+                        )
+                    )
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                projectConfigCompletableFuture.completeExceptionally(
+                    Exception(
+                        Web3AuthError.getError(
+                            ErrorCode.SOMETHING_WENT_WRONG
+                        )
+                    )
+                )
+            }
+        }
+        return projectConfigCompletableFuture
     }
 
     /**

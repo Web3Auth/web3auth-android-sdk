@@ -10,7 +10,7 @@ data class Web3AuthOptions(
     var buildEnv: BuildEnv? = BuildEnv.PRODUCTION,
     @Transient var redirectUrl: Uri? = null,
     var sdkUrl: String = getSdkUrl(buildEnv),
-    val whiteLabel: WhiteLabelData? = null,
+    var whiteLabel: WhiteLabelData? = null,
     val loginConfig: HashMap<String, LoginConfigItem>? = null,
     val useCoreKitKey: Boolean? = false,
     val chainNamespace: ChainNamespace? = ChainNamespace.EIP155,
