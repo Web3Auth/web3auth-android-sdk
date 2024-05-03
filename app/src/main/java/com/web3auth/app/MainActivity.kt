@@ -302,6 +302,13 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         selectedLoginProvider = verifierList[p2].loginProvider
 
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
+
+        if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS) {
+            hintEmailEditText.hint = "Enter Email"
+        } else if (selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
+            hintEmailEditText.hint = "Enter Phone Number"
+        }
+
         if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS || selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
             hintEmailEditText.visibility = View.VISIBLE
         } else {
