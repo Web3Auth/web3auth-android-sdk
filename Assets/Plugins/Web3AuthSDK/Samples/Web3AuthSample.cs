@@ -21,6 +21,8 @@ public class Web3AuthSample : MonoBehaviour
         new LoginVerifier("Twitter", Provider.TWITTER),
         new LoginVerifier("Line", Provider.LINE),
         new LoginVerifier("Hosted Email Passwordless", Provider.EMAIL_PASSWORDLESS),
+        new LoginVerifier("SMS Passwordless", Provider.SMS_PASSWORDLESS),
+        new LoginVerifier("Farcaster", Provider.FARCASTER),
     };
 
     Web3Auth web3Auth;
