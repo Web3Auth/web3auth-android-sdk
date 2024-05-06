@@ -107,25 +107,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val initOptions = getInitOptions()
         val initParams = getInitParams(params)
 
-        if (params?.loginProvider == Provider.SMS_PASSWORDLESS) {
-            if (initOptions.has("loginConfig")) {
-                val loginConfigJson = initOptions.getString("loginConfig")
-                val jsonObject = JSONObject(loginConfigJson)
-                val loginConfigObject = jsonObject.getJSONObject("loginConfig")
-                val loginConfigItem =
-                    gson.fromJson(loginConfigObject.toString(), LoginConfigItem::class.java)
-                projectConfigResponse?.sms_otp_enabled?.let { smsOtpEnabled ->
-                    loginConfigItem.showOnMobile = smsOtpEnabled
-                    loginConfigItem.showOnDesktop = smsOtpEnabled
-                    loginConfigItem.showOnModal = smsOtpEnabled
-                    initOptions.put(
-                        "loginConfig",
-                        gson.toJson(mapOf("loginConfig" to loginConfigItem))
-                    )
-                }
-            }
-        }
-
         val paramMap = JSONObject()
         paramMap.put(
             "options", initOptions
