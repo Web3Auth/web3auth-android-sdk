@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using UnityEngine.Networking;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class Web3AuthApi
 {
@@ -21,6 +22,7 @@ public class Web3AuthApi
     {
         //var requestURL = $"{baseAddress}/store/get?key={key}";
         //var request = UnityWebRequest.Get(requestURL);
+        Debug.Log("authorizeSession api called: =>");
         WWWForm data = new WWWForm();
         data.AddField("key", key);
 
@@ -93,4 +95,45 @@ public class Web3AuthApi
         else
             callback(null);
     }
+
+    public IEnumerator fetchProjectConfig(string project_id, string network, Action<ProjectConfigResponse> callback)
+    {
+        //var requestURL = $"{baseAddress}/store/get?key={key}";
+        //var request = UnityWebRequest.Get(requestURL);
+        Debug.Log("fetchProjectConfig api called: =>");
+        WWWForm data = new WWWForm();
+        data.AddField("project_id", project_id);
+        data.AddField("network", network);
+        data.AddField("whitelist", true.ToString());
+
+        string baseUrl = SIGNER_MAP[network];
+        var request = UnityWebRequest.Post($"{baseUrl}/api/configuration", data);
+
+        Debug.Log("baseUrl =>" + baseUrl);
+        Debug.Log("request.isNetworkError =>" + request.isNetworkError);
+        Debug.Log("request.isHttpError =>" + request.isHttpError);
+        Debug.Log("request.isHttpError =>" + request.error);
+        Debug.Log("request.result =>" + request.result);
+        Debug.Log("request.downloadHandler.text =>" + request.downloadHandler.text);
+
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            string result = request.downloadHandler.text;
+            callback(Newtonsoft.Json.JsonConvert.DeserializeObject<ProjectConfigResponse>(result));
+        }
+        else
+            callback(null);
+    }
+
+    public static Dictionary<string, string> SIGNER_MAP = new Dictionary<string, string>()
+    {
+        { "mainnet", "https://signer.web3auth.io" },
+        { "testnet", "https://signer.web3auth.io" },
+        { "cyan", "https://signer-polygon.web3auth.io" },
+        { "aqua", "https://signer-polygon.web3auth.io" },
+        { "sapphire_mainnet", "https://signer.web3auth.io" },
+        { "sapphire_devnet", "https://signer.web3auth.io" }
+    };
 }

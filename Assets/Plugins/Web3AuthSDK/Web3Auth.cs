@@ -87,6 +87,20 @@ public class Web3Auth : MonoBehaviour
 //            this.setResultUrl(new Uri($"http://localhost#{code}"));
 //        } 
 #endif
+
+        /*fetchProjectConfig().ContinueWith(task =>
+        {
+            Debug.Log("fetchProjectConfig task: =>" + task.Result);
+            if (task.Exception == null)
+            {
+                var response = task.Result;
+                if (response?.whiteLabelData != null)
+                {
+                    this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(response.whiteLabelData);
+                }
+            }
+        });*/
+        fetchProjectConfig();
         authorizeSession("");
     }
 
@@ -649,6 +663,38 @@ public class Web3Auth : MonoBehaviour
             }
         ));
         return await createSessionResponse.Task;
+    }
+
+    private TaskCompletionSource<ProjectConfigResponse> fetchProjectConfig()
+    {
+        Debug.Log("fetchProjectConfig entry point: =>");
+        var projectConfigTaskCompletionSource = new TaskCompletionSource<ProjectConfigResponse>();
+        StartCoroutine(Web3AuthApi.getInstance().fetchProjectConfig(this.web3AuthOptions.clientId, this.web3AuthOptions.network.ToString().ToLower(), (response =>
+        {
+            if (response != null)
+            {
+                Debug.Log("configResponse: =>" + response);
+                projectConfigTaskCompletionSource.SetResult(response);
+            }
+            else
+            {
+                Debug.Log("configResponse error:");
+                projectConfigTaskCompletionSource.SetException(new Exception("Something went wrong. Please try again later."));
+            }
+        })));
+        yield return new WaitUntil(() => projectConfigTaskCompletionSource.Task.IsCompleted);
+        /*if (projectConfigTaskCompletionSource.Task.Exception != null)
+        {
+            Debug.LogError("Error fetching project config: " + projectConfigTaskCompletionSource.Task.Exception.Message);
+        }
+        else
+        {
+            var projectConfigResponse = projectConfigTaskCompletionSource.Task.Result;
+            if (projectConfigResponse?.whiteLabelData != null)
+            {
+                this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(projectConfigResponse.whiteLabelData);
+            }
+        }*/
     }
 
     public string getPrivKey()
