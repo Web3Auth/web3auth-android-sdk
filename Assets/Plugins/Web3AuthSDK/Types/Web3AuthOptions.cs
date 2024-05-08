@@ -21,7 +21,7 @@ public class Web3AuthOptions {
     }
     public const string openLoginVersion = "v8";
 
-    public const string walletServicesVersion = "v1";
+    public const string walletServicesVersion = "v2";
     public string walletSdkUrl {
          get {
             if (buildEnv == Web3Auth.BuildEnv.STAGING)
