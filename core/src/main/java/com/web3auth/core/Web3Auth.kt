@@ -61,6 +61,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (web3AuthOption.sessionTime != null) initOptions.put(
             "sessionTime", web3AuthOption.sessionTime
         )
+        if (web3AuthOption.originData != null) initOptions.put(
+            "originData", gson.toJson(web3AuthOption.originData)
+        )
         return initOptions
     }
 
@@ -176,6 +179,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         fetchProjectConfig().whenComplete { response, error ->
             if (error == null) {
                 projectConfigResponse = response
+                web3AuthOption.originData = response.whitelist?.signed_urls
                 if (response?.whiteLabelData != null) {
                     web3AuthOption.whiteLabel =
                         web3AuthOption.whiteLabel?.merge(response.whiteLabelData)
