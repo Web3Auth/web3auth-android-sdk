@@ -22,7 +22,6 @@ public class Web3AuthApi
     {
         //var requestURL = $"{baseAddress}/store/get?key={key}";
         //var request = UnityWebRequest.Get(requestURL);
-        Debug.Log("authorizeSession api called: =>");
         WWWForm data = new WWWForm();
         data.AddField("key", key);
 
@@ -31,7 +30,7 @@ public class Web3AuthApi
         yield return request.SendWebRequest();
         // Debug.Log("baseAddress =>" + baseAddress);
         // Debug.Log("key =>" + key);
-        // //Debug.Log("request URL =>"+ requestURL);
+        // Debug.Log("request URL =>"+ requestURL);
         // Debug.Log("request.isNetworkError =>" + request.isNetworkError);
         // Debug.Log("request.isHttpError =>" + request.isHttpError);
         // Debug.Log("request.isHttpError =>" + request.error);
@@ -98,23 +97,10 @@ public class Web3AuthApi
 
     public IEnumerator fetchProjectConfig(string project_id, string network, Action<ProjectConfigResponse> callback)
     {
-        //var requestURL = $"{baseAddress}/store/get?key={key}";
-        //var request = UnityWebRequest.Get(requestURL);
-        Debug.Log("fetchProjectConfig api called: =>");
-        WWWForm data = new WWWForm();
-        data.AddField("project_id", project_id);
-        data.AddField("network", network);
-        data.AddField("whitelist", true.ToString());
-
+        //Debug.Log("network =>" + network);
         string baseUrl = SIGNER_MAP[network];
-        var request = UnityWebRequest.Post($"{baseUrl}/api/configuration", data);
-
-        Debug.Log("baseUrl =>" + baseUrl);
-        Debug.Log("request.isNetworkError =>" + request.isNetworkError);
-        Debug.Log("request.isHttpError =>" + request.isHttpError);
-        Debug.Log("request.isHttpError =>" + request.error);
-        Debug.Log("request.result =>" + request.result);
-        Debug.Log("request.downloadHandler.text =>" + request.downloadHandler.text);
+        var requestURL = $"{baseUrl}/api/configuration?project_id={project_id}&network={network}&whitelist=true";
+        var request = UnityWebRequest.Get(requestURL);
 
         yield return request.SendWebRequest();
 

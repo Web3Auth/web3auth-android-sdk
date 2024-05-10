@@ -100,19 +100,19 @@ public class Web3Auth : MonoBehaviour
                 }
             }
         });*/
-        fetchProjectConfig();
         authorizeSession("");
     }
 
     public void setOptions(Web3AuthOptions web3AuthOptions)
     {
+        this.web3AuthOptions = web3AuthOptions;
+        fetchProjectConfig();
+
         JsonSerializerSettings settings = new JsonSerializerSettings
         {
             Converters = new List<JsonConverter> { new StringEnumConverter() },
             Formatting = Formatting.Indented
         };
-
-        this.web3AuthOptions = web3AuthOptions;
 
         if (this.web3AuthOptions.redirectUrl != null)
             this.initParams["redirectUrl"] = this.web3AuthOptions.redirectUrl;
@@ -665,36 +665,35 @@ public class Web3Auth : MonoBehaviour
         return await createSessionResponse.Task;
     }
 
-    private TaskCompletionSource<ProjectConfigResponse> fetchProjectConfig()
+    private void fetchProjectConfig()
     {
-        Debug.Log("fetchProjectConfig entry point: =>");
-        var projectConfigTaskCompletionSource = new TaskCompletionSource<ProjectConfigResponse>();
         StartCoroutine(Web3AuthApi.getInstance().fetchProjectConfig(this.web3AuthOptions.clientId, this.web3AuthOptions.network.ToString().ToLower(), (response =>
         {
             if (response != null)
             {
-                Debug.Log("configResponse: =>" + response);
-                projectConfigTaskCompletionSource.SetResult(response);
+                this.web3AuthOptions.originData = response.whitelist?.signed_urls;
+                if (response?.whiteLabelData != null)
+                {
+                    this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(response.whiteLabelData);
+                }
+                //Debug.Log("this.web3AuthOptions: =>" + JsonConvert.SerializeObject(this.web3AuthOptions));
+
+                JsonSerializerSettings settings = new JsonSerializerSettings
+                {
+                    Converters = new List<JsonConverter> { new StringEnumConverter() },
+                    Formatting = Formatting.Indented
+                };
+                if (this.web3AuthOptions.whiteLabel != null)
+                    this.initParams["whiteLabel"] = JsonConvert.SerializeObject(this.web3AuthOptions.whiteLabel, settings);
+
+                if(this.web3AuthOptions.originData != null)
+                    this.initParams["originData"] = JsonConvert.SerializeObject(this.web3AuthOptions.originData, settings);
             }
             else
             {
-                Debug.Log("configResponse error:");
-                projectConfigTaskCompletionSource.SetException(new Exception("Something went wrong. Please try again later."));
+                Debug.Log("configResponse API error:");
             }
         })));
-        yield return new WaitUntil(() => projectConfigTaskCompletionSource.Task.IsCompleted);
-        /*if (projectConfigTaskCompletionSource.Task.Exception != null)
-        {
-            Debug.LogError("Error fetching project config: " + projectConfigTaskCompletionSource.Task.Exception.Message);
-        }
-        else
-        {
-            var projectConfigResponse = projectConfigTaskCompletionSource.Task.Result;
-            if (projectConfigResponse?.whiteLabelData != null)
-            {
-                this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(projectConfigResponse.whiteLabelData);
-            }
-        }*/
     }
 
     public string getPrivKey()
