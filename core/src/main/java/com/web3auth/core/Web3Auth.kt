@@ -30,7 +30,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
     private var sessionManager: SessionManager = SessionManager(web3AuthOption.context)
-    private var projectConfigResponse: ProjectConfigResponse? = null
 
     /**
      * Initializes the KeyStoreManager.
@@ -178,7 +177,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         //fetch project config
         fetchProjectConfig().whenComplete { response, error ->
             if (error == null) {
-                projectConfigResponse = response
                 web3AuthOption.originData = response.whitelist?.signed_urls
                 if (response?.whiteLabelData != null) {
                     web3AuthOption.whiteLabel =
