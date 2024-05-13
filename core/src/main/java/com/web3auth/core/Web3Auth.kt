@@ -2,10 +2,7 @@ package com.web3auth.core
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import androidx.browser.customtabs.CustomTabsIntent
-import androidx.core.os.postDelayed
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -174,21 +171,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         //initiate keyStore
         initiateKeyStoreManager()
 
-        //fetch project config
-        fetchProjectConfig().whenComplete { response, error ->
-            if (error == null) {
-                web3AuthOption.originData = response.whitelist?.signed_urls
-                if (response?.whiteLabelData != null) {
-                    web3AuthOption.whiteLabel =
-                        web3AuthOption.whiteLabel?.merge(response.whiteLabelData)
-                }
-            } else {
-                initializeCf.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)))
-            }
-        }
-
         //authorize session
         if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
+
+            //fetch project config
+            val sessionId = sessionManager.getSessionId()
+            if (sessionId.isBlank()) {
+                fetchProjectConfig()
+            }
+
             this.authorizeSession().whenComplete { resp, error ->
                 if (error == null) {
                     web3AuthResponse = resp
@@ -389,7 +380,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return sessionCompletableFuture
     }
 
-    private fun fetchProjectConfig(): CompletableFuture<ProjectConfigResponse> {
+    private fun fetchProjectConfig() {
         val projectConfigCompletableFuture: CompletableFuture<ProjectConfigResponse> =
             CompletableFuture()
         val web3AuthApi =
@@ -401,8 +392,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     web3AuthOption.network.name
                 )
                 if (result.isSuccessful && result.body() != null) {
-                    Handler(Looper.getMainLooper()).postDelayed(10) {
-                        projectConfigCompletableFuture.complete(result.body())
+                    val response = result.body()
+                    web3AuthOption.originData =
+                        web3AuthOption.originData.mergeMaps(response?.whitelist?.signed_urls)
+                    if (response?.whiteLabelData != null) {
+                        web3AuthOption.whiteLabel =
+                            web3AuthOption.whiteLabel?.merge(response.whiteLabelData)
                     }
                 } else {
                     projectConfigCompletableFuture.completeExceptionally(
@@ -424,7 +419,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 )
             }
         }
-        return projectConfigCompletableFuture
     }
 
     /**

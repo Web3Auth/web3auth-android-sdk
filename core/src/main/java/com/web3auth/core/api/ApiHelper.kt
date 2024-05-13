@@ -24,7 +24,7 @@ object ApiHelper {
         Network.SAPPHIRE_DEVNET to "https://signer.web3auth.io"
     )
 
-    private const val baseUrl = "https://session.web3auth.io"
+    private const val sessionBaseUrl = "https://session.web3auth.io"
 
     private val okHttpClient = OkHttpClient().newBuilder()
         .readTimeout(60, TimeUnit.SECONDS)

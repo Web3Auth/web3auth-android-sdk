@@ -70,6 +70,16 @@ fun Context.getCustomTabsBrowsers(): List<String> {
 }
 
 fun WhiteLabelData.merge(other: WhiteLabelData): WhiteLabelData {
+    val mergedTheme = HashMap<String, String?>()
+    this.theme.let {
+        if (it != null) {
+            mergedTheme.putAll(it)
+        }
+    }
+    other.theme?.forEach { (key, value) ->
+        mergedTheme[key] = value ?: mergedTheme[key]
+    }
+
     return WhiteLabelData(
         appName = other.appName ?: this.appName,
         appUrl = other.appUrl ?: this.appUrl,
@@ -78,6 +88,26 @@ fun WhiteLabelData.merge(other: WhiteLabelData): WhiteLabelData {
         defaultLanguage = other.defaultLanguage ?: this.defaultLanguage,
         mode = other.mode ?: this.mode,
         useLogoLoader = other.useLogoLoader ?: this.useLogoLoader,
-        theme = other.theme ?: this.theme
+        theme = mergedTheme
     )
 }
+
+fun Map<String, String>?.mergeMaps(other: Map<String, String>?): Map<String, String>? {
+    if (this == null && other == null) {
+        return null
+    } else if (this == null) {
+        return other
+    } else if (other == null) {
+        return this
+    }
+
+    val mergedMap = LinkedHashMap<String, String>()
+    mergedMap.putAll(this)
+
+    other.forEach { (key, value) ->
+        mergedMap[key] = value
+    }
+
+    return mergedMap
+}
+

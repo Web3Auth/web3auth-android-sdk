@@ -8,5 +8,5 @@ data class WhiteLabelData(
     var defaultLanguage: Language? = Language.EN,
     var mode: ThemeModes? = null,
     var useLogoLoader: Boolean? = false,
-    var theme: HashMap<String, String>? = null
+    var theme: HashMap<String, String?>? = null
 )
