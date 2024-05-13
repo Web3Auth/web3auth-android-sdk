@@ -37,11 +37,11 @@ enum class Provider {
     @SerializedName("email_passwordless")
     EMAIL_PASSWORDLESS,
 
-    @SerializedName("sms_passwordless")
-    SMS_PASSWORDLESS,
-
     @SerializedName("jwt")
     JWT,
+
+    @SerializedName("sms_passwordless")
+    SMS_PASSWORDLESS,
 
     @SerializedName("farcaster")
     FARCASTER

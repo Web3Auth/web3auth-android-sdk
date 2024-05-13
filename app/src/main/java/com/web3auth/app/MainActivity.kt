@@ -201,14 +201,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         launchWalletButton.setOnClickListener {
             val launchWalletCompletableFuture = web3Auth.launchWalletServices(
-                loginParams = LoginParams(
-                    selectedLoginProvider,
-                    extraLoginOptions = null,
-                    mfaLevel = MFALevel.NONE,
-                ),
                 chainConfig = ChainConfig(
-                    chainId = "0x1",
-                    rpcTarget = "https://mainnet.infura.io/v3/daeee53504be4cd3a997d4f2718d33e0",
+                    chainId = "0x89",
+                    rpcTarget = "https://1rpc.io/matic",
                     chainNamespace = ChainNamespace.EIP155
                 )
             )

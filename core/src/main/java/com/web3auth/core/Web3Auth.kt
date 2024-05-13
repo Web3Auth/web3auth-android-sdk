@@ -450,7 +450,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
     fun launchWalletServices(
-        loginParams: LoginParams,
         chainConfig: ChainConfig,
         path: String? = "wallet"
     ): CompletableFuture<Void> {
@@ -465,13 +464,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 "chainConfig", gson.toJson(chainConfig)
             )
 
-            val initParams = getInitParams(loginParams)
-
             val paramMap = JSONObject()
             paramMap.put(
                 "options", initOptions
             )
-            paramMap.put("params", initParams)
 
             val loginIdCf = getLoginId(paramMap)
 
