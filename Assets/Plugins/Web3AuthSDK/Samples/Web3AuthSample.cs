@@ -190,19 +190,6 @@ public class Web3AuthSample : MonoBehaviour
     private void launchWalletServices() {
         var selectedProvider = verifierList[verifierDropdown.value].loginProvider;
 
-        var options = new LoginParams()
-        {
-            loginProvider = selectedProvider
-        };
-
-        if (selectedProvider == Provider.EMAIL_PASSWORDLESS)
-        {
-            options.extraLoginOptions = new ExtraLoginOptions()
-            {
-                login_hint = emailAddressField.text
-            };
-        }
-
         var chainConfig = new ChainConfig()
         {
             chainId = "0x1",
@@ -210,6 +197,6 @@ public class Web3AuthSample : MonoBehaviour
             ticker = "ETH",
             chainNamespace = Web3Auth.ChainNamespace.EIP155
         };
-        web3Auth.launchWalletServices(options, chainConfig);
+        web3Auth.launchWalletServices(chainConfig);
     }
 }
