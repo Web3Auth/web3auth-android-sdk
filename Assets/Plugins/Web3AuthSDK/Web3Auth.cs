@@ -323,7 +323,7 @@ public class Web3Auth : MonoBehaviour
                 var loginIdObject = new Dictionary<string, string>
                  {
                       { "loginId", loginId },
-                      { "sessionId", sessionId }
+                      { "sessionId", sessionId },
                       { "platform", "unity" }
                  };
                 string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Formatting.None,
