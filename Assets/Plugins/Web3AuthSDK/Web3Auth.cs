@@ -324,6 +324,7 @@ public class Web3Auth : MonoBehaviour
                  {
                       { "loginId", loginId },
                       { "sessionId", sessionId }
+                      { "platform", "unity" }
                  };
                 string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Formatting.None,
                     new JsonSerializerSettings
