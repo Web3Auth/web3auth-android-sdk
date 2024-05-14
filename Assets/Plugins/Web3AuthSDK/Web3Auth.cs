@@ -88,18 +88,6 @@ public class Web3Auth : MonoBehaviour
 //        } 
 #endif
 
-        /*fetchProjectConfig().ContinueWith(task =>
-        {
-            Debug.Log("fetchProjectConfig task: =>" + task.Result);
-            if (task.Exception == null)
-            {
-                var response = task.Result;
-                if (response?.whiteLabelData != null)
-                {
-                    this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(response.whiteLabelData);
-                }
-            }
-        });*/
         authorizeSession("");
     }
 
@@ -310,7 +298,7 @@ public class Web3Auth : MonoBehaviour
         }
     }
 
-    public async void launchWalletServices(LoginParams loginParams, ChainConfig chainConfig, string path = "wallet")
+    public async void launchWalletServices(ChainConfig chainConfig, string path = "wallet")
     {
             string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
             if (!string.IsNullOrEmpty(sessionId))
@@ -321,11 +309,9 @@ public class Web3Auth : MonoBehaviour
             this.initParams["redirectUrl"] = Utils.GetCurrentURL();
     #endif
 
-            loginParams.redirectUrl = loginParams.redirectUrl ?? new Uri(this.initParams["redirectUrl"].ToString());
             this.initParams["chainConfig"] = chainConfig;
             Dictionary<string, object> paramMap = new Dictionary<string, object>();
             paramMap["options"] = this.initParams;
-            paramMap["params"] = loginParams == null ? (object)new Dictionary<string, object>() : (object)loginParams;
 
             //Debug.Log("paramMap: =>" + JsonConvert.SerializeObject(paramMap));
             string loginId = await createSession(JsonConvert.SerializeObject(paramMap, Formatting.None,
@@ -671,7 +657,7 @@ public class Web3Auth : MonoBehaviour
         {
             if (response != null)
             {
-                this.web3AuthOptions.originData = response.whitelist?.signed_urls;
+                this.web3AuthOptions.originData = this.web3AuthOptions.originData.mergeMaps(response.whitelist?.signed_urls);
                 if (response?.whiteLabelData != null)
                 {
                     this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(response.whiteLabelData);
