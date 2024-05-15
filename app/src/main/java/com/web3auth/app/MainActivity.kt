@@ -212,10 +212,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 add("Android")
             }
             val signMsgCompletableFuture = web3Auth.request(
-                loginParams = LoginParams(
-                    selectedLoginProvider,
-                    extraLoginOptions = null,
-                    mfaLevel = MFALevel.NONE,
+                chainConfig = ChainConfig(
+                    chainId = "0x89",
+                    rpcTarget = "https://polygon-rpc.com/",
+                    chainNamespace = ChainNamespace.EIP155
                 ), "personal_sign", requestParams = params
             )
             signMsgCompletableFuture.whenComplete { _, error ->
