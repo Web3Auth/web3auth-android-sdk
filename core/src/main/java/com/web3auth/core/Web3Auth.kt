@@ -445,14 +445,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     /**
      * Launches the wallet services asynchronously.
      *
-     * @param loginParams The login parameters required for authentication.
      * @param chainConfig The configuration details of the blockchain network.
      * @param path The path where the wallet services will be launched. Default value is "wallet".
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
     fun launchWalletServices(
         chainConfig: ChainConfig,
-        path: String? = "wallet"
+        path: String? = "wallet",
     ): CompletableFuture<Void> {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
@@ -479,7 +478,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         "loginId", loginId
                     )
                     walletMap.addProperty("sessionId", sessionId)
-                    walletMap.addProperty("isAndroid", true)
+                    walletMap.addProperty("platform", "android")
 
                     val walletHash =
                         "b64Params=" + gson.toJson(walletMap).toByteArray(Charsets.UTF_8)
@@ -506,14 +505,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     /**
      * Signs a message asynchronously.
      *
-     * @param loginParams The login parameters required for authentication.
+     * @param chainConfig The configuration details of the blockchain network.
      * @param method The method name of the request.
      * @param requestParams The parameters of the request in JSON array format.
      * @param path The path where the signing service is located. Default value is "wallet/request".
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
     fun request(
-        loginParams: LoginParams,
+        chainConfig: ChainConfig,
         method: String,
         requestParams: JsonArray,
         path: String? = "wallet/request"
@@ -524,12 +523,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
             val context = web3AuthOption.context
             val initOptions = getInitOptions()
-            val initParams = getInitParams(loginParams)
+            initOptions.put(
+                "chainConfig", gson.toJson(chainConfig)
+            )
             val paramMap = JSONObject()
             paramMap.put(
                 "options", initOptions
             )
-            paramMap.put("params", initParams)
 
             val loginIdCf = getLoginId(paramMap)
 
@@ -538,6 +538,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     val signMessageMap = JsonObject()
                     signMessageMap.addProperty("loginId", loginId)
                     signMessageMap.addProperty("sessionId", sessionId)
+                    signMessageMap.addProperty("platform", "android")
 
                     val requestData = JsonObject().apply {
                         addProperty("method", method)
