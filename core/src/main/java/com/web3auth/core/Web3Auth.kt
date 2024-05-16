@@ -175,10 +175,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
 
             //fetch project config
-            val sessionId = sessionManager.getSessionId()
-            if (sessionId.isBlank()) {
-                fetchProjectConfig()
-            }
+            fetchProjectConfig()
 
             this.authorizeSession().whenComplete { resp, error ->
                 if (error == null) {
