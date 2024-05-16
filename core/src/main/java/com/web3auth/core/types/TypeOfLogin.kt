@@ -23,16 +23,25 @@ enum class TypeOfLogin {
     KAKAO,
     @SerializedName("linkedin")
     LINKEDIN,
+
     @SerializedName("twitter")
     TWITTER,
+
     @SerializedName("weibo")
     WEIBO,
+
     @SerializedName("wechat")
     WECHAT,
+
     @SerializedName("email_passwordless")
     EMAIL_PASSWORDLESS,
-    @SerializedName("email_password")
-    EMAIL_PASSWORD,
+
     @SerializedName("jwt")
-    JWT
+    JWT,
+
+    @SerializedName("sms_passwordless")
+    SMS_PASSWORDLESS,
+
+    @SerializedName("farcaster")
+    FARCASTER
 }
