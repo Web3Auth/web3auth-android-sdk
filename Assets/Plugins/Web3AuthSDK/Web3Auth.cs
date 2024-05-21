@@ -284,7 +284,14 @@ public class Web3Auth : MonoBehaviour
                 })));
 
             UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
-            uriBuilder.Path += "/" + "start";
+            if(this.web3AuthOptions.sdkUrl.Contains("develop"))
+            {
+                uriBuilder.Path = "/" + "start";
+            }
+            else
+            {
+                uriBuilder.Path += "/" + "start";
+            }
             uriBuilder.Fragment = "b64Params=" + hash;
             //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
 
@@ -333,7 +340,14 @@ public class Web3Auth : MonoBehaviour
                     })));
 
                 UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
-                uriBuilder.Path += "/" + path;
+                if(this.web3AuthOptions.sdkUrl.Contains("develop"))
+                {
+                    uriBuilder.Path = "/" + "start";
+                }
+                else
+                {
+                    uriBuilder.Path += "/" + "start";
+                }
                 uriBuilder.Fragment = "b64Params=" + hash;
                 //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
 
