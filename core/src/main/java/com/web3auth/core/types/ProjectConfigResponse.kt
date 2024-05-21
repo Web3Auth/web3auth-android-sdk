@@ -10,7 +10,7 @@ data class WhitelistResponse(
 
 @Keep
 data class ProjectConfigResponse(
-    val whiteLabelData: WhiteLabelData? = null,
+    val whitelabel: WhiteLabelData? = null,
     val sms_otp_enabled: Boolean,
     val wallet_connect_enabled: Boolean,
     val wallet_connect_project_id: String?,

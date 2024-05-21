@@ -392,9 +392,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     val response = result.body()
                     web3AuthOption.originData =
                         web3AuthOption.originData.mergeMaps(response?.whitelist?.signed_urls)
-                    if (response?.whiteLabelData != null) {
+                    if (response?.whitelabel != null) {
                         web3AuthOption.whiteLabel =
-                            web3AuthOption.whiteLabel?.merge(response.whiteLabelData)
+                            web3AuthOption.whiteLabel?.merge(response.whitelabel)
                     }
                 } else {
                     projectConfigCompletableFuture.completeExceptionally(

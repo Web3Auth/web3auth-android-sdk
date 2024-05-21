@@ -146,7 +146,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         val options = Web3AuthOptions(
             context = this,
-            clientId = "BHgArYmWwSeq21czpcarYh0EVq2WWOzflX-NTK-tY1-1pauPzHKRRLgpABkmYiIV_og9jAvoIxQ8L3Smrwe04Lw",
+            clientId = "BFuUqebV5I8Pz5F7a5A2ihW7YVmbv_OHXnHYDv6OltAD5NGr6e-ViNvde3U4BHdn6HvwfkgobhVu4VwC-OSJkik",
             network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
 //            sdkUrl = "https://auth.mocaverse.xyz",

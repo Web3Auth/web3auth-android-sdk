@@ -81,13 +81,13 @@ fun WhiteLabelData.merge(other: WhiteLabelData): WhiteLabelData {
     }
 
     return WhiteLabelData(
-        appName = other.appName ?: this.appName,
-        appUrl = other.appUrl ?: this.appUrl,
-        logoLight = other.logoLight ?: this.logoLight,
-        logoDark = other.logoDark ?: this.logoDark,
-        defaultLanguage = other.defaultLanguage ?: this.defaultLanguage,
-        mode = other.mode ?: this.mode,
-        useLogoLoader = other.useLogoLoader ?: this.useLogoLoader,
+        appName = this.appName ?: other.appName,
+        appUrl = this.appUrl ?: other.appUrl,
+        logoLight = this.logoLight ?: other.logoLight,
+        logoDark = this.logoDark ?: other.logoDark,
+        defaultLanguage = this.defaultLanguage ?: other.defaultLanguage,
+        mode = this.mode ?: other.mode,
+        useLogoLoader = this.useLogoLoader ?: other.useLogoLoader,
         theme = mergedTheme
     )
 }
