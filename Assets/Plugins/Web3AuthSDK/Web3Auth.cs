@@ -342,11 +342,11 @@ public class Web3Auth : MonoBehaviour
                 UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
                 if(this.web3AuthOptions.sdkUrl.Contains("develop"))
                 {
-                    uriBuilder.Path = "/" + "start";
+                    uriBuilder.Path = "/" + path;
                 }
                 else
                 {
-                    uriBuilder.Path += "/" + "start";
+                    uriBuilder.Path += "/" + path;
                 }
                 uriBuilder.Fragment = "b64Params=" + hash;
                 //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
