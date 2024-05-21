@@ -244,7 +244,7 @@ public class Web3Auth : MonoBehaviour
     }
 #endif
 
-    private async void request(string path, LoginParams loginParams = null)
+    private async void processRequest(string path, LoginParams loginParams = null)
     {
 #if UNITY_STANDALONE || UNITY_EDITOR
         this.initParams["redirectUrl"] = StartLocalWebserver();
@@ -284,9 +284,15 @@ public class Web3Auth : MonoBehaviour
                 })));
 
             UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
-            uriBuilder.Path += "/" + "start";
+            if(this.web3AuthOptions.sdkUrl.Contains("develop"))
+            {
+                uriBuilder.Path = "/" + "start";
+            } else
+            {
+                uriBuilder.Path += "/" + "start";
+            }
             uriBuilder.Fragment = "b64Params=" + hash;
-            //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
+            Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
 
             Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
         }
@@ -333,9 +339,16 @@ public class Web3Auth : MonoBehaviour
                     })));
 
                 UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
-                uriBuilder.Path += "/" + path;
+                if(this.web3AuthOptions.sdkUrl.Contains("develop"))
+                {
+                    uriBuilder.Path = "/" + path;
+                }
+                else
+                {
+                    uriBuilder.Path += "/" + path;
+                }
                 uriBuilder.Fragment = "b64Params=" + hash;
-                //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
+                Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
 
                 Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
             }
@@ -420,7 +433,7 @@ public class Web3Auth : MonoBehaviour
             }
         }
 
-        request("login", loginParams);
+        processRequest("login", loginParams);
     }
 
     public void logout(Dictionary<string, object> extraParams)
@@ -458,7 +471,76 @@ public class Web3Auth : MonoBehaviour
                        loginParams.dappShare = share;
                    }
             }
-            request("enable_mfa", loginParams);
+            processRequest("enable_mfa", loginParams);
+        }
+        else
+        {
+            throw new Exception("SessionId not found. Please login first.");
+        }
+    }
+
+    public async void request(ChainConfig chainConfig, string method, JArray requestParams, string path = "wallet/request") {
+        string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
+        if (!string.IsNullOrEmpty(sessionId))
+        {
+            #if UNITY_STANDALONE || UNITY_EDITOR
+                    this.initParams["redirectUrl"] = StartLocalWebserver();
+            #elif UNITY_WEBGL
+                    this.initParams["redirectUrl"] = Utils.GetCurrentURL();
+            #endif
+
+                    this.initParams["chainConfig"] = chainConfig;
+                    Dictionary<string, object> paramMap = new Dictionary<string, object>();
+                    paramMap["options"] = this.initParams;
+
+                    Debug.Log("paramMap: =>" + JsonConvert.SerializeObject(paramMap));
+                    string loginId = await createSession(JsonConvert.SerializeObject(paramMap, Formatting.None,
+                        new JsonSerializerSettings
+                        {
+                            NullValueHandling = NullValueHandling.Ignore
+                        }), 600);
+
+                    if (!string.IsNullOrEmpty(loginId))
+                    {
+                        JObject requestData = new JObject
+                        {
+                            { "method", method },
+                            { "params", JsonConvert.SerializeObject(requestParams) }
+                        };
+                        JObject signMessageMap = new JObject
+                        {
+                            { "loginId", loginId },
+                            { "sessionId", sessionId },
+                            {"platform", "unity" },
+                            { "requestData", JsonConvert.SerializeObject(requestData) }
+                        };
+                        Debug.Log("signMessageMap: =>" + JsonConvert.SerializeObject(signMessageMap));
+
+                        string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(signMessageMap, Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            })));
+                        Debug.Log("hash: =>" + hash);
+
+                        UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
+                        if(this.web3AuthOptions.sdkUrl.Contains("develop"))
+                        {
+                            uriBuilder.Path = "/" + path;
+                        }
+                        else
+                        {
+                            uriBuilder.Path += "/" + path;
+                        }
+                        uriBuilder.Fragment = "b64Params=" + hash;
+                        Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
+
+                        Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
+                    }
+                    else
+                    {
+                        throw new Exception("Some went wrong. Please try again later.");
+                    }
         }
         else
         {

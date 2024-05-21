@@ -4,7 +4,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static Web3Auth;
+using Org.BouncyCastle.Asn1.Sec;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Math.EC;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Utilities.Encoders;
+using Org.BouncyCastle.Crypto.Digests;
 
 public class Web3AuthSample : MonoBehaviour
 {
@@ -81,7 +89,7 @@ public class Web3AuthSample : MonoBehaviour
             }
             */
             clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ",
-            buildEnv = BuildEnv.PRODUCTION,
+            buildEnv = BuildEnv.TESTING,
             redirectUrl = new Uri("torusapp://com.torus.Web3AuthUnity/auth"),
             network = Web3Auth.Network.SAPPHIRE_MAINNET,
             sessionTime = 86400
@@ -205,5 +213,50 @@ public class Web3AuthSample : MonoBehaviour
             chainNamespace = Web3Auth.ChainNamespace.EIP155
         };
         web3Auth.launchWalletServices(chainConfig);
+    }
+
+    private void request() {
+        var selectedProvider = verifierList[verifierDropdown.value].loginProvider;
+
+        var chainConfig = new ChainConfig()
+        {
+            chainId = "0x89",
+            rpcTarget = "https://1rpc.io/matic",
+            chainNamespace = Web3Auth.ChainNamespace.EIP155
+        };
+
+        JArray paramsArray = new JArray
+        {
+            "Hello, World!",
+            getPublicAddressFromPrivateKey(web3Auth.getPrivKey()),
+            "Android"
+        };
+
+        web3Auth.request(chainConfig, "personal_sign", paramsArray);
+    }
+
+    public string getPublicAddressFromPrivateKey(string privateKeyHex)
+    {
+        byte[] privateKeyBytes = Hex.Decode(privateKeyHex);
+
+        // Create the EC private key parameters
+        BigInteger privateKeyInt = new BigInteger(1, privateKeyBytes);
+        var ecParams = SecNamedCurves.GetByName("secp256k1");
+        ECPoint q = ecParams.G.Multiply(privateKeyInt);
+
+        // Get the public key bytes
+        byte[] publicKeyBytes = q.GetEncoded(false).Skip(1).ToArray();
+
+        // Compute the Keccak-256 hash of the public key
+        var digest = new KeccakDigest(256);
+        byte[] hash = new byte[digest.GetDigestSize()];
+        digest.BlockUpdate(publicKeyBytes, 0, publicKeyBytes.Length);
+        digest.DoFinal(hash, 0);
+
+        // Take the last 20 bytes of the hash as the address
+        byte[] addressBytes = hash.Skip(12).ToArray();
+        string publicAddress = "0x" + BitConverter.ToString(addressBytes).Replace("-", "").ToLower();
+
+        return publicAddress;
     }
 }
