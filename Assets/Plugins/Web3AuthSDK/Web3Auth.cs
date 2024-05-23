@@ -42,10 +42,23 @@ public class Web3Auth : MonoBehaviour
     private Dictionary<string, object> initParams;
 
     private Web3AuthResponse web3AuthResponse;
+    private bool isRequestResponse = false;
 
     public event Action<Web3AuthResponse> onLogin;
     public event Action onLogout;
     public event Action<bool> onMFASetup;
+
+    private static SignResponse signResponse = null;
+
+    public static void setSignResponse(SignResponse _response)
+    {
+        signResponse = _response;
+    }
+
+    public static SignResponse getSignResponse()
+    {
+        return signResponse;
+    }
 
     [SerializeField]
     private string clientId;
@@ -292,8 +305,8 @@ public class Web3Auth : MonoBehaviour
                 uriBuilder.Path += "/" + "start";
             }
             uriBuilder.Fragment = "b64Params=" + hash;
-            Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
-
+            //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
+            isRequestResponse = false;
             Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
         }
         else
@@ -348,8 +361,8 @@ public class Web3Auth : MonoBehaviour
                     uriBuilder.Path += "/" + path;
                 }
                 uriBuilder.Fragment = "b64Params=" + hash;
-                Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
-
+                //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
+                isRequestResponse = false;
                 Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
             }
             else
@@ -378,8 +391,23 @@ public class Web3Auth : MonoBehaviour
         if (queryParameters.Keys.Contains("error"))
             throw new UnKnownException(queryParameters["error"]);
 
-        string b64Params = hash.Split('=')[1];
+        string newUriString = "http://" + uri.Host + "?" + hash;
+        Uri newUri = new Uri(newUriString);
+        string b64Params = getQueryParamValue(newUri, "b64Params");
         string decodedString = decodeBase64Params(b64Params);
+        if(isRequestResponse) {
+            try
+            {
+                signResponse = JsonUtility.FromJson<SignResponse>(decodedString);
+                setSignResponse(signResponse);
+            }
+            catch (Exception e)
+            {
+                Debug.Log("Failed to decode JSON: " + e.Message);
+            }
+            isRequestResponse = false;
+            return;
+        }
         SessionResponse sessionResponse = null;
         try
         {
@@ -401,6 +429,25 @@ public class Web3Auth : MonoBehaviour
             Utils.RemoveAuthCodeFromURL();
         } 
 #endif
+    }
+
+    private string getQueryParamValue(Uri uri, string key)
+    {
+        string value = "";
+        if (uri.Query != null && uri.Query.Length > 0)
+        {
+            string[] queryParameters = uri.Query.Substring(1).Split('&');
+            foreach (string queryParameter in queryParameters)
+            {
+                string[] keyValue = queryParameter.Split('=');
+                if (keyValue[0] == key)
+                {
+                    value = keyValue[1];
+                    break;
+                }
+            }
+        }
+        return value;
     }
 
     private string decodeBase64Params(string base64Params)
@@ -493,12 +540,11 @@ public class Web3Auth : MonoBehaviour
                     Dictionary<string, object> paramMap = new Dictionary<string, object>();
                     paramMap["options"] = this.initParams;
 
-                    Debug.Log("paramMap: =>" + JsonConvert.SerializeObject(paramMap));
                     string loginId = await createSession(JsonConvert.SerializeObject(paramMap, Formatting.None,
                         new JsonSerializerSettings
                         {
                             NullValueHandling = NullValueHandling.Ignore
-                        }), 600);
+                        }), 60000);
 
                     if (!string.IsNullOrEmpty(loginId))
                     {
@@ -512,16 +558,14 @@ public class Web3Auth : MonoBehaviour
                             { "loginId", loginId },
                             { "sessionId", sessionId },
                             {"platform", "unity" },
-                            { "requestData", JsonConvert.SerializeObject(requestData) }
+                            { "request", JsonConvert.SerializeObject(requestData) }
                         };
-                        Debug.Log("signMessageMap: =>" + JsonConvert.SerializeObject(signMessageMap));
 
                         string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(signMessageMap, Formatting.None,
                             new JsonSerializerSettings
                             {
                                 NullValueHandling = NullValueHandling.Ignore
                             })));
-                        Debug.Log("hash: =>" + hash);
 
                         UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
                         if(this.web3AuthOptions.sdkUrl.Contains("develop"))
@@ -533,8 +577,8 @@ public class Web3Auth : MonoBehaviour
                             uriBuilder.Path += "/" + path;
                         }
                         uriBuilder.Fragment = "b64Params=" + hash;
-                        Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
-
+                        //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
+                        isRequestResponse = true;
                         Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
                     }
                     else

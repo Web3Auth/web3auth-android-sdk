@@ -56,6 +56,12 @@ public class Web3AuthSample : MonoBehaviour
     [SerializeField]
     Button launchWalletServicesButton;
 
+    [SerializeField]
+    Button signMessageButton;
+
+    [SerializeField]
+    Button signResponseButton;
+
     void Start()
     {
         var loginConfigItem = new LoginConfigItem()
@@ -102,11 +108,15 @@ public class Web3AuthSample : MonoBehaviour
         logoutButton.gameObject.SetActive(false);
         mfaSetupButton.gameObject.SetActive(false);
         launchWalletServicesButton.gameObject.SetActive(false);
+        signMessageButton.gameObject.SetActive(false);
+        signResponseButton.gameObject.SetActive(false);
 
         loginButton.onClick.AddListener(login);
         logoutButton.onClick.AddListener(logout);
         mfaSetupButton.onClick.AddListener(enableMFA);
-        launchWalletServicesButton.onClick.AddListener(request);
+        launchWalletServicesButton.onClick.AddListener(launchWalletServices);
+        signMessageButton.onClick.AddListener(request);
+        signResponseButton.onClick.AddListener(getSignResponse);
 
         verifierDropdown.AddOptions(verifierList.Select(x => x.name).ToList());
         verifierDropdown.onValueChanged.AddListener(onVerifierDropDownChange);
@@ -124,6 +134,8 @@ public class Web3AuthSample : MonoBehaviour
         logoutButton.gameObject.SetActive(true);
         mfaSetupButton.gameObject.SetActive(true);
         launchWalletServicesButton.gameObject.SetActive(true);
+        signMessageButton.gameObject.SetActive(true);
+        signResponseButton.gameObject.SetActive(true);
     }
 
     private void onLogout()
@@ -133,6 +145,8 @@ public class Web3AuthSample : MonoBehaviour
         logoutButton.gameObject.SetActive(false);
         mfaSetupButton.gameObject.SetActive(false);
         launchWalletServicesButton.gameObject.SetActive(false);
+        signMessageButton.gameObject.SetActive(false);
+        signResponseButton.gameObject.SetActive(false);
 
         loginResponseText.text = "";
     }
@@ -225,7 +239,6 @@ public class Web3AuthSample : MonoBehaviour
             chainNamespace = Web3Auth.ChainNamespace.EIP155
         };
 
-        Debug.Log("PrivateKey " + web3Auth.getPrivKey());
         JArray paramsArray = new JArray
         {
             "Hello, World!",
@@ -259,5 +272,17 @@ public class Web3AuthSample : MonoBehaviour
         string publicAddress = "0x" + BitConverter.ToString(addressBytes).Replace("-", "").ToLower();
 
         return publicAddress;
+    }
+
+    public void getSignResponse() {
+        SignResponse signResponse = Web3Auth.getSignResponse();
+        if (signResponse != null)
+        {
+            Debug.Log("Retrieved SignResponse: " + signResponse);
+        }
+        else
+        {
+            Debug.Log("SignResponse is null");
+        }
     }
 }
