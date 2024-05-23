@@ -106,7 +106,7 @@ public class Web3AuthSample : MonoBehaviour
         loginButton.onClick.AddListener(login);
         logoutButton.onClick.AddListener(logout);
         mfaSetupButton.onClick.AddListener(enableMFA);
-        launchWalletServicesButton.onClick.AddListener(launchWalletServices);
+        launchWalletServicesButton.onClick.AddListener(request);
 
         verifierDropdown.AddOptions(verifierList.Select(x => x.name).ToList());
         verifierDropdown.onValueChanged.AddListener(onVerifierDropDownChange);
@@ -225,6 +225,7 @@ public class Web3AuthSample : MonoBehaviour
             chainNamespace = Web3Auth.ChainNamespace.EIP155
         };
 
+        Debug.Log("PrivateKey " + web3Auth.getPrivKey());
         JArray paramsArray = new JArray
         {
             "Hello, World!",
