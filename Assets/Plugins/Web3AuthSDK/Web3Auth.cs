@@ -76,7 +76,7 @@ public class Web3Auth : MonoBehaviour
         this.initParams = new Dictionary<string, object>();
 
         this.initParams["clientId"] = clientId;
-        this.initParams["network"] = network.ToString().ToLower();
+        this.initParams["network"] = network.ToString().ToLowerInvariant();
 
         if (!string.IsNullOrEmpty(redirectUri))
             this.initParams["redirectUrl"] = redirectUri;
@@ -126,9 +126,9 @@ public class Web3Auth : MonoBehaviour
             this.initParams["clientId"] = this.web3AuthOptions.clientId;
 
         if (this.web3AuthOptions.buildEnv != null)
-            this.initParams["buildEnv"] = this.web3AuthOptions.buildEnv.ToString().ToLower();
+            this.initParams["buildEnv"] = this.web3AuthOptions.buildEnv.ToString().ToLowerInvariant();
 
-        this.initParams["network"] = this.web3AuthOptions.network.ToString().ToLower();
+        this.initParams["network"] = this.web3AuthOptions.network.ToString().ToLowerInvariant();
 
         if (this.web3AuthOptions.useCoreKitKey.HasValue)
             this.initParams["useCoreKitKey"] = this.web3AuthOptions.useCoreKitKey.Value;
@@ -300,7 +300,8 @@ public class Web3Auth : MonoBehaviour
             if(this.web3AuthOptions.sdkUrl.Contains("develop"))
             {
                 uriBuilder.Path = "/" + "start";
-            } else
+            }
+            else
             {
                 uriBuilder.Path += "/" + "start";
             }
@@ -386,8 +387,8 @@ public class Web3Auth : MonoBehaviour
             throw new UserCancelledException();
 #endif
         hash = hash.Remove(0, 1);
-        Dictionary<string, string> queryParameters = Utils.ParseQuery(uri.Query);
 
+        Dictionary<string, string> queryParameters = Utils.ParseQuery(uri.Query);
         if (queryParameters.Keys.Contains("error"))
             throw new UnKnownException(queryParameters["error"]);
 
