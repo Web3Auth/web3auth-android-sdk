@@ -11,13 +11,13 @@ public static class WhiteLabelDataExtensions
 
         return new WhiteLabelData
         {
-            appName = other.appName ?? target.appName,
-            appUrl = other.appUrl ?? target.appUrl,
-            logoLight = other.logoLight ?? target.logoLight,
-            logoDark = other.logoDark ?? target.logoDark,
-            defaultLanguage = other.defaultLanguage ?? target.defaultLanguage,
-            mode = other.mode ?? target.mode,
-            useLogoLoader = other.useLogoLoader ?? target.useLogoLoader,
+            appName = target.appName ?? other.appName,
+            appUrl = target.appUrl ?? other.appUrl,
+            logoLight = target.logoLight ?? other.logoLight,
+            logoDark = target.logoDark ?? other.logoDark,
+            defaultLanguage = target.defaultLanguage ?? other.defaultLanguage,
+            mode = target.mode ?? other.mode,
+            useLogoLoader = target.useLogoLoader ?? other.useLogoLoader,
             theme = mergeThemes(target.theme, other.theme)
         };
     }
