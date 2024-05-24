@@ -8,7 +8,7 @@ public class WhitelistResponse
 
 public class ProjectConfigResponse
 {
-    public WhiteLabelData whiteLabelData { get; set; }
+    public WhiteLabelData whiteLabel { get; set; }
     public bool sms_otp_enabled { get; set; }
     public bool wallet_connect_enabled { get; set; }
     public string wallet_connect_project_id { get; set; }

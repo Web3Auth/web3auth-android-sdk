@@ -658,9 +658,9 @@ public class Web3Auth : MonoBehaviour
             if (response != null)
             {
                 this.web3AuthOptions.originData = this.web3AuthOptions.originData.mergeMaps(response.whitelist?.signed_urls);
-                if (response?.whiteLabelData != null)
+                if (response?.whiteLabel != null)
                 {
-                    this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(response.whiteLabelData);
+                    this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(response.whiteLabel);
                 }
                 //Debug.Log("this.web3AuthOptions: =>" + JsonConvert.SerializeObject(this.web3AuthOptions));
 
