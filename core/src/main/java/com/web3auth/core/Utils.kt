@@ -77,7 +77,9 @@ fun WhiteLabelData.merge(other: WhiteLabelData): WhiteLabelData {
         }
     }
     other.theme?.forEach { (key, value) ->
-        mergedTheme[key] = value ?: mergedTheme[key]
+        if (!mergedTheme.containsKey(key)) {
+            mergedTheme[key] = value ?: mergedTheme[key]
+        }
     }
 
     return WhiteLabelData(
