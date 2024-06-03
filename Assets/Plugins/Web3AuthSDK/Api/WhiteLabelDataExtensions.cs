@@ -30,13 +30,13 @@ public static class WhiteLabelDataExtensions
             return otherTheme;
 
         var mergedTheme = new Dictionary<string, string>(targetTheme);
+        foreach (var kvp in targetTheme)
+        {
+            mergedTheme[kvp.Key] = kvp.Value;
+        }
         foreach (var kvp in otherTheme)
         {
-            if (mergedTheme.ContainsKey(kvp.Key))
-            {
-                mergedTheme[kvp.Key] = kvp.Value; // Overwrite with otherTheme's value
-            }
-            else
+            if (!mergedTheme.ContainsKey(kvp.Key))
             {
                 mergedTheme.Add(kvp.Key, kvp.Value);
             }
