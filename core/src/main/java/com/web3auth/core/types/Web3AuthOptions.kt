@@ -10,7 +10,7 @@ data class Web3AuthOptions(
     var buildEnv: BuildEnv? = BuildEnv.PRODUCTION,
     @Transient var redirectUrl: Uri? = null,
     var sdkUrl: String = getSdkUrl(buildEnv),
-    var whiteLabel: WhiteLabelData? = null,
+    var whiteLabel: WhiteLabelData? = WhiteLabelData(),
     val loginConfig: HashMap<String, LoginConfigItem>? = null,
     val useCoreKitKey: Boolean? = false,
     val chainNamespace: ChainNamespace? = ChainNamespace.EIP155,
@@ -58,3 +58,4 @@ const val openLoginVersion = "v8"
 const val walletServicesVersion = "v2"
 const val WEBVIEW_URL = "walletUrl"
 const val REDIRECT_URL = "redirectUrl"
+const val CUSTOM_TABS_URL = "customTabsUrl"
