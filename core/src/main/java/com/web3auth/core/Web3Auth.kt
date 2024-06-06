@@ -2,7 +2,6 @@ package com.web3auth.core
 
 import android.content.Intent
 import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -140,21 +139,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
                         .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
                 //print("url: => $url")
-                val defaultBrowser = context.getDefaultBrowser()
-                val customTabsBrowsers = context.getCustomTabsBrowsers()
-
-                if (customTabsBrowsers.contains(defaultBrowser)) {
-                    val customTabs = CustomTabsIntent.Builder().build()
-                    customTabs.intent.setPackage(defaultBrowser)
-                    customTabs.launchUrl(context, url)
-                } else if (customTabsBrowsers.isNotEmpty()) {
-                    val customTabs = CustomTabsIntent.Builder().build()
-                    customTabs.intent.setPackage(customTabsBrowsers[0])
-                    customTabs.launchUrl(context, url)
-                } else {
-                    // Open in browser externally
-                    context.startActivity(Intent(Intent.ACTION_VIEW, url))
-                }
+                val intent = Intent(context, CustomChromeTabsActivity::class.java)
+                intent.putExtra(WEBVIEW_URL, url.toString())
+                context.startActivity(intent)
             }
         }
     }
@@ -641,12 +628,21 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     companion object {
 
         private var signResponse: SignResponse? = null
+        private var isCustomTabsClosed: Boolean = false
         fun setSignResponse(_response: SignResponse?) {
             signResponse = _response
         }
 
         fun getSignResponse(): SignResponse? {
             return signResponse
+        }
+
+        fun setCustomTabsClosed(_isCustomTabsClosed: Boolean) {
+            isCustomTabsClosed = _isCustomTabsClosed
+        }
+
+        fun getCustomTabsClosed(): Boolean {
+            return isCustomTabsClosed
         }
     }
 }

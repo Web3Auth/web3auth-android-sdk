@@ -6,7 +6,13 @@ import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
-import android.widget.*
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
@@ -15,16 +21,28 @@ import com.google.gson.JsonArray
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
 import com.web3auth.core.isPhoneNumberValid
-import com.web3auth.core.types.*
+import com.web3auth.core.types.BuildEnv
+import com.web3auth.core.types.ChainConfig
+import com.web3auth.core.types.ChainNamespace
+import com.web3auth.core.types.ExtraLoginOptions
+import com.web3auth.core.types.Language
+import com.web3auth.core.types.LoginConfigItem
+import com.web3auth.core.types.LoginParams
+import com.web3auth.core.types.MFALevel
+import com.web3auth.core.types.Network
+import com.web3auth.core.types.Provider
+import com.web3auth.core.types.ThemeModes
+import com.web3auth.core.types.TypeOfLogin
+import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
+import com.web3auth.core.types.WhiteLabelData
 import org.json.JSONObject
 import org.web3j.crypto.Credentials
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicBoolean
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
-    private val isLoginCompleted = AtomicBoolean(false)
-    private var count = 0
 
     private val verifierList: List<LoginVerifier> = listOf(
         LoginVerifier("Google", Provider.GOOGLE),
@@ -273,23 +291,14 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         web3Auth.setResultUrl(intent?.data)
-        isLoginCompleted.set(true)
     }
 
     override fun onResume() {
         super.onResume()
-        if (isLoginCompleted.get()) {
-            isLoginCompleted.set(false)
-            count = 0
-        } else {
-            if (count > 0) {
-                if (Web3Auth.getSignResponse() != null) {
-                    return
-                }
-                Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
-                web3Auth.setResultUrl(null)
-            }
-            count++
+        if (Web3Auth.getCustomTabsClosed()) {
+            Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
+            web3Auth.setResultUrl(null)
+            Web3Auth.setCustomTabsClosed(false)
         }
     }
 
