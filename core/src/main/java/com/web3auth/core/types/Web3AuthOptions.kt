@@ -8,7 +8,7 @@ data class Web3AuthOptions(
     val clientId: String,
     val network: Network,
     var buildEnv: BuildEnv? = BuildEnv.PRODUCTION,
-    @Transient var redirectUrl: Uri? = null,
+    @Transient var redirectUrl: Uri,
     var sdkUrl: String = getSdkUrl(buildEnv),
     var whiteLabel: WhiteLabelData? = WhiteLabelData(),
     val loginConfig: HashMap<String, LoginConfigItem>? = null,
