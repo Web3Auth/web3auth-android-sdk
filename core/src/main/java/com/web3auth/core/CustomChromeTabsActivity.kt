@@ -15,7 +15,7 @@ class CustomChromeTabsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_cct)
+        setContentView(R.layout.activity_webview)
 
         customTabLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
