@@ -20,7 +20,9 @@
             android:name="com.web3auth.core.WebViewActivity"
             android:theme="@style/Theme.AppCompat" />
 
-        <activity android:name=".CustomChromeTabsActivity" />
+        <activity
+            android:name=".CustomChromeTabsActivity"
+            android:theme="@style/Theme.AppCompat" />
 
     </application>
 
