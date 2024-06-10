@@ -397,8 +397,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     web3AuthOption.originData =
                         web3AuthOption.originData.mergeMaps(response?.whitelist?.signed_urls)
                     if (response?.whitelabel != null) {
-                        web3AuthOption.whiteLabel =
-                            web3AuthOption.whiteLabel?.merge(response.whitelabel)
+                        if(web3AuthOption.whiteLabel == null) {
+                            web3AuthOption.whiteLabel = response.whitelabel
+                        } else {
+                            web3AuthOption.whiteLabel =
+                                web3AuthOption.whiteLabel!!.merge(response.whitelabel)
+                        }
                     }
                     projectConfigCompletableFuture.complete(true)
                 } else {

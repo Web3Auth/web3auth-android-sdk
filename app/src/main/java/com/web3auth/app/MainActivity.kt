@@ -173,7 +173,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 "Web3Auth Sample App", null, null, null,
                 Language.EN, ThemeModes.LIGHT, true,
                 hashMapOf(
-                    "primary" to "#123456"
+                    "primary" to "#123456",
+                    "onPrimary" to "#0000FF"
                 )
             ),
             loginConfig = hashMapOf(
