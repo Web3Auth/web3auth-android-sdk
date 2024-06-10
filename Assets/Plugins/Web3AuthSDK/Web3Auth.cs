@@ -325,7 +325,8 @@ public class Web3Auth : MonoBehaviour
                 var loginIdObject = new Dictionary<string, string>
                  {
                       { "loginId", loginId },
-                      { "sessionId", sessionId }
+                      { "sessionId", sessionId },
+                      { "platform", "unity" }
                  };
                 string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(loginIdObject, Formatting.None,
                     new JsonSerializerSettings
@@ -336,7 +337,7 @@ public class Web3Auth : MonoBehaviour
                 UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
                 uriBuilder.Path = path;
                 uriBuilder.Fragment = "b64Params=" + hash;
-                //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
+                //Debug.Log("WalletUriBuilderToOpen: =>" + uriBuilder.ToString());
 
                 Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
             }
@@ -669,7 +670,7 @@ public class Web3Auth : MonoBehaviour
                         this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(response.whitelabel);
                     }
                 }
-                Debug.Log("this.web3AuthOptions: =>" + JsonConvert.SerializeObject(this.web3AuthOptions));
+                //Debug.Log("this.web3AuthOptions: =>" + JsonConvert.SerializeObject(this.web3AuthOptions));
 
                 JsonSerializerSettings settings = new JsonSerializerSettings
                 {
