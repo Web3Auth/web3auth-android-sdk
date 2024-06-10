@@ -6,7 +6,13 @@ import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
-import android.widget.*
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
@@ -15,7 +21,22 @@ import com.google.gson.JsonArray
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
 import com.web3auth.core.isPhoneNumberValid
-import com.web3auth.core.types.*
+import com.web3auth.core.types.BuildEnv
+import com.web3auth.core.types.ChainConfig
+import com.web3auth.core.types.ChainNamespace
+import com.web3auth.core.types.ExtraLoginOptions
+import com.web3auth.core.types.Language
+import com.web3auth.core.types.LoginConfigItem
+import com.web3auth.core.types.LoginParams
+import com.web3auth.core.types.MFALevel
+import com.web3auth.core.types.Network
+import com.web3auth.core.types.Provider
+import com.web3auth.core.types.ThemeModes
+import com.web3auth.core.types.TypeOfLogin
+import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
+import com.web3auth.core.types.WhiteLabelData
 import org.json.JSONObject
 import org.web3j.crypto.Credentials
 import java.util.concurrent.CompletableFuture
@@ -155,7 +176,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 "Web3Auth Sample App", null, null, null,
                 Language.EN, ThemeModes.LIGHT, true,
                 hashMapOf(
-                    "primary" to "#123456"
+                    "primary" to "#123456",
+                    "onPrimary" to "#0000FF"
                 )
             ),
             loginConfig = hashMapOf(
