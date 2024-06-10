@@ -7,9 +7,12 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.web3auth.core.api.ApiHelper
+import com.web3auth.core.api.ApiService
 import com.web3auth.core.keystore.KeyStoreManagerUtils
 import com.web3auth.core.types.*
 import com.web3auth.session_manager_android.SessionManager
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -53,6 +56,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         )
         if (web3AuthOption.sessionTime != null) initOptions.put(
             "sessionTime", web3AuthOption.sessionTime
+        )
+        if (web3AuthOption.originData != null) initOptions.put(
+            "originData", gson.toJson(web3AuthOption.originData)
         )
         return initOptions
     }
@@ -167,6 +173,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
         //authorize session
         if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
+
+            //fetch project config
+            fetchProjectConfig()
+
             this.authorizeSession().whenComplete { resp, error ->
                 if (error == null) {
                     web3AuthResponse = resp
@@ -365,6 +375,51 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             }
         }
         return sessionCompletableFuture
+    }
+
+    private fun fetchProjectConfig() {
+        val projectConfigCompletableFuture: CompletableFuture<ProjectConfigResponse> =
+            CompletableFuture()
+        val web3AuthApi =
+            ApiHelper.getInstance(web3AuthOption.network.name).create(ApiService::class.java)
+        GlobalScope.launch {
+            try {
+                val result = web3AuthApi.fetchProjectConfig(
+                    web3AuthOption.clientId,
+                    web3AuthOption.network.name
+                )
+                if (result.isSuccessful && result.body() != null) {
+                    val response = result.body()
+                    web3AuthOption.originData =
+                        web3AuthOption.originData.mergeMaps(response?.whitelist?.signed_urls)
+                    if (response?.whitelabel != null) {
+                        if(web3AuthOption.whiteLabel == null) {
+                            web3AuthOption.whiteLabel = response.whitelabel
+                        } else {
+                            web3AuthOption.whiteLabel =
+                                web3AuthOption.whiteLabel!!.merge(response.whitelabel)
+                        }
+                    }
+                } else {
+                    projectConfigCompletableFuture.completeExceptionally(
+                        Exception(
+                            Web3AuthError.getError(
+                                ErrorCode.RUNTIME_ERROR
+                            )
+                        )
+                    )
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                projectConfigCompletableFuture.completeExceptionally(
+                    Exception(
+                        Web3AuthError.getError(
+                            ErrorCode.SOMETHING_WENT_WRONG
+                        )
+                    )
+                )
+            }
+        }
     }
 
     /**

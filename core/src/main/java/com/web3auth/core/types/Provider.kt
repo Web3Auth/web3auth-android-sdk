@@ -21,6 +21,7 @@ enum class Provider {
     GITHUB,
     @SerializedName("kakao")
     KAKAO,
+
     @SerializedName("linkedin")
     LINKEDIN,
 

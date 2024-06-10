@@ -6,7 +6,13 @@ import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
-import android.widget.*
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
@@ -14,7 +20,23 @@ import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
-import com.web3auth.core.types.*
+import com.web3auth.core.isPhoneNumberValid
+import com.web3auth.core.types.BuildEnv
+import com.web3auth.core.types.ChainConfig
+import com.web3auth.core.types.ChainNamespace
+import com.web3auth.core.types.ExtraLoginOptions
+import com.web3auth.core.types.Language
+import com.web3auth.core.types.LoginConfigItem
+import com.web3auth.core.types.LoginParams
+import com.web3auth.core.types.MFALevel
+import com.web3auth.core.types.Network
+import com.web3auth.core.types.Provider
+import com.web3auth.core.types.ThemeModes
+import com.web3auth.core.types.TypeOfLogin
+import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
+import com.web3auth.core.types.WhiteLabelData
 import org.json.JSONObject
 import org.web3j.crypto.Credentials
 import java.util.concurrent.CompletableFuture
@@ -36,7 +58,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         LoginVerifier("LinkedIn", Provider.LINKEDIN),
         LoginVerifier("Twitter", Provider.TWITTER),
         LoginVerifier("Line", Provider.LINE),
-        LoginVerifier("Hosted Email Passwordless", Provider.EMAIL_PASSWORDLESS)
+        LoginVerifier("Hosted Email Passwordless", Provider.EMAIL_PASSWORDLESS),
+        LoginVerifier("SMS Passwordless", Provider.SMS_PASSWORDLESS),
+        LoginVerifier("JWT", Provider.JWT),
+        LoginVerifier("Farcaster", Provider.FARCASTER)
     )
 
     private var selectedLoginProvider: Provider = Provider.GOOGLE
@@ -54,6 +79,16 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
+
+        if (selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
+            val hintPhNo = hintEmailEditText.text.toString()
+            if (hintPhNo.isBlank() || !hintPhNo.isPhoneNumberValid()) {
+                Toast.makeText(this, "Please enter a valid Number.", Toast.LENGTH_LONG).show()
+                return
+            }
+            extraLoginOptions = ExtraLoginOptions(login_hint = hintPhNo)
+        }
+
         val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(
             LoginParams(
                 selectedLoginProvider,
@@ -132,7 +167,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         val options = Web3AuthOptions(
             context = this,
-            clientId = "BHgArYmWwSeq21czpcarYh0EVq2WWOzflX-NTK-tY1-1pauPzHKRRLgpABkmYiIV_og9jAvoIxQ8L3Smrwe04Lw",
+            clientId = "BFuUqebV5I8Pz5F7a5A2ihW7YVmbv_OHXnHYDv6OltAD5NGr6e-ViNvde3U4BHdn6HvwfkgobhVu4VwC-OSJkik",
             network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
 //            sdkUrl = "https://auth.mocaverse.xyz",
@@ -141,14 +176,15 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 "Web3Auth Sample App", null, null, null,
                 Language.EN, ThemeModes.LIGHT, true,
                 hashMapOf(
-                    "primary" to "#123456"
+                    "primary" to "#123456",
+                    "onPrimary" to "#0000FF"
                 )
             ),
             loginConfig = hashMapOf(
                 "loginConfig" to LoginConfigItem(
                     "web3auth-auth0-email-passwordless-sapphire-devnet",
                     typeOfLogin = TypeOfLogin.JWT,
-                    clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C"
+                    clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C",
                 )
             ),
             buildEnv = BuildEnv.TESTING,
@@ -283,7 +319,14 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         selectedLoginProvider = verifierList[p2].loginProvider
 
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
+
         if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS) {
+            hintEmailEditText.hint = "Enter Email"
+        } else if (selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
+            hintEmailEditText.hint = "Enter Phone Number"
+        }
+
+        if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS || selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
             hintEmailEditText.visibility = View.VISIBLE
         } else {
             hintEmailEditText.visibility = View.GONE

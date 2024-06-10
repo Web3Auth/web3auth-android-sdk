@@ -7,6 +7,7 @@ import android.net.Uri
 import android.util.Base64
 import android.util.Patterns
 import androidx.browser.customtabs.CustomTabsService
+import com.web3auth.core.types.WhiteLabelData
 
 const val BASE64_URL_FLAGS = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
 
@@ -41,6 +42,10 @@ fun String.isEmailValid(): Boolean {
     return Patterns.EMAIL_ADDRESS.matcher(this).matches()
 }
 
+fun String.isPhoneNumberValid(): Boolean {
+    return Patterns.PHONE.matcher(this).matches()
+}
+
 fun Context.getDefaultBrowser(): String? {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://web3auth.io"))
     val resolveInfo = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
@@ -63,3 +68,48 @@ fun Context.getCustomTabsBrowsers(): List<String> {
     }
     return customTabsBrowsers
 }
+
+fun WhiteLabelData.merge(other: WhiteLabelData): WhiteLabelData {
+    val mergedTheme = HashMap<String, String?>()
+    this.theme.let {
+        if (it != null) {
+            mergedTheme.putAll(it)
+        }
+    }
+    other.theme?.forEach { (key, value) ->
+        if (!mergedTheme.containsKey(key)) {
+            mergedTheme[key] = value ?: mergedTheme[key]
+        }
+    }
+
+    return WhiteLabelData(
+        appName = this.appName ?: other.appName,
+        appUrl = this.appUrl ?: other.appUrl,
+        logoLight = this.logoLight ?: other.logoLight,
+        logoDark = this.logoDark ?: other.logoDark,
+        defaultLanguage = this.defaultLanguage ?: other.defaultLanguage,
+        mode = this.mode ?: other.mode,
+        useLogoLoader = this.useLogoLoader ?: other.useLogoLoader,
+        theme = mergedTheme
+    )
+}
+
+fun Map<String, String>?.mergeMaps(other: Map<String, String>?): Map<String, String>? {
+    if (this == null && other == null) {
+        return null
+    } else if (this == null) {
+        return other
+    } else if (other == null) {
+        return this
+    }
+
+    val mergedMap = LinkedHashMap<String, String>()
+    mergedMap.putAll(this)
+
+    other.forEach { (key, value) ->
+        mergedMap[key] = value
+    }
+
+    return mergedMap
+}
+
