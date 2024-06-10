@@ -8,12 +8,27 @@ import com.google.gson.JsonObject
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.api.ApiService
 import com.web3auth.core.keystore.KeyStoreManagerUtils
-import com.web3auth.core.types.*
+import com.web3auth.core.types.ChainConfig
+import com.web3auth.core.types.ErrorCode
+import com.web3auth.core.types.ExtraLoginOptions
+import com.web3auth.core.types.LoginConfigItem
+import com.web3auth.core.types.LoginParams
+import com.web3auth.core.types.MFALevel
+import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.SessionResponse
+import com.web3auth.core.types.SignResponse
+import com.web3auth.core.types.UnKnownException
+import com.web3auth.core.types.UserCancelledException
+import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.WEBVIEW_URL
+import com.web3auth.core.types.Web3AuthError
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
 import com.web3auth.session_manager_android.SessionManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
@@ -162,7 +177,19 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
 
             //fetch project config
-            fetchProjectConfig()
+            fetchProjectConfig().whenComplete { _, err ->
+                if (err != null) {
+                    this.authorizeSession().whenComplete { resp, error ->
+                        if (error == null) {
+                            web3AuthResponse = resp
+                        } else {
+                            print(error)
+                        }
+                    }
+                } else {
+                    initializeCf.completeExceptionally(err)
+                }
+            }
 
             this.authorizeSession().whenComplete { resp, error ->
                 if (error == null) {
@@ -364,9 +391,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return sessionCompletableFuture
     }
 
-    private fun fetchProjectConfig() {
-        val projectConfigCompletableFuture: CompletableFuture<ProjectConfigResponse> =
-            CompletableFuture()
+    private fun fetchProjectConfig(): CompletableFuture<Boolean> {
+        val projectConfigCompletableFuture: CompletableFuture<Boolean> = CompletableFuture()
         val web3AuthApi =
             ApiHelper.getInstance(web3AuthOption.network.name).create(ApiService::class.java)
         GlobalScope.launch {
@@ -383,6 +409,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         web3AuthOption.whiteLabel =
                             web3AuthOption.whiteLabel?.merge(response.whitelabel)
                     }
+                    projectConfigCompletableFuture.complete(true)
                 } else {
                     projectConfigCompletableFuture.completeExceptionally(
                         Exception(
@@ -403,6 +430,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 )
             }
         }
+        return projectConfigCompletableFuture
     }
 
     /**
