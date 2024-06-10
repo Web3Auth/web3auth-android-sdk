@@ -178,10 +178,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
             //fetch project config
             fetchProjectConfig().whenComplete { _, err ->
-                if (err != null) {
+                if (err == null) {
                     this.authorizeSession().whenComplete { resp, error ->
                         if (error == null) {
                             web3AuthResponse = resp
+                            initializeCf.complete(null)
                         } else {
                             print(error)
                         }
