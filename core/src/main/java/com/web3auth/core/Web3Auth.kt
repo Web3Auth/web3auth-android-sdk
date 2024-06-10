@@ -190,15 +190,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     initializeCf.completeExceptionally(err)
                 }
             }
-
-            this.authorizeSession().whenComplete { resp, error ->
-                if (error == null) {
-                    web3AuthResponse = resp
-                } else {
-                    print(error)
-                }
-                initializeCf.complete(null)
-            }
         }
         return initializeCf
     }
