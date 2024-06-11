@@ -35,10 +35,13 @@ class CustomChromeTabsActivity : AppCompatActivity() {
     }
 
     private fun launchCustomTabs(url: String) {
-        val builder = CustomTabsIntent.Builder()
-        val customTabsIntent = builder.build()
-        val intent = customTabsIntent.intent
-        intent.data = Uri.parse(url)
-        customTabLauncher.launch(intent)
+        val customTabsBrowsers = this.getCustomTabsBrowsers()
+        if (customTabsBrowsers.isNotEmpty()) {
+            val intent = CustomTabsIntent.Builder().build().intent
+            intent.data = Uri.parse(url)
+            customTabLauncher.launch(intent)
+        } else {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
     }
 }
