@@ -7,7 +7,10 @@ import android.net.Uri
 import android.util.Base64
 import android.util.Patterns
 import androidx.browser.customtabs.CustomTabsService
+import com.web3auth.core.types.Network
 import com.web3auth.core.types.WhiteLabelData
+import org.torusresearch.fetchnodedetails.types.TorusNetwork
+import java.nio.ByteBuffer
 
 const val BASE64_URL_FLAGS = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
 
@@ -112,4 +115,31 @@ fun Map<String, String>?.mergeMaps(other: Map<String, String>?): Map<String, Str
 
     return mergedMap
 }
+
+val TORUS_NETWORK_MAP: Map<Network, TorusNetwork> = mapOf(
+    Network.MAINNET to TorusNetwork.MAINNET,
+    Network.TESTNET to TorusNetwork.TESTNET,
+    Network.AQUA to TorusNetwork.AQUA,
+    Network.CYAN to TorusNetwork.CYAN,
+    Network.SAPPHIRE_DEVNET to TorusNetwork.SAPPHIRE_DEVNET,
+    Network.SAPPHIRE_MAINNET to TorusNetwork.SAPPHIRE_MAINNET
+)
+
+fun ByteArray.toLong(): Long {
+    return ByteBuffer.wrap(this).long
+}
+
+fun ByteArray.toShort(): Short {
+    return ByteBuffer.wrap(this).short
+}
+
+fun decode(data: ByteArray): AttestationStruct {
+    // Placeholder for actual decoding logic
+    return AttestationStruct(data)
+}
+
+// A placeholder for the attestation structure as it would be parsed in a real-world scenario
+data class AttestationStruct(
+    val authData: ByteArray
+)
 

@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Web3Auth</string>
+    <string name="asset_statements" translatable="false">
+[{
+  \"include\": \"https://signin.example.com/.well-known/assetlinks.json\"
+}]
+</string>
 </resources>

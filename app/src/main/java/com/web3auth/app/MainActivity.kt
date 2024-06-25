@@ -122,6 +122,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
+        val passkeysSignUpButton = findViewById<Button>(R.id.passkeysSignUpButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
@@ -143,6 +144,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             signOutButton.visibility = View.VISIBLE
             launchWalletButton.visibility = View.VISIBLE
             signMsgButton.visibility = View.VISIBLE
+            passkeysSignUpButton.visibility = View.VISIBLE
             btnSetUpMfa.visibility = View.VISIBLE
             spinner.visibility = View.GONE
             hintEmailEditText.visibility = View.GONE
@@ -154,6 +156,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             btnSetUpMfa.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             signMsgButton.visibility = View.GONE
+            passkeysSignUpButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
     }
@@ -174,7 +177,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 Language.EN, ThemeModes.LIGHT, true,
                 hashMapOf(
                     "primary" to "#123456",
-                    "onPrimary" to "#0000FF"
                 )
             ),
             loginConfig = hashMapOf(
@@ -261,6 +263,12 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 }
             }
         }
+
+        val passkeysSignUpButton = findViewById<Button>(R.id.passkeysSignUpButton)
+        passkeysSignUpButton.setOnClickListener {
+
+        }
+
 
         signResultButton.setOnClickListener {
             val signResult = Web3Auth.getSignResponse()

@@ -2,32 +2,85 @@ package com.web3auth.core
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.credentials.CreatePublicKeyCredentialRequest
+import androidx.credentials.CreatePublicKeyCredentialResponse
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetPasswordOption
+import androidx.credentials.GetPublicKeyCredentialOption
+import androidx.credentials.PasswordCredential
+import androidx.credentials.PublicKeyCredential
+import androidx.credentials.exceptions.CreateCredentialCancellationException
+import androidx.credentials.exceptions.CreateCredentialCustomException
+import androidx.credentials.exceptions.CreateCredentialException
+import androidx.credentials.exceptions.CreateCredentialInterruptedException
+import androidx.credentials.exceptions.CreateCredentialProviderConfigurationException
+import androidx.credentials.exceptions.CreateCredentialUnknownException
+import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.api.ApiService
 import com.web3auth.core.keystore.KeyStoreManagerUtils
+import com.web3auth.core.types.AuthOptions
+import com.web3auth.core.types.AuthParamsData
+import com.web3auth.core.types.AuthenticationOptionsRequest
+import com.web3auth.core.types.AuthenticationOptionsResponse
+import com.web3auth.core.types.AuthenticatorAttachment
 import com.web3auth.core.types.ChainConfig
+import com.web3auth.core.types.ChallengeData
 import com.web3auth.core.types.ErrorCode
 import com.web3auth.core.types.ExtraLoginOptions
+import com.web3auth.core.types.ExtraVerifierParams
+import com.web3auth.core.types.Flags
 import com.web3auth.core.types.LoginConfigItem
 import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.MFALevel
+import com.web3auth.core.types.MetadataInfo
+import com.web3auth.core.types.Network
+import com.web3auth.core.types.Options
+import com.web3auth.core.types.PassKeyLoginParams
 import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.RegistrationOptionsRequest
+import com.web3auth.core.types.RegistrationResponse
+import com.web3auth.core.types.RegistrationResponseJson
+import com.web3auth.core.types.Rp
 import com.web3auth.core.types.SessionResponse
 import com.web3auth.core.types.SignResponse
 import com.web3auth.core.types.UnKnownException
 import com.web3auth.core.types.UserCancelledException
 import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.VerifyAuthenticationRequest
+import com.web3auth.core.types.VerifyAuthenticationResponse
+import com.web3auth.core.types.VerifyRegistrationResponse
+import com.web3auth.core.types.VerifyRequest
 import com.web3auth.core.types.WEBVIEW_URL
 import com.web3auth.core.types.Web3AuthError
 import com.web3auth.core.types.Web3AuthOptions
 import com.web3auth.core.types.Web3AuthResponse
 import com.web3auth.session_manager_android.SessionManager
+import com.web3auth.session_manager_android.keystore.KeyStoreManager
+import com.web3auth.session_manager_android.types.AES256CBC
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import org.bouncycastle.jcajce.provider.digest.Keccak
 import org.json.JSONObject
+import org.torusresearch.fetchnodedetails.FetchNodeDetails
+import org.torusresearch.fetchnodedetails.types.NodeDetails
+import org.torusresearch.torusutils.TorusUtils
+import org.torusresearch.torusutils.types.TorusCtorOptions
+import org.torusresearch.torusutils.types.TorusPublicKey
+import org.torusresearch.torusutils.types.VerifierArgs
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
@@ -41,6 +94,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
     private var sessionManager: SessionManager = SessionManager(web3AuthOption.context)
+    private lateinit var credentialManager: CredentialManager
+    private lateinit var trackingId: String
+    private lateinit var rpId: String
 
     /**
      * Initializes the KeyStoreManager.
@@ -586,6 +642,590 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     )
                 )
             )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun registerPasskey(
+        authenticatorAttachment: String?,
+        username: String? = null,
+        rp: Rp
+    ): Boolean {
+        try {
+            this.rpId = rp.rpId
+            val sessionId = sessionManager.getSessionId()
+            if (sessionId.isBlank()) {
+                throw Exception(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
+            }
+            val registrationResponse =
+                getRegistrationOptionsResponse(authenticatorAttachment, username, rp)
+            registrationResponse.whenComplete { response, error ->
+                if (error == null) {
+                    GlobalScope.launch {
+                        val data = createPasskey(response.data.options)
+                            ?: throw Exception("passkey registration failed.")
+                        var passkeyVerifierId = getPasskeyVerifierId(data)
+                        var passkeyPublicKey = getPasskeyPublicKey(
+                            web3AuthResponse?.userInfo?.verifier.toString(),
+                            passkeyVerifierId
+                        )
+                        if (passkeyPublicKey == null) {
+                            throw Exception("Unable to get passkey public key, please try again.")
+                        }
+
+                        val encryptedMetadata = getEncryptedMetadata(passkeyPublicKey)
+
+                        val verificationResult = web3AuthResponse?.signatures?.let {
+                            verifyRegistration(
+                                data,
+                                it, web3AuthResponse?.idToken.toString(), encryptedMetadata
+                            )
+                        }
+                    }
+
+                }
+            }
+
+
+            return true
+        } catch (e: Exception) {
+            throw Exception(Web3AuthError.getError(ErrorCode.ERROR_REGISTERING_USER))
+        }
+    }
+
+    fun loginWithPasskey(authenticatorId: String?) {
+        try {
+            val sessionId = sessionManager.getSessionId()
+            if (sessionId.isBlank()) {
+                throw Exception(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
+            }
+            val authOptions = getAuthenticationOptions(authenticatorId)
+            authOptions.whenComplete { response, error ->
+                if (error == null) {
+                    GlobalScope.launch {
+                        val data = getSavedCredentials(response)
+                        val verificationResponse =
+                            gson.fromJson(data, RegistrationResponseJson::class.java)
+                        val result = verifyAuthentication(verificationResponse)
+                        result.whenComplete { response, error ->
+                            val passKeyLoginParams = web3AuthResponse?.userInfo?.verifierId?.let {
+                                PassKeyLoginParams(
+                                    web3AuthResponse?.userInfo?.verifier.toString(),
+                                    it, web3AuthResponse?.idToken.toString(), ExtraVerifierParams(
+                                        "",
+                                        verificationResponse.response.clientDataJson,
+                                        verificationResponse.response.attestationObject,
+                                        response.data?.publicKey.toString(),
+                                        response.data?.challenge.toString(),
+                                        "",
+                                        rpId,
+                                        verificationResponse.id
+                                    )
+                                )
+                            }
+                            val passKey = passKeyLoginParams?.let { getPasskeyPostboxKey(it) }
+
+                            //decrypt Data
+                            val decryptedData =
+                                passKey?.let { decryptData(response.data?.metadata.toString(), it) }
+                            if (decryptedData == null) {
+                                throw Exception("Unable to decrypt data")
+                            }
+                            println("Decrypted data => $decryptedData")
+
+                        }
+                    }
+
+                }
+            }
+
+        } catch (e: Exception) {
+            throw Exception(Web3AuthError.getError(ErrorCode.ERROR_SIGNING_USER_IN_WITH_PASSKEYS))
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getPasskeyVerifierId(verificationResponse: CreatePublicKeyCredentialResponse): String {
+        // Parse auth data from the given buffer
+        fun parseAuthData(paramBuffer: ByteArray): AuthParamsData {
+            val buffer = ByteBuffer.wrap(paramBuffer)
+
+            // Extract rpIdHash
+            val rpIdHash = ByteArray(32)
+            buffer.get(rpIdHash)
+
+            // Extract flags
+            val flagsBuf = ByteArray(1)
+            buffer.get(flagsBuf)
+            val flagsInt = flagsBuf[0].toInt()
+            val flags = Flags(
+                up = flagsInt and 0x01 != 0,
+                uv = flagsInt and 0x04 != 0,
+                at = flagsInt and 0x40 != 0,
+                ed = flagsInt and 0x80 != 0,
+                flagsInt = flagsInt
+            )
+
+            // Extract counter
+            val counterBuf = ByteArray(4)
+            buffer.get(counterBuf)
+            val counter = counterBuf.toLong()
+
+            if (!flags.at) throw Exception("Unable to parse auth data")
+
+            // Extract AAGUID
+            val aaguid = ByteArray(16)
+            buffer.get(aaguid)
+
+            // Extract credential ID length and ID
+            val credIDLenBuf = ByteArray(2)
+            buffer.get(credIDLenBuf)
+            val credIDLen = credIDLenBuf.toShort()
+            val credID = ByteArray(credIDLen.toInt())
+            buffer.get(credID)
+
+            // Remaining buffer is the COSEPublicKey
+            val COSEPublicKey = ByteArray(buffer.remaining())
+            buffer.get(COSEPublicKey)
+
+            return AuthParamsData(
+                rpIdHash = rpIdHash,
+                flagsBuf = flagsBuf,
+                flags = flags,
+                counter = counter,
+                counterBuf = counterBuf,
+                aaguid = aaguid,
+                credID = credID,
+                COSEPublicKey = COSEPublicKey
+            )
+        }
+
+        // Convert ArrayBuffer to base64 URL string
+        fun b64url(arrayBuffer: ByteArray): String {
+            val base64String = Base64.getEncoder().encodeToString(arrayBuffer)
+            return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(base64String.toByteArray())
+        }
+
+        val response = verificationResponse.registrationResponseJson as RegistrationResponseJson
+
+        // Decode the attestation object and parse the auth data
+        val attestationObject = Base64.getUrlDecoder().decode(response.response.attestationObject)
+        val attestationStruct = decode(attestationObject)
+        val authDataStruct = parseAuthData(attestationStruct.authData)
+
+        // Convert COSEPublicKey to base64 URL string
+        val base64UrlString = b64url(authDataStruct.COSEPublicKey)
+
+        // Generate the verifier ID using Keccak-256 hash
+        val keccakDigest = Keccak.Digest256()
+        val verifierId = keccakDigest.digest(base64UrlString.toByteArray(Charsets.UTF_8))
+        return b64url(verifierId)
+    }
+
+    private fun getRegistrationOptionsResponse(
+        authenticatorAttachment: String?,
+        username: String? = null,
+        rp: Rp
+    ): CompletableFuture<RegistrationResponse> {
+        val registrationResponseCF: CompletableFuture<RegistrationResponse> = CompletableFuture()
+        val web3AuthApi =
+            ApiHelper.getPassKeysApiInstance(web3AuthOption.buildEnv?.name.toString())
+                .create(ApiService::class.java)
+
+        GlobalScope.launch {
+            try {
+                val requestBody = web3AuthResponse?.signatures?.let {
+                    RegistrationOptionsRequest(
+                        web3auth_client_id = web3AuthOption.clientId,
+                        verifier_id = web3AuthResponse?.userInfo?.verifierId ?: "",
+                        verifier = web3AuthResponse?.userInfo?.verifier ?: "",
+                        authenticator_attachment = authenticatorAttachment?.let {
+                            AuthenticatorAttachment.valueOf(
+                                it
+                            )
+                        },
+                        rp = Rp(rpName = rp.rpName, rpId = rp.rpId),
+                        username = (if (username.isNullOrBlank()) web3AuthResponse?.userInfo?.name else username).toString(),
+                        network = web3AuthOption.network.name,
+                        signatures = it
+                    )
+                }
+                val result = web3AuthApi.getRegistrationOptions(
+                    requestBody!!,
+                    "Bearer "
+                )
+                if (result.isSuccessful && result.body() != null) {
+                    val response = result.body() as RegistrationResponse
+                    trackingId = response.data.trackingId
+                    registrationResponseCF.complete(response)
+                } else {
+                    registrationResponseCF.completeExceptionally(
+                        Exception(
+                            Web3AuthError.getError(
+                                ErrorCode.RUNTIME_ERROR
+                            )
+                        )
+                    )
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                registrationResponseCF.completeExceptionally(
+                    Exception(
+                        Web3AuthError.getError(
+                            ErrorCode.SOMETHING_WENT_WRONG
+                        )
+                    )
+                )
+            }
+        }
+        return registrationResponseCF
+    }
+
+    private suspend fun createPasskey(options: Options): CreatePublicKeyCredentialResponse? {
+        val request = CreatePublicKeyCredentialRequest(options.toString())
+        var response: CreatePublicKeyCredentialResponse? = null
+        try {
+            response = credentialManager.createCredential(
+                web3AuthOption.context,
+                request
+            ) as CreatePublicKeyCredentialResponse
+        } catch (e: CreateCredentialException) {
+            handlePasskeyFailure(e)
+        }
+        return response
+    }
+
+    private fun handlePasskeyFailure(e: CreateCredentialException) {
+        val msg = when (e) {
+            is CreatePublicKeyCredentialDomException -> {
+                // Handle the passkey DOM errors thrown according to the
+                // WebAuthn spec using e.domError
+                "An error occurred while creating a passkey, please check logs for additional details."
+            }
+
+            is CreateCredentialCancellationException -> {
+                // The user intentionally canceled the operation and chose not
+                // to register the credential.
+                "The user intentionally canceled the operation and chose not to register the credential. Check logs for additional details."
+            }
+
+            is CreateCredentialInterruptedException -> {
+                // Retry-able error. Consider retrying the call.
+                "The operation was interrupted, please retry the call. Check logs for additional details."
+            }
+
+            is CreateCredentialProviderConfigurationException -> {
+                // Your app is missing the provider configuration dependency.
+                // Most likely, you're missing "credentials-play-services-auth".
+                "Your app is missing the provider configuration dependency. Check logs for additional details."
+            }
+
+            is CreateCredentialUnknownException -> {
+                "An unknown error occurred while creating passkey. Check logs for additional details."
+            }
+
+            is CreateCredentialCustomException -> {
+                // You have encountered an error from a 3rd-party SDK. If you
+                // make the API call with a request object that's a subclass of
+                // CreateCustomCredentialRequest using a 3rd-party SDK, then you
+                // should check for any custom exception type constants within
+                // that SDK to match with e.type. Otherwise, drop or log the
+                // exception.
+                "An unknown error occurred from a 3rd party SDK. Check logs for additional details."
+            }
+
+            else -> {
+                Log.w("Auth", "Unexpected exception type ${e::class.java.name}")
+                "An unknown error occurred."
+            }
+        }
+        Log.e("Auth", "createPasskey failed with exception: " + e.message.toString())
+    }
+
+    fun getPasskeyPublicKey(verifier: String, verifierId: String): TorusPublicKey {
+        val fetchNodeDetails =
+            FetchNodeDetails(TORUS_NETWORK_MAP[Network.valueOf(web3AuthOption.network.name)])
+        val opts = TorusCtorOptions(
+            "Custom",
+            web3AuthOption.clientId,
+        )
+        opts.network = web3AuthOption.network.name
+        opts.isEnableOneKey = true
+        val torusUtils = TorusUtils(opts)
+        val nodeDetails: NodeDetails = fetchNodeDetails.getNodeDetails(verifier, verifierId).get()
+        val publicAddress = torusUtils.getPublicAddress(
+            nodeDetails.torusNodeSSSEndpoints, nodeDetails.torusNodePub,
+            VerifierArgs(verifier, verifierId, null)
+        ).get();
+        return publicAddress
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getEncryptedMetadata(passkeyPubKey: TorusPublicKey): String {
+        val metadata = getUserInfo()?.let {
+            MetadataInfo(
+                privKey = getPrivkey(),
+                userInfo = it
+            )
+        }
+        // Encrypting the metadata
+        return encryptData(
+            passkeyPubKey.finalKeyData.x,
+            passkeyPubKey.finalKeyData.y,
+            Json.encodeToString(metadata)
+        )
+    }
+
+    /*fun encryptData(x: String, y: String, data: String): String {
+        // Convert the data to JSON and then to a byte array
+        val jsonData = Json.encodeToString(data)
+        val dataBytes = jsonData.toByteArray(Charsets.UTF_8)
+
+        // Convert the public key components to ECPoint
+        val ecSpec: ECParameterSpec = ECNamedCurveTable.getParameterSpec("secp256k1")
+        val ecPoint: ECPoint = ecSpec.curve.createPoint(BigInteger(Hex.decode(x)), BigInteger(Hex.decode(y)))
+
+        // Create the public key from the ECPoint
+        val keySpec = ECPublicKeySpec(ecPoint, ecSpec)
+        val keyFactory = KeyFactory.getInstance("ECDH", "BC")
+        val pubKey: PublicKey = keyFactory.generatePublic(keySpec)
+
+        // Encrypt the data using the public key
+        val cipher = Cipher.getInstance("ECIES", "BC")
+        cipher.init(Cipher.ENCRYPT_MODE, pubKey)
+        val encryptedData = cipher.doFinal(dataBytes)
+
+        // Convert the encrypted data to a hex string
+        val encryptedDataHex = Hex.toHexString(encryptedData)
+
+        // Return the encrypted data as a JSON string
+        return Json.encodeToString(encryptedDataHex)
+    }*/
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun encryptData(x: String, y: String, data: String): String {
+        val ephemKey = x.plus(y)
+        val privKey = KeyStoreManager.getPrivateKey("")// how to get Privkey
+        val ivKey = KeyStoreManager.randomBytes(16)
+        val aes256cbc = AES256CBC(
+            privKey, ephemKey, KeyStoreManager.convertByteToHexadecimal(ivKey)
+        )
+
+        val encryptedData = aes256cbc.encrypt(data.toByteArray(StandardCharsets.UTF_8))
+        return KeyStoreManager.convertByteToHexadecimal(encryptedData)
+    }
+
+    fun decryptData(data: String, privKey: String): String {
+        val ephemKey = KeyStoreManager.getPubKey(privKey)
+        val ivKey = KeyStoreManager.randomBytes(16)
+        val aes256cbc = AES256CBC(
+            privKey, ephemKey, KeyStoreManager.convertByteToHexadecimal(ivKey)
+        )
+        val encryptedData = aes256cbc.encrypt(data.toByteArray(StandardCharsets.UTF_8))
+        val mac = aes256cbc.getMac(encryptedData)
+        val decryptedData = aes256cbc.decrypt(data, KeyStoreManager.convertByteToHexadecimal(mac))
+        return String(decryptedData)
+    }
+
+
+    private fun verifyRegistration(
+        registrationResponse: CreatePublicKeyCredentialResponse,
+        signatures: List<String>,
+        passkeyToken: String,
+        data: String
+    ): CompletableFuture<ChallengeData> {
+        val registrationResponseCF: CompletableFuture<ChallengeData> = CompletableFuture()
+        val web3AuthApi =
+            ApiHelper.getPassKeysApiInstance(web3AuthOption.buildEnv?.name.toString())
+                .create(ApiService::class.java)
+
+        GlobalScope.launch {
+            try {
+                val requestBody = VerifyRequest(
+                    web3auth_client_id = web3AuthOption.clientId,
+                    tracking_id = trackingId,
+                    verification_data = registrationResponse,
+                    network = web3AuthOption.network.name,
+                    signatures = signatures,
+                    metadata = data
+                )
+                val result = web3AuthApi.verifyRegistration(
+                    requestBody,
+                    "Bearer $passkeyToken"
+                )
+                if (result.isSuccessful && result.body() != null && result.body()?.verified == true) {
+                    val response = result.body() as VerifyRegistrationResponse
+                    registrationResponseCF.complete(response.data)
+                } else {
+                    registrationResponseCF.completeExceptionally(
+                        Exception(
+                            Web3AuthError.getError(
+                                ErrorCode.RUNTIME_ERROR
+                            )
+                        )
+                    )
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                registrationResponseCF.completeExceptionally(
+                    Exception(
+                        Web3AuthError.getError(
+                            ErrorCode.SOMETHING_WENT_WRONG
+                        )
+                    )
+                )
+            }
+        }
+        return registrationResponseCF
+    }
+
+    private fun getAuthenticationOptions(authenticatorId: String?): CompletableFuture<AuthOptions> {
+        val authenticationOptionsCF: CompletableFuture<AuthOptions> = CompletableFuture()
+        val web3AuthApi =
+            ApiHelper.getPassKeysApiInstance(web3AuthOption.buildEnv?.name.toString())
+                .create(ApiService::class.java)
+
+        GlobalScope.launch {
+            try {
+                val requestBody = AuthenticationOptionsRequest(
+                    web3auth_client_id = web3AuthOption.clientId,
+                    rp_id = "",
+                    authenticatorId,
+                    network = web3AuthOption.network.name
+                )
+                val result = web3AuthApi.getAuthenticationOptions(
+                    requestBody,
+                )
+                if (result.isSuccessful && result.body() != null) {
+                    val response = result.body() as AuthenticationOptionsResponse
+                    trackingId = response.data.trackingId
+                    authenticationOptionsCF.complete(response.data.options)
+                } else {
+                    authenticationOptionsCF.completeExceptionally(
+                        Exception(
+                            Web3AuthError.getError(
+                                ErrorCode.RUNTIME_ERROR
+                            )
+                        )
+                    )
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                authenticationOptionsCF.completeExceptionally(
+                    Exception(
+                        Web3AuthError.getError(
+                            ErrorCode.SOMETHING_WENT_WRONG
+                        )
+                    )
+                )
+            }
+        }
+        return authenticationOptionsCF
+    }
+
+    private suspend fun getSavedCredentials(options: AuthOptions): String? {
+        val getPublicKeyCredentialOption =
+            GetPublicKeyCredentialOption(options.toString(), null)
+        val getPasswordOption = GetPasswordOption()
+        val result = try {
+            credentialManager.getCredential(
+                web3AuthOption.context,
+                GetCredentialRequest(
+                    listOf(
+                        getPublicKeyCredentialOption,
+                        getPasswordOption
+                    )
+                )
+            )
+        } catch (e: Exception) {
+            Log.e("Auth", "getCredential failed with exception: " + e.message.toString())
+            return null
+        }
+
+        if (result.credential is PublicKeyCredential) {
+            val cred = result.credential as PublicKeyCredential
+            //DataProvider.setSignedInThroughPasskeys(true)
+            return cred.authenticationResponseJson
+        }
+        if (result.credential is PasswordCredential) {
+            val cred = result.credential as PasswordCredential
+            //DataProvider.setSignedInThroughPasskeys(false)
+            return "Got Password - User:${cred.id} Password: ${cred.password}"
+        }
+        if (result.credential is CustomCredential) {
+            //If you are also using any external sign-in libraries, parse them here with the
+            // utility functions provided.
+        }
+        return null
+    }
+
+    private fun verifyAuthentication(publicKeyCredential: RegistrationResponseJson): CompletableFuture<VerifyAuthenticationResponse> {
+        val authenticationOptionsCF: CompletableFuture<VerifyAuthenticationResponse> =
+            CompletableFuture()
+        val web3AuthApi =
+            ApiHelper.getPassKeysApiInstance(web3AuthOption.buildEnv?.name.toString())
+                .create(ApiService::class.java)
+
+        GlobalScope.launch {
+            try {
+                val requestBody = VerifyAuthenticationRequest(
+                    web3auth_client_id = web3AuthOption.clientId,
+                    tracking_id = trackingId,
+                    verification_data = publicKeyCredential,
+                    network = web3AuthOption.network.name
+                )
+                val result = web3AuthApi.verifyAuthentication(
+                    requestBody,
+                )
+                if (result.isSuccessful && result.body() != null && result.body()?.verified == true) {
+                    val response = result.body() as VerifyAuthenticationResponse
+                    authenticationOptionsCF.complete(response)
+                } else {
+                    authenticationOptionsCF.completeExceptionally(
+                        Exception(
+                            Web3AuthError.getError(
+                                ErrorCode.RUNTIME_ERROR
+                            )
+                        )
+                    )
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                authenticationOptionsCF.completeExceptionally(
+                    Exception(
+                        Web3AuthError.getError(
+                            ErrorCode.SOMETHING_WENT_WRONG
+                        )
+                    )
+                )
+            }
+        }
+        return authenticationOptionsCF
+    }
+
+    private fun getPasskeyPostboxKey(passKeyLoginParams: PassKeyLoginParams): String {
+        val fetchNodeDetails =
+            FetchNodeDetails(TORUS_NETWORK_MAP[Network.valueOf(web3AuthOption.network.name)])
+        val opts = TorusCtorOptions(
+            "Custom",
+            web3AuthOption.clientId,
+        )
+        opts.network = web3AuthOption.network.name
+        opts.isEnableOneKey = true
+        val torusUtils = TorusUtils(opts)
+        val nodeDetails: NodeDetails = fetchNodeDetails.getNodeDetails(
+            passKeyLoginParams.verifier,
+            passKeyLoginParams.verifierId
+        ).get()
+        val torusKey = torusUtils.retrieveShares(
+            nodeDetails.torusNodeEndpoints, nodeDetails.torusIndexes, passKeyLoginParams.verifier,
+            hashMapOf("verifier_id" to passKeyLoginParams.verifierId), passKeyLoginParams.idToken
+        ).get()
+
+        if (torusKey.finalKeyData.privKey == null) {
+            throw Exception("Unable to get passkey postbox key")
+        }
+        return torusKey.finalKeyData.privKey.padStart(64, '0')
     }
 
     /**

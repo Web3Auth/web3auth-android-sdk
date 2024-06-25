@@ -10,4 +10,5 @@
     <string name="send_tx">Send Transaction</string>
     <string name="sign_result">Get Sign Result</string>
     <string name="mfa">SetUp MFA</string>
+    <string name="passkey_signup">SignUp with PassKey</string>
 </resources>

@@ -7,7 +7,11 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Message
 import android.view.ViewTreeObserver.OnScrollChangedListener
-import android.webkit.*
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.gson.GsonBuilder

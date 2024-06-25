@@ -28,6 +28,13 @@ object Web3AuthError {
             ErrorCode.MFA_ALREADY_ENABLED -> {
                 "MFA already enabled"
             }
+            ErrorCode.ERROR_REGISTERING_USER -> {
+                "Error registering user"
+            }
+
+            ErrorCode.ERROR_SIGNING_USER_IN_WITH_PASSKEYS -> {
+                "Error signing user in with passkeys"
+            }
         }
     }
 }
@@ -40,5 +47,7 @@ enum class ErrorCode {
     APP_CANCELLED,
     SOMETHING_WENT_WRONG,
     INVALID_LOGIN,
-    MFA_ALREADY_ENABLED
+    MFA_ALREADY_ENABLED,
+    ERROR_REGISTERING_USER,
+    ERROR_SIGNING_USER_IN_WITH_PASSKEYS
 }
