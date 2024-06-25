@@ -122,6 +122,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
+        val signResultButton = findViewById<Button>(R.id.signResultButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
@@ -154,6 +155,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             btnSetUpMfa.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             signMsgButton.visibility = View.GONE
+            signResultButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
     }
