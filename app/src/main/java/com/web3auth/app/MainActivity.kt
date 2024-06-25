@@ -40,12 +40,9 @@ import com.web3auth.core.types.WhiteLabelData
 import org.json.JSONObject
 import org.web3j.crypto.Credentials
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicBoolean
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
-    private val isLoginCompleted = AtomicBoolean(false)
-    private var count = 0
 
     private val verifierList: List<LoginVerifier> = listOf(
         LoginVerifier("Google", Provider.GOOGLE),
@@ -125,6 +122,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
+        val signResultButton = findViewById<Button>(R.id.signResultButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
@@ -157,6 +155,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             btnSetUpMfa.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             signMsgButton.visibility = View.GONE
+            signResultButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
     }
@@ -295,23 +294,14 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         web3Auth.setResultUrl(intent?.data)
-        isLoginCompleted.set(true)
     }
 
     override fun onResume() {
         super.onResume()
-        if (isLoginCompleted.get()) {
-            isLoginCompleted.set(false)
-            count = 0
-        } else {
-            if (count > 0) {
-                if (Web3Auth.getSignResponse() != null) {
-                    return
-                }
-                Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
-                web3Auth.setResultUrl(null)
-            }
-            count++
+        if (Web3Auth.getCustomTabsClosed()) {
+            Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
+            web3Auth.setResultUrl(null)
+            Web3Auth.setCustomTabsClosed(false)
         }
     }
 

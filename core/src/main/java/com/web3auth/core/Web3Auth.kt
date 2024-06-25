@@ -2,19 +2,33 @@ package com.web3auth.core
 
 import android.content.Intent
 import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.api.ApiService
 import com.web3auth.core.keystore.KeyStoreManagerUtils
-import com.web3auth.core.types.*
+import com.web3auth.core.types.ChainConfig
+import com.web3auth.core.types.ErrorCode
+import com.web3auth.core.types.ExtraLoginOptions
+import com.web3auth.core.types.LoginConfigItem
+import com.web3auth.core.types.LoginParams
+import com.web3auth.core.types.MFALevel
+import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.SessionResponse
+import com.web3auth.core.types.SignResponse
+import com.web3auth.core.types.UnKnownException
+import com.web3auth.core.types.UserCancelledException
+import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.WEBVIEW_URL
+import com.web3auth.core.types.Web3AuthError
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
 import com.web3auth.session_manager_android.SessionManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions) {
@@ -140,21 +154,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
                         .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
                 //print("url: => $url")
-                val defaultBrowser = context.getDefaultBrowser()
-                val customTabsBrowsers = context.getCustomTabsBrowsers()
-
-                if (customTabsBrowsers.contains(defaultBrowser)) {
-                    val customTabs = CustomTabsIntent.Builder().build()
-                    customTabs.intent.setPackage(defaultBrowser)
-                    customTabs.launchUrl(context, url)
-                } else if (customTabsBrowsers.isNotEmpty()) {
-                    val customTabs = CustomTabsIntent.Builder().build()
-                    customTabs.intent.setPackage(customTabsBrowsers[0])
-                    customTabs.launchUrl(context, url)
-                } else {
-                    // Open in browser externally
-                    context.startActivity(Intent(Intent.ACTION_VIEW, url))
-                }
+                val intent = Intent(context, CustomChromeTabsActivity::class.java)
+                intent.putExtra(WEBVIEW_URL, url.toString())
+                context.startActivity(intent)
             }
         }
     }
@@ -175,15 +177,19 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
 
             //fetch project config
-            fetchProjectConfig()
-
-            this.authorizeSession().whenComplete { resp, error ->
-                if (error == null) {
-                    web3AuthResponse = resp
+            fetchProjectConfig().whenComplete { _, err ->
+                if (err == null) {
+                    this.authorizeSession().whenComplete { resp, error ->
+                        if (error == null) {
+                            web3AuthResponse = resp
+                            initializeCf.complete(null)
+                        } else {
+                            print(error)
+                        }
+                    }
                 } else {
-                    print(error)
+                    initializeCf.completeExceptionally(err)
                 }
-                initializeCf.complete(null)
             }
         }
         return initializeCf
@@ -377,9 +383,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return sessionCompletableFuture
     }
 
-    private fun fetchProjectConfig() {
-        val projectConfigCompletableFuture: CompletableFuture<ProjectConfigResponse> =
-            CompletableFuture()
+    private fun fetchProjectConfig(): CompletableFuture<Boolean> {
+        val projectConfigCompletableFuture: CompletableFuture<Boolean> = CompletableFuture()
         val web3AuthApi =
             ApiHelper.getInstance(web3AuthOption.network.name).create(ApiService::class.java)
         GlobalScope.launch {
@@ -400,6 +405,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                                 web3AuthOption.whiteLabel!!.merge(response.whitelabel)
                         }
                     }
+                    projectConfigCompletableFuture.complete(true)
                 } else {
                     projectConfigCompletableFuture.completeExceptionally(
                         Exception(
@@ -420,6 +426,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 )
             }
         }
+        return projectConfigCompletableFuture
     }
 
     /**
@@ -646,12 +653,21 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     companion object {
 
         private var signResponse: SignResponse? = null
+        private var isCustomTabsClosed: Boolean = false
         fun setSignResponse(_response: SignResponse?) {
             signResponse = _response
         }
 
         fun getSignResponse(): SignResponse? {
             return signResponse
+        }
+
+        fun setCustomTabsClosed(_isCustomTabsClosed: Boolean) {
+            isCustomTabsClosed = _isCustomTabsClosed
+        }
+
+        fun getCustomTabsClosed(): Boolean {
+            return isCustomTabsClosed
         }
     }
 }
