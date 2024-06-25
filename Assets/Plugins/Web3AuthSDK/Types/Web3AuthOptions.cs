@@ -11,25 +11,23 @@ public class Web3AuthOptions {
     public string sdkUrl {
         get {
             if (buildEnv == Web3Auth.BuildEnv.STAGING)
-                return "https://staging-auth.web3auth.io/{openLoginVersion}";
+                return "https://staging-auth.web3auth.io/v8";
             else if (buildEnv == Web3Auth.BuildEnv.TESTING)
                 return "https://develop-auth.web3auth.io";
             else 
-                return "https://auth.web3auth.io/{openLoginVersion}";    
+                return "https://auth.web3auth.io/v8";
         }
         set { }
     }
-    public const string openLoginVersion = "v8";
 
-    public const string walletServicesVersion = "v2";
     public string walletSdkUrl {
          get {
             if (buildEnv == Web3Auth.BuildEnv.STAGING)
-                return "https://staging-wallet.web3auth.io/{walletServicesVersion}";
+                return "https://staging-wallet.web3auth.io/v2";
             else if (buildEnv == Web3Auth.BuildEnv.TESTING)
                 return "https://develop-wallet.web3auth.io";
             else
-                return "https://wallet.web3auth.io/{walletServicesVersion}";
+                return "https://wallet.web3auth.io/v2";
          }
          set { }
     }

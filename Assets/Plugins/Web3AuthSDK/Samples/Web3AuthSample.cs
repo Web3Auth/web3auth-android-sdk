@@ -11,7 +11,7 @@ public class Web3AuthSample : MonoBehaviour
     List<LoginVerifier> verifierList = new List<LoginVerifier> {
         new LoginVerifier("Google", Provider.GOOGLE),
         new LoginVerifier("Facebook", Provider.FACEBOOK),
-        new LoginVerifier("CUSTOM_VERIFIER", Provider.CUSTOM_VERIFIER),
+        // new LoginVerifier("CUSTOM_VERIFIER", Provider.CUSTOM_VERIFIER),
         new LoginVerifier("Twitch", Provider.TWITCH),
         new LoginVerifier("Discord", Provider.DISCORD),
         new LoginVerifier("Reddit", Provider.REDDIT),
@@ -20,7 +20,7 @@ public class Web3AuthSample : MonoBehaviour
         new LoginVerifier("LinkedIn", Provider.LINKEDIN),
         new LoginVerifier("Twitter", Provider.TWITTER),
         new LoginVerifier("Line", Provider.LINE),
-        new LoginVerifier("Hosted Email Passwordless", Provider.EMAIL_PASSWORDLESS),
+        new LoginVerifier("Email Passwordless", Provider.EMAIL_PASSWORDLESS),
         new LoginVerifier("SMS Passwordless", Provider.SMS_PASSWORDLESS),
         new LoginVerifier("Farcaster", Provider.FARCASTER),
     };
@@ -69,7 +69,7 @@ public class Web3AuthSample : MonoBehaviour
                 mode = ThemeModes.dark,
                 theme = new Dictionary<string, string>
                 {
-                    { "primary", "#123456" }
+                    { "primary", "#FFBF00" }
                 }
             },
             // If using your own custom verifier, uncomment this code. 
@@ -80,8 +80,8 @@ public class Web3AuthSample : MonoBehaviour
                 {"CUSTOM_VERIFIER", loginConfigItem}
             }
             */
-            clientId = "BFuUqebV5I8Pz5F7a5A2ihW7YVmbv_OHXnHYDv6OltAD5NGr6e-ViNvde3U4BHdn6HvwfkgobhVu4VwC-OSJkik",
-            buildEnv = BuildEnv.TESTING,
+            clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ",
+            buildEnv = BuildEnv.PRODUCTION,
             redirectUrl = new Uri("torusapp://com.torus.Web3AuthUnity/auth"),
             network = Web3Auth.Network.SAPPHIRE_DEVNET,
             sessionTime = 86400
@@ -156,6 +156,13 @@ public class Web3AuthSample : MonoBehaviour
             options.extraLoginOptions = new ExtraLoginOptions()
             {
                 login_hint = emailAddressField.text
+            };
+        }
+        if (selectedProvider == Provider.SMS_PASSWORDLESS)
+        {
+            options.extraLoginOptions = new ExtraLoginOptions()
+            {
+                login_hint = "+XX-XXXXXXXXXX"
             };
         }
 

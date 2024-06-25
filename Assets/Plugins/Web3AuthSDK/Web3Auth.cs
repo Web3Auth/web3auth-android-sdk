@@ -63,7 +63,7 @@ public class Web3Auth : MonoBehaviour
         this.initParams = new Dictionary<string, object>();
 
         this.initParams["clientId"] = clientId;
-        this.initParams["network"] = network.ToString().ToLower();
+        this.initParams["network"] = network.ToString().ToLowerInvariant();
 
         if (!string.IsNullOrEmpty(redirectUri))
             this.initParams["redirectUrl"] = redirectUri;
@@ -293,7 +293,14 @@ public class Web3Auth : MonoBehaviour
                 })));
 
             UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.sdkUrl);
-            uriBuilder.Path = "start";
+            if(this.web3AuthOptions.sdkUrl.Contains("develop"))
+            {
+                uriBuilder.Path = "/" + "start";
+            }
+            else
+            {
+                uriBuilder.Path += "/" + "start";
+            }
             uriBuilder.Fragment = "b64Params=" + hash;
             //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
 
@@ -342,7 +349,14 @@ public class Web3Auth : MonoBehaviour
                     })));
 
                 UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
-                uriBuilder.Path = path;
+                if(this.web3AuthOptions.sdkUrl.Contains("develop"))
+                {
+                    uriBuilder.Path = "/" + path;
+                }
+                else
+                {
+                    uriBuilder.Path += "/" + path;
+                }
                 uriBuilder.Fragment = "b64Params=" + hash;
                 //Debug.Log("WalletUriBuilderToOpen: =>" + uriBuilder.ToString());
 
@@ -369,12 +383,14 @@ public class Web3Auth : MonoBehaviour
             throw new UserCancelledException();
 #endif
         hash = hash.Remove(0, 1);
-        Dictionary<string, string> queryParameters = Utils.ParseQuery(uri.Query);
 
+        Dictionary<string, string> queryParameters = Utils.ParseQuery(uri.Query);
         if (queryParameters.Keys.Contains("error"))
             throw new UnKnownException(queryParameters["error"]);
 
-        string b64Params = hash.Split('=')[1];
+        string newUriString = "http://" + uri.Host + "?" + hash;
+        Uri newUri = new Uri(newUriString);
+        string b64Params = getQueryParamValue(newUri, "b64Params");
         string decodedString = decodeBase64Params(b64Params);
         SessionResponse sessionResponse = null;
         try
@@ -397,6 +413,25 @@ public class Web3Auth : MonoBehaviour
             Utils.RemoveAuthCodeFromURL();
         } 
 #endif
+    }
+
+    private string getQueryParamValue(Uri uri, string key)
+    {
+        string value = "";
+        if (uri.Query != null && uri.Query.Length > 0)
+        {
+            string[] queryParameters = uri.Query.Substring(1).Split('&');
+            foreach (string queryParameter in queryParameters)
+            {
+                string[] keyValue = queryParameter.Split('=');
+                if (keyValue[0] == key)
+                {
+                    value = keyValue[1];
+                    break;
+                }
+            }
+        }
+        return value;
     }
 
     private string decodeBase64Params(string base64Params)
