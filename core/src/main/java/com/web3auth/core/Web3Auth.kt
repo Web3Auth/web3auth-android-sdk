@@ -238,10 +238,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     this.authorizeSession().whenComplete { resp, error ->
                         if (error == null) {
                             web3AuthResponse = resp
-                            initializeCf.complete(null)
+                            //initializeCf.complete(null)
                         } else {
                             print(error)
                         }
+                        initializeCf.complete(null)
                     }
                 } else {
                     initializeCf.completeExceptionally(err)
@@ -663,8 +664,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     GlobalScope.launch {
                         val data = createPasskey(response.data.options)
                             ?: throw Exception("passkey registration failed.")
-                        var passkeyVerifierId = getPasskeyVerifierId(data)
-                        var passkeyPublicKey = getPasskeyPublicKey(
+                        val passkeyVerifierId = getPasskeyVerifierId(data)
+                        val passkeyPublicKey = getPasskeyPublicKey(
                             web3AuthResponse?.userInfo?.verifier.toString(),
                             passkeyVerifierId
                         )
