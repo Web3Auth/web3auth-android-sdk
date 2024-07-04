@@ -15,7 +15,7 @@ android {
     compileSdkVersion 34
 
     defaultConfig {
-        applicationId "com.web3auth.app"
+        applicationId "io.web3auth.app"
         minSdkVersion 24
         targetSdkVersion 34
         versionCode 1

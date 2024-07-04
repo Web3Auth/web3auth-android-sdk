@@ -1,4 +1,4 @@
-package com.web3auth.app
+package io.web3auth.app
 
 import com.web3auth.core.types.Provider
 

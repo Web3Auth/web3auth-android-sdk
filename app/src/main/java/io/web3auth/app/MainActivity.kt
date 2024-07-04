@@ -1,4 +1,4 @@
-package com.web3auth.app
+package io.web3auth.app
 
 import android.content.Intent
 import android.net.Uri
@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
 import com.google.gson.JsonArray
+import com.web3auth.app.R
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
 import com.web3auth.core.isPhoneNumberValid

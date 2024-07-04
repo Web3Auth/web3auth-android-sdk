@@ -14,7 +14,7 @@
 
         <activity
             android:launchMode="singleTop"
-            android:name="com.web3auth.app.MainActivity"
+            android:name="io.web3auth.app.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -42,6 +42,9 @@
                 <data android:scheme="web3auth" />
             </intent-filter>
         </activity>
+        <meta-data
+            android:name="asset_statements"
+            android:resource="@string/asset_statements" />
     </application>
 
 </manifest>

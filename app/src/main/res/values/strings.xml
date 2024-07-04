@@ -11,4 +11,9 @@
     <string name="sign_result">Get Sign Result</string>
     <string name="mfa">SetUp MFA</string>
     <string name="passkey_signup">SignUp with PassKey</string>
+    <string name="asset_statements" translatable="false">
+[{
+  \"include\": \"https://signin.example.com/.well-known/assetlinks.json\"
+}]
+</string>
 </resources>
