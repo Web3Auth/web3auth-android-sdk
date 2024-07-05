@@ -184,6 +184,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                             web3AuthResponse = resp
                         } else {
                             print(error)
+                            initializeCf.completeExceptionally(error)
                         }
                         initializeCf.complete(null)
                     }
