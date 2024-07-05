@@ -6,13 +6,16 @@ plugins {
 android {
     signingConfigs {
         release {
-            storeFile file('/Users/tanuj/Desktop/Torus/open login/open_login')
+            storeFile file('/Users/gaurav/Desktop/Web3Auth/web3auth-android-sdk/web3auth.keystore.jks')
             storePassword 'torus123'
             keyAlias 'key0'
             keyPassword 'torus123'
         }
+        debug {
+
+        }
     }
-    compileSdkVersion 34
+    compileSdk 34
 
     defaultConfig {
         applicationId "io.web3auth.app"
@@ -31,9 +34,10 @@ android {
 
     buildTypes {
         release {
+            applicationIdSuffix ".release"
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {

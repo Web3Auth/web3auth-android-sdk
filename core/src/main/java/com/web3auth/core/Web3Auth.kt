@@ -653,6 +653,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     ): Boolean {
         try {
             this.rpId = rp.id
+            credentialManager = CredentialManager.create(web3AuthOption.context)
             val sessionId = sessionManager.getSessionId()
             if (sessionId.isBlank()) {
                 throw Exception(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
@@ -877,7 +878,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     private suspend fun createPasskey(options: Options): CreatePublicKeyCredentialResponse? {
-        val request = CreatePublicKeyCredentialRequest(options.toString())
+        val request = CreatePublicKeyCredentialRequest(gson.toJson(options))
         var response: CreatePublicKeyCredentialResponse? = null
         try {
             response = credentialManager.createCredential(

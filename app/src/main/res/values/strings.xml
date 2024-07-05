@@ -13,7 +13,7 @@
     <string name="passkey_signup">SignUp with PassKey</string>
     <string name="asset_statements" translatable="false">
 [{
-  \"include\": \"https://signin.example.com/.well-known/assetlinks.json\"
+  \"include\": \"https://web3auth.io/.well-known/assetlinks.json\"
 }]
 </string>
 </resources>
