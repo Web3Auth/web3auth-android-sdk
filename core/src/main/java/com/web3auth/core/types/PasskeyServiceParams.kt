@@ -33,7 +33,6 @@ data class RegistrationOptionsRequest(
     val web3auth_client_id: String,
     val verifier_id: String,
     val verifier: String,
-    val authenticator_attachment: AuthenticatorAttachment?,
     val rp: Rp,
     val username: String,
     val network: String,
@@ -46,8 +45,8 @@ data class RegistrationOptionsResponse(
 )
 
 data class Rp(
-    val rpName: String,
-    val rpId: String
+    val name: String,
+    val id: String
 )
 
 data class PasskeyServiceEndpoints(

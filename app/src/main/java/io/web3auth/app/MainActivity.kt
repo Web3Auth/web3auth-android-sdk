@@ -2,6 +2,7 @@ package io.web3auth.app
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
@@ -13,6 +14,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputLayout
@@ -22,6 +24,7 @@ import com.web3auth.app.R
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
 import com.web3auth.core.isPhoneNumberValid
+import com.web3auth.core.types.AuthenticatorAttachment
 import com.web3auth.core.types.BuildEnv
 import com.web3auth.core.types.ChainConfig
 import com.web3auth.core.types.ChainNamespace
@@ -32,6 +35,7 @@ import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.MFALevel
 import com.web3auth.core.types.Network
 import com.web3auth.core.types.Provider
+import com.web3auth.core.types.Rp
 import com.web3auth.core.types.ThemeModes
 import com.web3auth.core.types.TypeOfLogin
 import com.web3auth.core.types.UserInfo
@@ -162,6 +166,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -267,7 +272,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         val passkeysSignUpButton = findViewById<Button>(R.id.passkeysSignUpButton)
         passkeysSignUpButton.setOnClickListener {
-
+            web3Auth.registerPasskey(
+                AuthenticatorAttachment.PLATFORM,
+                web3Auth.getUserInfo()?.name.plus("|").plus(web3Auth.getUserInfo()?.email),
+                Rp("Web3Auth PnP Android Example", "web3auth.io")
+            )
         }
 
 

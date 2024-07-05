@@ -647,12 +647,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun registerPasskey(
-        authenticatorAttachment: String?,
+        authenticatorAttachment: AuthenticatorAttachment?,
         username: String? = null,
         rp: Rp
     ): Boolean {
         try {
-            this.rpId = rp.rpId
+            this.rpId = rp.id
             val sessionId = sessionManager.getSessionId()
             if (sessionId.isBlank()) {
                 throw Exception(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
@@ -685,8 +685,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
                 }
             }
-
-
             return true
         } catch (e: Exception) {
             throw Exception(Web3AuthError.getError(ErrorCode.ERROR_REGISTERING_USER))
@@ -824,7 +822,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     private fun getRegistrationOptionsResponse(
-        authenticatorAttachment: String?,
+        authenticatorAttachment: AuthenticatorAttachment?,
         username: String? = null,
         rp: Rp
     ): CompletableFuture<RegistrationResponse> {
@@ -840,14 +838,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                         web3auth_client_id = web3AuthOption.clientId,
                         verifier_id = web3AuthResponse?.userInfo?.verifierId ?: "",
                         verifier = web3AuthResponse?.userInfo?.verifier ?: "",
-                        authenticator_attachment = authenticatorAttachment?.let {
-                            AuthenticatorAttachment.valueOf(
-                                it
-                            )
-                        },
-                        rp = Rp(rpName = rp.rpName, rpId = rp.rpId),
+                        //authenticator_attachment = authenticatorAttachment?.name ?: "",
+                        rp = Rp(name = rp.name, id = rp.id),
                         username = (if (username.isNullOrBlank()) web3AuthResponse?.userInfo?.name else username).toString(),
-                        network = web3AuthOption.network.name,
+                        network = web3AuthOption.network.name.toLowerCase(),
                         signatures = it
                     )
                 }
