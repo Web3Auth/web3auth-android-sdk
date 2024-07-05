@@ -182,10 +182,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     this.authorizeSession().whenComplete { resp, error ->
                         if (error == null) {
                             web3AuthResponse = resp
-                            initializeCf.complete(null)
                         } else {
                             print(error)
                         }
+                        initializeCf.complete(null)
                     }
                 } else {
                     initializeCf.completeExceptionally(err)
