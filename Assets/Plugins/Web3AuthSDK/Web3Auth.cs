@@ -42,10 +42,23 @@ public class Web3Auth : MonoBehaviour
     private Dictionary<string, object> initParams;
 
     private Web3AuthResponse web3AuthResponse;
+    private bool isRequestResponse = false;
 
     public event Action<Web3AuthResponse> onLogin;
     public event Action onLogout;
     public event Action<bool> onMFASetup;
+
+    private static SignResponse signResponse = null;
+
+    public static void setSignResponse(SignResponse _response)
+    {
+        signResponse = _response;
+    }
+
+    public static SignResponse getSignResponse()
+    {
+        return signResponse;
+    }
 
     [SerializeField]
     private string clientId;
@@ -253,7 +266,7 @@ public class Web3Auth : MonoBehaviour
     }
 #endif
 
-    private async void request(string path, LoginParams loginParams = null)
+    private async void processRequest(string path, LoginParams loginParams = null)
     {
 #if UNITY_STANDALONE || UNITY_EDITOR
         this.initParams["redirectUrl"] = StartLocalWebserver();
@@ -303,7 +316,7 @@ public class Web3Auth : MonoBehaviour
             }
             uriBuilder.Fragment = "b64Params=" + hash;
             //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
-
+            isRequestResponse = false;
             Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
         }
         else
@@ -358,8 +371,8 @@ public class Web3Auth : MonoBehaviour
                     uriBuilder.Path += "/" + path;
                 }
                 uriBuilder.Fragment = "b64Params=" + hash;
-                //Debug.Log("WalletUriBuilderToOpen: =>" + uriBuilder.ToString());
-
+                //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
+                isRequestResponse = false;
                 Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
             }
             else
@@ -392,6 +405,19 @@ public class Web3Auth : MonoBehaviour
         Uri newUri = new Uri(newUriString);
         string b64Params = getQueryParamValue(newUri, "b64Params");
         string decodedString = decodeBase64Params(b64Params);
+        if(isRequestResponse) {
+            try
+            {
+                signResponse = JsonUtility.FromJson<SignResponse>(decodedString);
+                setSignResponse(signResponse);
+            }
+            catch (Exception e)
+            {
+                Debug.Log("Failed to decode JSON: " + e.Message);
+            }
+            isRequestResponse = false;
+            return;
+        }
         SessionResponse sessionResponse = null;
         try
         {
@@ -464,7 +490,7 @@ public class Web3Auth : MonoBehaviour
             }
         }
 
-        request("login", loginParams);
+        processRequest("login", loginParams);
     }
 
     public void logout(Dictionary<string, object> extraParams)
@@ -502,7 +528,73 @@ public class Web3Auth : MonoBehaviour
                        loginParams.dappShare = share;
                    }
             }
-            request("enable_mfa", loginParams);
+            processRequest("enable_mfa", loginParams);
+        }
+        else
+        {
+            throw new Exception("SessionId not found. Please login first.");
+        }
+    }
+
+    public async void request(ChainConfig chainConfig, string method, JArray requestParams, string path = "wallet/request") {
+        string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
+        if (!string.IsNullOrEmpty(sessionId))
+        {
+            #if UNITY_STANDALONE || UNITY_EDITOR
+                    this.initParams["redirectUrl"] = StartLocalWebserver();
+            #elif UNITY_WEBGL
+                    this.initParams["redirectUrl"] = Utils.GetCurrentURL();
+            #endif
+
+                    this.initParams["chainConfig"] = chainConfig;
+                    Dictionary<string, object> paramMap = new Dictionary<string, object>();
+                    paramMap["options"] = this.initParams;
+
+                    string loginId = await createSession(JsonConvert.SerializeObject(paramMap, Formatting.None,
+                        new JsonSerializerSettings
+                        {
+                            NullValueHandling = NullValueHandling.Ignore
+                        }), 60000);
+
+                    if (!string.IsNullOrEmpty(loginId))
+                    {
+                        JObject requestData = new JObject
+                        {
+                            { "method", method },
+                            { "params", JsonConvert.SerializeObject(requestParams) }
+                        };
+                        JObject signMessageMap = new JObject
+                        {
+                            { "loginId", loginId },
+                            { "sessionId", sessionId },
+                            {"platform", "unity" },
+                            { "request", JsonConvert.SerializeObject(requestData) }
+                        };
+
+                        string hash = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(signMessageMap, Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            })));
+
+                        UriBuilder uriBuilder = new UriBuilder(this.web3AuthOptions.walletSdkUrl);
+                        if(this.web3AuthOptions.sdkUrl.Contains("develop"))
+                        {
+                            uriBuilder.Path = "/" + path;
+                        }
+                        else
+                        {
+                            uriBuilder.Path += "/" + path;
+                        }
+                        uriBuilder.Fragment = "b64Params=" + hash;
+                        //Debug.Log("finalUriBuilderToOpen: =>" + uriBuilder.ToString());
+                        isRequestResponse = true;
+                        Utils.LaunchUrl(uriBuilder.ToString(), this.initParams["redirectUrl"].ToString(), gameObject.name);
+                    }
+                    else
+                    {
+                        throw new Exception("Some went wrong. Please try again later.");
+                    }
         }
         else
         {
