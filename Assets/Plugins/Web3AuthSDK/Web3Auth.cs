@@ -100,47 +100,56 @@ public class Web3Auth : MonoBehaviour
 //            this.setResultUrl(new Uri($"http://localhost#{code}"));
 //        } 
 #endif
-        authorizeSession("");
     }
 
-    public void setOptions(Web3AuthOptions web3AuthOptions)
+    public async void setOptions(Web3AuthOptions web3AuthOptions)
     {
-        JsonSerializerSettings settings = new JsonSerializerSettings
-        {
-            Converters = new List<JsonConverter> { new StringEnumConverter() },
-            Formatting = Formatting.Indented
-        };
-
         this.web3AuthOptions = web3AuthOptions;
 
-        if (this.web3AuthOptions.redirectUrl != null)
-            this.initParams["redirectUrl"] = this.web3AuthOptions.redirectUrl;
+        bool isfetchConfigSuccess = await fetchProjectConfig();
 
-        if (this.web3AuthOptions.whiteLabel != null)
-            this.initParams["whiteLabel"] = JsonConvert.SerializeObject(this.web3AuthOptions.whiteLabel, settings);
+        if (!isfetchConfigSuccess)
+        {
+            throw new Exception("Failed to fetch project config. Please try again later.");
+        } else {
+            authorizeSession("");
 
-        if (this.web3AuthOptions.loginConfig != null)
-            this.initParams["loginConfig"] = JsonConvert.SerializeObject(this.web3AuthOptions.loginConfig, settings);
+            JsonSerializerSettings settings = new JsonSerializerSettings
+            {
+                Converters = new List<JsonConverter> { new StringEnumConverter() },
+                Formatting = Formatting.Indented
+            };
 
-        if (this.web3AuthOptions.clientId != null)
-            this.initParams["clientId"] = this.web3AuthOptions.clientId;
+            if (this.web3AuthOptions.redirectUrl != null)
+                this.initParams["redirectUrl"] = this.web3AuthOptions.redirectUrl;
 
-        if (this.web3AuthOptions.buildEnv != null)
-            this.initParams["buildEnv"] = this.web3AuthOptions.buildEnv.ToString().ToLowerInvariant();
+            if (this.web3AuthOptions.whiteLabel != null)
+                this.initParams["whiteLabel"] = JsonConvert.SerializeObject(this.web3AuthOptions.whiteLabel, settings);
 
-        this.initParams["network"] = this.web3AuthOptions.network.ToString().ToLowerInvariant();
+            if (this.web3AuthOptions.loginConfig != null)
+                this.initParams["loginConfig"] = JsonConvert.SerializeObject(this.web3AuthOptions.loginConfig, settings);
 
-        if (this.web3AuthOptions.useCoreKitKey.HasValue)
-            this.initParams["useCoreKitKey"] = this.web3AuthOptions.useCoreKitKey.Value;
+            if (this.web3AuthOptions.clientId != null)
+                this.initParams["clientId"] = this.web3AuthOptions.clientId;
 
-        if (this.web3AuthOptions.chainNamespace != null)
-            this.initParams["chainNamespace"] = this.web3AuthOptions.chainNamespace;
+            if (this.web3AuthOptions.buildEnv != null)
+                this.initParams["buildEnv"] = this.web3AuthOptions.buildEnv.ToString().ToLower();
 
-        if (this.web3AuthOptions.mfaSettings != null)
-            this.initParams["mfaSettings"] = JsonConvert.SerializeObject(this.web3AuthOptions.mfaSettings, settings);
+            this.initParams["network"] = this.web3AuthOptions.network.ToString().ToLower();
 
-        if (this.web3AuthOptions.sessionTime != null)
-            this.initParams["sessionTime"] = this.web3AuthOptions.sessionTime;
+            if (this.web3AuthOptions.useCoreKitKey.HasValue)
+                this.initParams["useCoreKitKey"] = this.web3AuthOptions.useCoreKitKey.Value;
+
+            if (this.web3AuthOptions.chainNamespace != null)
+                this.initParams["chainNamespace"] = this.web3AuthOptions.chainNamespace;
+
+            if (this.web3AuthOptions.mfaSettings != null)
+                this.initParams["mfaSettings"] = JsonConvert.SerializeObject(this.web3AuthOptions.mfaSettings, settings);
+
+            if (this.web3AuthOptions.sessionTime != null)
+                this.initParams["sessionTime"] = this.web3AuthOptions.sessionTime;
+
+        }
     }
 
     private void onDeepLinkActivated(string url)
@@ -775,6 +784,49 @@ public class Web3Auth : MonoBehaviour
             }
         ));
         return await createSessionResponse.Task;
+    }
+
+    private async Task<bool> fetchProjectConfig()
+    {
+        TaskCompletionSource<bool> fetchProjectConfigResponse = new TaskCompletionSource<bool>();
+        StartCoroutine(Web3AuthApi.getInstance().fetchProjectConfig(this.web3AuthOptions.clientId, this.web3AuthOptions.network.ToString().ToLower(), (response =>
+        {
+            if (response != null)
+            {
+                this.web3AuthOptions.originData = this.web3AuthOptions.originData.mergeMaps(response.whitelist?.signed_urls);
+                if (response?.whitelabel != null)
+                {
+                    if (this.web3AuthOptions.whiteLabel == null)
+                    {
+                        this.web3AuthOptions.whiteLabel = response.whitelabel;
+                    }
+                    else
+                    {
+                        this.web3AuthOptions.whiteLabel = this.web3AuthOptions.whiteLabel?.merge(response.whitelabel);
+                    }
+                }
+                //Debug.Log("this.web3AuthOptions: =>" + JsonConvert.SerializeObject(this.web3AuthOptions));
+
+                JsonSerializerSettings settings = new JsonSerializerSettings
+                {
+                    Converters = new List<JsonConverter> { new StringEnumConverter() },
+                    Formatting = Formatting.Indented
+                };
+                if (this.web3AuthOptions.whiteLabel != null)
+                    this.initParams["whiteLabel"] = JsonConvert.SerializeObject(this.web3AuthOptions.whiteLabel, settings);
+
+                if(this.web3AuthOptions.originData != null)
+                    this.initParams["originData"] = JsonConvert.SerializeObject(this.web3AuthOptions.originData, settings);
+
+               fetchProjectConfigResponse.SetResult(true);
+            }
+            else
+            {
+                Debug.Log("configResponse API error:");
+                fetchProjectConfigResponse.SetResult(false);
+            }
+        })));
+        return await fetchProjectConfigResponse.Task;
     }
 
     public string getPrivKey()
