@@ -47,17 +47,13 @@ public class Web3Auth : MonoBehaviour
     public event Action<Web3AuthResponse> onLogin;
     public event Action onLogout;
     public event Action<bool> onMFASetup;
+    public event Action<SignResponse> onSignResponse;
 
     private static SignResponse signResponse = null;
 
     public static void setSignResponse(SignResponse _response)
     {
         signResponse = _response;
-    }
-
-    public static SignResponse getSignResponse()
-    {
-        return signResponse;
     }
 
     [SerializeField]
@@ -409,7 +405,7 @@ public class Web3Auth : MonoBehaviour
             try
             {
                 signResponse = JsonUtility.FromJson<SignResponse>(decodedString);
-                setSignResponse(signResponse);
+                this.Enqueue(() => this.onSignResponse?.Invoke(signResponse));
             }
             catch (Exception e)
             {

@@ -94,7 +94,7 @@ public class Web3AuthSample : MonoBehaviour
                 {"CUSTOM_VERIFIER", loginConfigItem}
             }
             */
-            clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ",
+            clientId = "BFuUqebV5I8Pz5F7a5A2ihW7YVmbv_OHXnHYDv6OltAD5NGr6e-ViNvde3U4BHdn6HvwfkgobhVu4VwC-OSJkik",
             buildEnv = BuildEnv.TESTING,
             redirectUrl = new Uri("torusapp://com.torus.Web3AuthUnity/auth"),
             network = Web3Auth.Network.SAPPHIRE_DEVNET,
@@ -103,6 +103,7 @@ public class Web3AuthSample : MonoBehaviour
         web3Auth.onLogin += onLogin;
         web3Auth.onLogout += onLogout;
         web3Auth.onMFASetup += onMFASetup;
+        web3Auth.onSignResponse += onSignResponse;
 
         emailAddressField.gameObject.SetActive(false);
         logoutButton.gameObject.SetActive(false);
@@ -116,7 +117,6 @@ public class Web3AuthSample : MonoBehaviour
         mfaSetupButton.onClick.AddListener(enableMFA);
         launchWalletServicesButton.onClick.AddListener(launchWalletServices);
         signMessageButton.onClick.AddListener(request);
-        signResponseButton.onClick.AddListener(getSignResponse);
 
         verifierDropdown.AddOptions(verifierList.Select(x => x.name).ToList());
         verifierDropdown.onValueChanged.AddListener(onVerifierDropDownChange);
@@ -155,6 +155,10 @@ public class Web3AuthSample : MonoBehaviour
         Debug.Log("MFA Setup: " + response);
     }
 
+    private void onSignResponse(SignResponse signResponse)
+    {
+        Debug.Log("Retrieved SignResponse: " + signResponse);
+    }
 
     private void onVerifierDropDownChange(int selectedIndex)
     {
@@ -272,17 +276,5 @@ public class Web3AuthSample : MonoBehaviour
         string publicAddress = "0x" + BitConverter.ToString(addressBytes).Replace("-", "").ToLower();
 
         return publicAddress;
-    }
-
-    public void getSignResponse() {
-        SignResponse signResponse = Web3Auth.getSignResponse();
-        if (signResponse != null)
-        {
-            Debug.Log("Retrieved SignResponse: " + signResponse);
-        }
-        else
-        {
-            Debug.Log("SignResponse is null");
-        }
     }
 }
