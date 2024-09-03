@@ -117,7 +117,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         actionType: String, params: LoginParams?, context: Context
     ) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
-        val context = context
         val initOptions = getInitOptions()
         val initParams = getInitParams(params)
 
@@ -468,7 +467,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
-            val context = context
 
             val initOptions = getInitOptions()
             initOptions.put(
@@ -533,7 +531,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
-            val context = context
             val initOptions = getInitOptions()
             initOptions.put(
                 "chainConfig", gson.toJson(chainConfig)
