@@ -307,7 +307,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     fun logout(): CompletableFuture<Void> {
         val logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
         if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
-            val sessionResponse: CompletableFuture<Boolean> = sessionManager.invalidateSession()
+            val sessionResponse: CompletableFuture<Boolean> =
+                sessionManager.invalidateSession(web3AuthOption.context)
             sessionResponse.whenComplete { _, error ->
                 if (error == null) {
                     logoutCompletableFuture.complete(null)
@@ -348,7 +349,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      */
     private fun authorizeSession(): CompletableFuture<Web3AuthResponse> {
         val sessionCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
-        val sessionResponse: CompletableFuture<String> = sessionManager.authorizeSession(false)
+        val sessionResponse: CompletableFuture<String> =
+            sessionManager.authorizeSession(web3AuthOption.context)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 val tempJson = JSONObject(response)
@@ -438,7 +440,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private fun getLoginId(jsonObject: JSONObject): CompletableFuture<String> {
         val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
         val sessionResponse: CompletableFuture<String> =
-            sessionManager.createSession(jsonObject.toString(), 600, false)
+            sessionManager.createSession(jsonObject.toString(), 600, web3AuthOption.context)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 createSessionCompletableFuture.complete(response)
