@@ -350,7 +350,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         val projectConfigCompletableFuture: CompletableFuture<Boolean> = CompletableFuture()
         val web3AuthApi =
             ApiHelper.getInstance(web3AuthOption.network.name).create(ApiService::class.java)
-        if (!com.web3auth.session_manager_android.api.ApiHelper.isNetworkAvailable(context)) {
+        if (!ApiHelper.isNetworkAvailable(context)) {
             throw Exception(
                 Web3AuthError.getError(ErrorCode.RUNTIME_ERROR)
             )
