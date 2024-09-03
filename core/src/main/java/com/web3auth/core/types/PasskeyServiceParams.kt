@@ -1,6 +1,6 @@
 package com.web3auth.core.types
 
-import androidx.credentials.CreatePublicKeyCredentialResponse
+import androidx.credentials.CreateCredentialResponse
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class PasskeyServiceParams(
@@ -145,7 +145,7 @@ data class MetadataInfo(
 data class VerifyRequest(
     val web3auth_client_id: String,
     val tracking_id: String,
-    val verification_data: CreatePublicKeyCredentialResponse,
+    val verification_data: CreateCredentialResponse,
     val network: String,
     val signatures: List<String>,
     val metadata: String

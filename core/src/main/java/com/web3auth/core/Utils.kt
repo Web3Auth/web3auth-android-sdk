@@ -9,7 +9,7 @@ import android.util.Patterns
 import androidx.browser.customtabs.CustomTabsService
 import com.web3auth.core.types.Network
 import com.web3auth.core.types.WhiteLabelData
-import org.torusresearch.fetchnodedetails.types.TorusNetwork
+import org.torusresearch.fetchnodedetails.types.Web3AuthNetwork
 import java.nio.ByteBuffer
 
 const val BASE64_URL_FLAGS = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
@@ -116,13 +116,13 @@ fun Map<String, String>?.mergeMaps(other: Map<String, String>?): Map<String, Str
     return mergedMap
 }
 
-val TORUS_NETWORK_MAP: Map<Network, TorusNetwork> = mapOf(
-    Network.MAINNET to TorusNetwork.MAINNET,
-    Network.TESTNET to TorusNetwork.TESTNET,
-    Network.AQUA to TorusNetwork.AQUA,
-    Network.CYAN to TorusNetwork.CYAN,
-    Network.SAPPHIRE_DEVNET to TorusNetwork.SAPPHIRE_DEVNET,
-    Network.SAPPHIRE_MAINNET to TorusNetwork.SAPPHIRE_MAINNET
+val WEB3AUTH_NETWORK_MAP: Map<Network, Web3AuthNetwork> = mapOf(
+    Network.MAINNET to Web3AuthNetwork.MAINNET,
+    Network.TESTNET to Web3AuthNetwork.TESTNET,
+    Network.AQUA to Web3AuthNetwork.AQUA,
+    Network.CYAN to Web3AuthNetwork.CYAN,
+    Network.SAPPHIRE_DEVNET to Web3AuthNetwork.SAPPHIRE_DEVNET,
+    Network.SAPPHIRE_MAINNET to Web3AuthNetwork.SAPPHIRE_MAINNET
 )
 
 fun ByteArray.toLong(): Long {
@@ -141,5 +141,26 @@ fun decode(data: ByteArray): AttestationStruct {
 // A placeholder for the attestation structure as it would be parsed in a real-world scenario
 data class AttestationStruct(
     val authData: ByteArray
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as AttestationStruct
+
+        return authData.contentEquals(other.authData)
+    }
+
+    override fun hashCode(): Int {
+        return authData.contentHashCode()
+    }
+}
+
+fun Context.readFromAsset(fileName: String): String {
+    var data = ""
+    this.assets.open(fileName).bufferedReader().use {
+        data = it.readText()
+    }
+    return data
+}
 

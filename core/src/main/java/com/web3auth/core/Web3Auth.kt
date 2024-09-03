@@ -5,8 +5,8 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.credentials.CreateCredentialResponse
 import androidx.credentials.CreatePublicKeyCredentialRequest
-import androidx.credentials.CreatePublicKeyCredentialResponse
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -70,7 +70,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.bouncycastle.jcajce.provider.digest.Keccak
 import org.json.JSONObject
 import org.torusresearch.fetchnodedetails.FetchNodeDetails
 import org.torusresearch.fetchnodedetails.types.NodeDetails
@@ -78,6 +77,7 @@ import org.torusresearch.torusutils.TorusUtils
 import org.torusresearch.torusutils.types.TorusCtorOptions
 import org.torusresearch.torusutils.types.TorusPublicKey
 import org.torusresearch.torusutils.types.VerifierArgs
+import org.web3j.crypto.Hash
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -698,7 +698,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             if (sessionId.isBlank()) {
                 throw Exception(Web3AuthError.getError(ErrorCode.NOUSERFOUND))
             }
-            val authOptions = getAuthenticationOptions(authenticatorId)
+            val authOptions = getAuthenticationOptions(authenticatorId, this.rpId)
             authOptions.whenComplete { response, error ->
                 if (error == null) {
                     GlobalScope.launch {
@@ -744,7 +744,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getPasskeyVerifierId(verificationResponse: CreatePublicKeyCredentialResponse): String {
+    fun getPasskeyVerifierId(verificationResponse: CreateCredentialResponse): String {
         // Parse auth data from the given buffer
         fun parseAuthData(paramBuffer: ByteArray): AuthParamsData {
             val buffer = ByteBuffer.wrap(paramBuffer)
@@ -805,8 +805,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             return Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(base64String.toByteArray())
         }
-
-        val response = verificationResponse.registrationResponseJson as RegistrationResponseJson
+        val response = verificationResponse.data as RegistrationResponseJson
 
         // Decode the attestation object and parse the auth data
         val attestationObject = Base64.getUrlDecoder().decode(response.response.attestationObject)
@@ -814,12 +813,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val authDataStruct = parseAuthData(attestationStruct.authData)
 
         // Convert COSEPublicKey to base64 URL string
-        val base64UrlString = b64url(authDataStruct.COSEPublicKey)
+        val base64UrlString = authDataStruct.COSEPublicKey.toBase64URLString()
 
         // Generate the verifier ID using Keccak-256 hash
-        val keccakDigest = Keccak.Digest256()
-        val verifierId = keccakDigest.digest(base64UrlString.toByteArray(Charsets.UTF_8))
-        return b64url(verifierId)
+        val verifierId =
+            Hash.sha3String(base64UrlString)//keccakDigest.digest(base64UrlString.toByteArray(Charsets.UTF_8))
+        return verifierId.toByteArray(Charsets.UTF_8).toBase64URLString()
     }
 
     private fun getRegistrationOptionsResponse(
@@ -877,14 +876,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return registrationResponseCF
     }
 
-    private suspend fun createPasskey(options: Options): CreatePublicKeyCredentialResponse? {
-        val request = CreatePublicKeyCredentialRequest(gson.toJson(options))
-        var response: CreatePublicKeyCredentialResponse? = null
+    private suspend fun createPasskey(options: Options): CreateCredentialResponse? {
+        //val data =  web3AuthOption.context.readFromAsset("RegFromServer")
+        Log.e("Web3Auth", "options: " + gson.toJson(options))
+        val request = CreatePublicKeyCredentialRequest(gson.toJson(options)) //gson.toJson(options)
+        var response: CreateCredentialResponse? = null
         try {
             response = credentialManager.createCredential(
                 web3AuthOption.context,
                 request
-            ) as CreatePublicKeyCredentialResponse
+            )
         } catch (e: CreateCredentialException) {
             handlePasskeyFailure(e)
         }
@@ -896,6 +897,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             is CreatePublicKeyCredentialDomException -> {
                 // Handle the passkey DOM errors thrown according to the
                 // WebAuthn spec using e.domError
+                Log.e("Web3Auth", e.domError.toString())
                 "An error occurred while creating a passkey, please check logs for additional details."
             }
 
@@ -935,12 +937,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 "An unknown error occurred."
             }
         }
-        Log.e("Auth", "createPasskey failed with exception: " + e.message.toString())
+        Log.e("Web3Auth", "createPasskey failed with exception: " + e.message.toString())
     }
 
     fun getPasskeyPublicKey(verifier: String, verifierId: String): TorusPublicKey {
         val fetchNodeDetails =
-            FetchNodeDetails(TORUS_NETWORK_MAP[Network.valueOf(web3AuthOption.network.name)])
+            FetchNodeDetails(WEB3AUTH_NETWORK_MAP[Network.valueOf(web3AuthOption.network.name)])
         val opts = TorusCtorOptions(
             "Custom",
             web3AuthOption.clientId,
@@ -952,7 +954,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val publicAddress = torusUtils.getPublicAddress(
             nodeDetails.torusNodeSSSEndpoints, nodeDetails.torusNodePub,
             VerifierArgs(verifier, verifierId, null)
-        ).get();
+        ).get()
         return publicAddress
     }
 
@@ -1020,12 +1022,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         val encryptedData = aes256cbc.encrypt(data.toByteArray(StandardCharsets.UTF_8))
         val mac = aes256cbc.getMac(encryptedData)
         val decryptedData = aes256cbc.decrypt(data, KeyStoreManager.convertByteToHexadecimal(mac))
-        return String(decryptedData)
+        return String(decryptedData, StandardCharsets.UTF_8)
     }
 
 
     private fun verifyRegistration(
-        registrationResponse: CreatePublicKeyCredentialResponse,
+        registrationResponse: CreateCredentialResponse,
         signatures: List<String>,
         passkeyToken: String,
         data: String
@@ -1075,7 +1077,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return registrationResponseCF
     }
 
-    private fun getAuthenticationOptions(authenticatorId: String?): CompletableFuture<AuthOptions> {
+    private fun getAuthenticationOptions(
+        authenticatorId: String?,
+        rpId: String
+    ): CompletableFuture<AuthOptions> {
         val authenticationOptionsCF: CompletableFuture<AuthOptions> = CompletableFuture()
         val web3AuthApi =
             ApiHelper.getPassKeysApiInstance(web3AuthOption.buildEnv?.name.toString())
@@ -1085,7 +1090,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             try {
                 val requestBody = AuthenticationOptionsRequest(
                     web3auth_client_id = web3AuthOption.clientId,
-                    rp_id = "",
+                    rp_id = rpId,
                     authenticatorId,
                     network = web3AuthOption.network.name
                 )
@@ -1140,12 +1145,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
         if (result.credential is PublicKeyCredential) {
             val cred = result.credential as PublicKeyCredential
-            //DataProvider.setSignedInThroughPasskeys(true)
             return cred.authenticationResponseJson
         }
         if (result.credential is PasswordCredential) {
             val cred = result.credential as PasswordCredential
-            //DataProvider.setSignedInThroughPasskeys(false)
             return "Got Password - User:${cred.id} Password: ${cred.password}"
         }
         if (result.credential is CustomCredential) {
@@ -1201,7 +1204,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     private fun getPasskeyPostboxKey(passKeyLoginParams: PassKeyLoginParams): String {
         val fetchNodeDetails =
-            FetchNodeDetails(TORUS_NETWORK_MAP[Network.valueOf(web3AuthOption.network.name)])
+            FetchNodeDetails(WEB3AUTH_NETWORK_MAP[Network.valueOf(web3AuthOption.network.name)])
         val opts = TorusCtorOptions(
             "Custom",
             web3AuthOption.clientId,

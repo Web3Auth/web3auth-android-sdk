@@ -1,0 +1,26 @@
+{
+  "challenge": "N_vYVOq7ucQhO4SdvPSVnfKvdCMp05hBeNy5yu4Cbm4",
+  "rp": {
+    "id": "unibeam.github.io",
+    "name": "Web3Auth PnP Android Example"
+  },
+  "pubKeyCredParams": [
+    {
+      "type": "public-key",
+      "alg": -7
+    },
+    {
+      "type": "public-key",
+      "alg": -257
+    }
+  ],
+  "authenticatorSelection": {
+    "authenticatorAttachment": "platform",
+    "residentKey": "required"
+  },
+  "user": {
+    "id": "XPp42YNRlT5BWODHfKw3NdjL3sVr2m6fgpCJPKqrHibC7DwDhhWFes6ooYbtbDzP-cv_5gfZ6-LI6CSLfzdszw",
+    "name": "Android Baby|androdbaby@gmail.com",
+    "displayName": "Android Baby|androdbaby@gmail.com"
+  }
+}
