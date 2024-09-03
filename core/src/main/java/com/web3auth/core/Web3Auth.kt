@@ -21,7 +21,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
-    // TODO: These should be removed
+    // TODO: These two should be removed, additionally incorrect use of global variables is being done, see comment re processRequest
     private var loginCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
 
@@ -278,7 +278,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         //login
         processRequest("login", loginParams, context)
 
-        loginCompletableFuture = CompletableFuture()
+        // TODO: This is incorrect, consider refactoring processRequest to return the result future instead, or wait on processRequest until is has assigned the result.
+        loginCompletableFuture = CompletableFuture<Web3AuthResponse>()
         return loginCompletableFuture
     }
 
@@ -298,7 +299,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 logoutCompletableFuture.completeExceptionally(Exception(error))
             }
         }
-        web3AuthResponse = Web3AuthResponse()
+        web3AuthResponse = Web3AuthResponse() // TODO: Set this on complete in the above
         return logoutCompletableFuture
     }
 
@@ -528,7 +529,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
-                    val signMessageMap = JsonObject()
+                    val signMessageMap = JsonObject() // TODO: @Serializable  class
                     signMessageMap.addProperty("loginId", loginId)
                     signMessageMap.addProperty("sessionId", sessionId)
                     signMessageMap.addProperty("platform", "android")
