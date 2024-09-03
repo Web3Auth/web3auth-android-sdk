@@ -12,6 +12,8 @@ import com.web3auth.core.keystore.KeyStoreManagerUtils
 import com.web3auth.core.types.ChainConfig
 import com.web3auth.core.types.ErrorCode
 import com.web3auth.core.types.ExtraLoginOptions
+import com.web3auth.core.types.InitOptions
+import com.web3auth.core.types.InitParams
 import com.web3auth.core.types.LoginConfigItem
 import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.MFALevel
@@ -54,33 +56,18 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         KeyStoreManagerUtils.getKeyGenerator()
     }
 
-    private fun getInitOptions(): JSONObject {
-        val initOptions =
-            JSONObject() // TODO: Refactor into a @Serializqble class, much of the below could be removed
-        initOptions.put("clientId", web3AuthOption.clientId)
-        initOptions.put("network", web3AuthOption.network.name.lowercase(Locale.ROOT))
-        if (web3AuthOption.redirectUrl != null) initOptions.put(
-            "redirectUrl", web3AuthOption.redirectUrl.toString()
+    private fun getInitOptions(): InitOptions {
+        return InitOptions(
+            clientId = web3AuthOption.clientId,
+            network = web3AuthOption.network.name.lowercase(Locale.ROOT),
+            redirectUrl = web3AuthOption.redirectUrl.toString(),
+            whiteLabel = web3AuthOption.whiteLabel?.let { gson.toJson(it) },
+            loginConfig = web3AuthOption.loginConfig?.let { gson.toJson(it) },
+            buildEnv = web3AuthOption.buildEnv?.name?.lowercase(Locale.ROOT),
+            mfaSettings = web3AuthOption.mfaSettings?.let { gson.toJson(it) },
+            sessionTime = web3AuthOption.sessionTime,
+            originData = web3AuthOption.originData?.let { gson.toJson(it) }
         )
-        if (web3AuthOption.whiteLabel != null) initOptions.put(
-            "whiteLabel", gson.toJson(web3AuthOption.whiteLabel)
-        )
-        if (web3AuthOption.loginConfig != null) initOptions.put(
-            "loginConfig", gson.toJson(web3AuthOption.loginConfig)
-        )
-        if (web3AuthOption.buildEnv != null) initOptions.put(
-            "buildEnv", web3AuthOption.buildEnv?.name?.lowercase(Locale.ROOT)
-        )
-        if (web3AuthOption.mfaSettings != null) initOptions.put(
-            "mfaSettings", gson.toJson(web3AuthOption.mfaSettings)
-        )
-        if (web3AuthOption.sessionTime != null) initOptions.put(
-            "sessionTime", web3AuthOption.sessionTime
-        )
-        if (web3AuthOption.originData != null) initOptions.put(
-            "originData", gson.toJson(web3AuthOption.originData)
-        )
-        return initOptions
     }
 
     /**
@@ -89,27 +76,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * @param params The optional login parameters required for initialization. Default is null.
      * @return The initialization parameters as a JSONObject.
      */
-    private fun getInitParams(params: LoginParams?): JSONObject {
-        val initParams = JSONObject() // TODO: Refactor into a @Serializqble class, see above
-        if (params?.loginProvider != null) initParams.put(
-            "loginProvider",
-            params.loginProvider.name.lowercase(Locale.ROOT)
+    private fun getInitParams(params: LoginParams?): InitParams {
+        return InitParams(
+            loginProvider = params?.loginProvider?.name?.lowercase(Locale.ROOT),
+            extraLoginOptions = params?.extraLoginOptions?.let { gson.toJson(it) },
+            redirectUrl = params?.redirectUrl?.toString() ?: web3AuthOption.redirectUrl.toString(),
+            mfaLevel = params?.mfaLevel?.name?.lowercase(Locale.ROOT),
+            curve = params?.curve?.name?.lowercase(Locale.ROOT),
+            dappShare = params?.dappShare
         )
-        if (params?.extraLoginOptions != null) initParams.put(
-            "extraLoginOptions",
-            gson.toJson(params.extraLoginOptions)
-        )
-        initParams.put(
-            "redirectUrl",
-            if (params?.redirectUrl != null) params.redirectUrl.toString() else web3AuthOption.redirectUrl.toString()
-        )
-        if (params?.mfaLevel != null) initParams.put(
-            "mfaLevel",
-            params.mfaLevel.name.lowercase(Locale.ROOT)
-        )
-        if (params?.curve != null) initParams.put("curve", params.curve.name.lowercase(Locale.ROOT))
-        if (params?.dappShare != null) initParams.put("dappShare", params.dappShare)
-        return initParams
     }
 
     /**
@@ -122,8 +97,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         actionType: String, params: LoginParams?, context: Context
     ) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
-        val initOptions = getInitOptions()
-        val initParams = getInitParams(params)
+        val initOptions = JSONObject(gson.toJson(getInitOptions()))
+        val initParams = JSONObject(gson.toJson(getInitParams(params)))
 
         val paramMap = JSONObject()
         paramMap.put(
@@ -178,10 +153,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         //initiate keyStore
         initiateKeyStoreManager()
 
-        //authorize session
         //fetch project config
         fetchProjectConfig(context).whenComplete { _, err ->
             if (err == null) {
+                //authorize session
                 this.authorizeSession(context).whenComplete { resp, error ->
                     if (error == null) {
                         web3AuthResponse = resp
@@ -220,7 +195,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
         val b64Params = hashUri.getQueryParameter("b64Params")
         if (b64Params.isNullOrBlank()) {
-            loginCompletableFuture.completeExceptionally(UnKnownException("Invalid Login"))
+            throwLoginError(ErrorCode.INVALID_LOGIN)
             throwEnableMFAError(ErrorCode.INVALID_LOGIN)
             return
         }
@@ -236,21 +211,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 if (error == null) {
                     web3AuthResponse = resp
                     if (web3AuthResponse?.error?.isNotBlank() == true) {
-                        loginCompletableFuture.completeExceptionally(
-                            UnKnownException(
-                                web3AuthResponse?.error
-                                    ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
-                            )
-                        )
+                        throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
                         throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                     } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
-                        loginCompletableFuture.completeExceptionally(
-                            Exception(
-                                Web3AuthError.getError(
-                                    ErrorCode.SOMETHING_WENT_WRONG
-                                )
-                            )
-                        )
+                        throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
                         throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                     } else {
                         web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
@@ -270,7 +234,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 }
             }
         } else {
-            loginCompletableFuture.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)))
+            throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
             throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
         }
     }
@@ -462,7 +426,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
 
-            val initOptions = getInitOptions()
+            val initOptions = JSONObject(gson.toJson(getInitOptions()))
             initOptions.put(
                 "chainConfig", gson.toJson(chainConfig)
             )
@@ -525,7 +489,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
-            val initOptions = getInitOptions()
+            val initOptions = JSONObject(gson.toJson(getInitOptions()))
             initOptions.put(
                 "chainConfig", gson.toJson(chainConfig)
             )
@@ -582,6 +546,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             )
     }
 
+    private fun throwLoginError(error: ErrorCode) {
+        loginCompletableFuture.completeExceptionally(
+            Exception(
+                Web3AuthError.getError(
+                    error
+                )
+            )
+        )
+    }
+
     /**
      * Retrieves the private key as a string.
      *
@@ -597,7 +571,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 web3AuthResponse?.privKey
             }
         }
-        return privKey ?: "" // TODO: Throw instead of empty, empty is not a valid result
+        return privKey
+            ?: throw IllegalStateException("No valid private key found") // TODO: Throw instead of empty, empty is not a valid result: done
     }
 
     /**
@@ -607,7 +582,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      */
     fun getEd25519PrivKey(): String {
         val ed25519Key: String? = if (web3AuthResponse == null) {
-            ""
+            null
         } else {
             if (web3AuthOption.useCoreKitKey == true) {
                 web3AuthResponse?.coreKitEd25519PrivKey
@@ -615,7 +590,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 web3AuthResponse?.ed25519PrivKey
             }
         }
-        return ed25519Key ?: "" // TODO: Throw instead of empty, empty is not a valid result
+
+        return ed25519Key
+            ?: throw IllegalStateException("No valid Ed25519 private key found") // TODO: Throw instead of empty, empty is not a valid result
     }
 
     /**
