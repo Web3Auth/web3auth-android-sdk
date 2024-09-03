@@ -9,12 +9,30 @@ import com.google.gson.JsonObject
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.api.ApiService
 import com.web3auth.core.keystore.KeyStoreManagerUtils
-import com.web3auth.core.types.*
+import com.web3auth.core.types.ChainConfig
+import com.web3auth.core.types.ErrorCode
+import com.web3auth.core.types.ExtraLoginOptions
+import com.web3auth.core.types.LoginConfigItem
+import com.web3auth.core.types.LoginParams
+import com.web3auth.core.types.MFALevel
+import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.RequestData
+import com.web3auth.core.types.SessionResponse
+import com.web3auth.core.types.SignMessage
+import com.web3auth.core.types.SignResponse
+import com.web3auth.core.types.UnKnownException
+import com.web3auth.core.types.UserCancelledException
+import com.web3auth.core.types.UserInfo
+import com.web3auth.core.types.WEBVIEW_URL
+import com.web3auth.core.types.Web3AuthError
+import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
 import com.web3auth.session_manager_android.SessionManager
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
@@ -131,7 +149,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         paramMap.put("params", initParams)
 
         val loginIdCf = getLoginId(paramMap, context)
-
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
                 val jsonObject = mapOf("loginId" to loginId)
@@ -163,7 +180,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
         //authorize session
         //fetch project config
-        fetchProjectConfig().whenComplete { _, err ->
+        fetchProjectConfig(context).whenComplete { _, err ->
             if (err == null) {
                 this.authorizeSession(context).whenComplete { resp, error ->
                     if (error == null) {
@@ -299,7 +316,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 logoutCompletableFuture.completeExceptionally(Exception(error))
             }
         }
-        web3AuthResponse = Web3AuthResponse() // TODO: Set this on complete in the above
+        web3AuthResponse = Web3AuthResponse()
         return logoutCompletableFuture
     }
 
@@ -365,14 +382,18 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         return sessionCompletableFuture
     }
 
-    private fun fetchProjectConfig(): CompletableFuture<Boolean> {
+    private fun fetchProjectConfig(context: Context): CompletableFuture<Boolean> {
         val projectConfigCompletableFuture: CompletableFuture<Boolean> = CompletableFuture()
         val web3AuthApi =
             ApiHelper.getInstance(web3AuthOption.network.name).create(ApiService::class.java)
-        // TODO: Do not use global scope, docs are explicit about this, consider withContext and runBlocking instead
-        GlobalScope.launch {
+        if (!com.web3auth.session_manager_android.api.ApiHelper.isNetworkAvailable(context)) {
+            throw Exception(
+                Web3AuthError.getError(ErrorCode.RUNTIME_ERROR)
+            )
+        }
+        val scope = CoroutineScope(Dispatchers.IO)
+        scope.launch {
             try {
-                // TODO: Do network available check for this call
                 val result = web3AuthApi.fetchProjectConfig(
                     web3AuthOption.clientId,
                     web3AuthOption.network.name
@@ -413,6 +434,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         return projectConfigCompletableFuture
     }
 
+
     /**
      * Retrieves the login ID from the provided JSONObject asynchronously.
      *
@@ -420,20 +442,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
      */
     private fun getLoginId(jsonObject: JSONObject, context: Context): CompletableFuture<String> {
-        // TODO: This can be simplified, i.e one future does not need to result in wrapping into another future,
-        //  return the first future (CompletableFuture<String>), though it be taken as far as returning a String instead of the future.
-        //  There are other instances like this, note that completeExceptionally can also throw in itself and is not automatic error handling
-        val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
-        val sessionResponse: CompletableFuture<String> =
-            sessionManager.createSession(jsonObject.toString(), 600, context)
-        sessionResponse.whenComplete { response, error ->
-            if (error == null) {
-                createSessionCompletableFuture.complete(response)
-            } else {
-                createSessionCompletableFuture.completeExceptionally(error)
-            }
-        }
-        return createSessionCompletableFuture
+        return sessionManager.createSession(jsonObject.toString(), 600, context)
     }
 
     /**
@@ -529,17 +538,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
-                    val signMessageMap = JsonObject() // TODO: @Serializable  class
-                    signMessageMap.addProperty("loginId", loginId)
-                    signMessageMap.addProperty("sessionId", sessionId)
-                    signMessageMap.addProperty("platform", "android")
-
-                    val requestData = JsonObject().apply {
-                        addProperty("method", method)
-                        addProperty("params", gson.toJson(requestParams))
-                    }
-
-                    signMessageMap.addProperty("request", gson.toJson(requestData))
+                    val signMessageMap = SignMessage(
+                        loginId = loginId,
+                        sessionId = sessionId,
+                        request = RequestData(
+                            method = method,
+                            params = gson.toJson(requestParams)
+                        )
+                    )
 
                     val signMessageHash =
                         "b64Params=" + gson.toJson(signMessageMap).toByteArray(Charsets.UTF_8)
