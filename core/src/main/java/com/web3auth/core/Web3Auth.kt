@@ -9,33 +9,19 @@ import com.google.gson.JsonObject
 import com.web3auth.core.api.ApiHelper
 import com.web3auth.core.api.ApiService
 import com.web3auth.core.keystore.KeyStoreManagerUtils
-import com.web3auth.core.types.ChainConfig
-import com.web3auth.core.types.ErrorCode
-import com.web3auth.core.types.ExtraLoginOptions
-import com.web3auth.core.types.LoginConfigItem
-import com.web3auth.core.types.LoginParams
-import com.web3auth.core.types.MFALevel
-import com.web3auth.core.types.REDIRECT_URL
-import com.web3auth.core.types.SessionResponse
-import com.web3auth.core.types.SignResponse
-import com.web3auth.core.types.UnKnownException
-import com.web3auth.core.types.UserCancelledException
-import com.web3auth.core.types.UserInfo
-import com.web3auth.core.types.WEBVIEW_URL
-import com.web3auth.core.types.Web3AuthError
-import com.web3auth.core.types.Web3AuthOptions
-import com.web3auth.core.types.Web3AuthResponse
+import com.web3auth.core.types.*
 import com.web3auth.session_manager_android.SessionManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.util.Locale
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
+    // TODO: These should be removed
     private var loginCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
 
@@ -51,7 +37,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
     }
 
     private fun getInitOptions(): JSONObject {
-        val initOptions = JSONObject()
+        val initOptions =
+            JSONObject() // TODO: Refactor into a @Serializqble class, much of the below could be removed
         initOptions.put("clientId", web3AuthOption.clientId)
         initOptions.put("network", web3AuthOption.network.name.lowercase(Locale.ROOT))
         if (web3AuthOption.redirectUrl != null) initOptions.put(
@@ -85,7 +72,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * @return The initialization parameters as a JSONObject.
      */
     private fun getInitParams(params: LoginParams?): JSONObject {
-        val initParams = JSONObject()
+        val initParams = JSONObject() // TODO: Refactor into a @Serializqble class, see above
         if (params?.loginProvider != null) initParams.put(
             "loginProvider",
             params.loginProvider.name.lowercase(Locale.ROOT)
@@ -133,7 +120,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             var existingExtraLoginOptions = ExtraLoginOptions()
             if (initParams.has("extraLoginOptions")) {
                 extraOptionsString = initParams.getString("extraLoginOptions")
-                existingExtraLoginOptions = gson.fromJson(extraOptionsString, ExtraLoginOptions::class.java)
+                existingExtraLoginOptions =
+                    gson.fromJson(extraOptionsString, ExtraLoginOptions::class.java)
             }
             existingExtraLoginOptions.login_hint = userInfo?.verifierId
             initParams.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
@@ -174,22 +162,19 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         initiateKeyStoreManager()
 
         //authorize session
-        if (ApiHelper.isNetworkAvailable(context)) {
-
-            //fetch project config
-            fetchProjectConfig().whenComplete { _, err ->
-                if (err == null) {
-                    this.authorizeSession(context).whenComplete { resp, error ->
-                        if (error == null) {
-                            web3AuthResponse = resp
-                        } else {
-                            print(error)
-                        }
-                        initializeCf.complete(null)
+        //fetch project config
+        fetchProjectConfig().whenComplete { _, err ->
+            if (err == null) {
+                this.authorizeSession(context).whenComplete { resp, error ->
+                    if (error == null) {
+                        web3AuthResponse = resp
+                    } else {
+                        print(error)
                     }
-                } else {
-                    initializeCf.completeExceptionally(err)
+                    initializeCf.complete(null)
                 }
+            } else {
+                initializeCf.completeExceptionally(err)
             }
         }
         return initializeCf
@@ -230,43 +215,41 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             sessionManager.saveSessionId(sessionId)
 
             //Rehydrate Session
-            if (ApiHelper.isNetworkAvailable(context)) {
-                this.authorizeSession(context).whenComplete { resp, error ->
-                    if (error == null) {
-                        web3AuthResponse = resp
-                        if (web3AuthResponse?.error?.isNotBlank() == true) {
-                            loginCompletableFuture.completeExceptionally(
-                                UnKnownException(
-                                    web3AuthResponse?.error
-                                        ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
+            this.authorizeSession(context).whenComplete { resp, error ->
+                if (error == null) {
+                    web3AuthResponse = resp
+                    if (web3AuthResponse?.error?.isNotBlank() == true) {
+                        loginCompletableFuture.completeExceptionally(
+                            UnKnownException(
+                                web3AuthResponse?.error
+                                    ?: Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG)
+                            )
+                        )
+                        throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                    } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
+                        loginCompletableFuture.completeExceptionally(
+                            Exception(
+                                Web3AuthError.getError(
+                                    ErrorCode.SOMETHING_WENT_WRONG
                                 )
                             )
-                            throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
-                        } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
-                            loginCompletableFuture.completeExceptionally(
-                                Exception(
-                                    Web3AuthError.getError(
-                                        ErrorCode.SOMETHING_WENT_WRONG
-                                    )
-                                )
-                            )
-                            throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
-                        } else {
-                            web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
-
-                            if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
-                                KeyStoreManagerUtils.encryptData(
-                                    web3AuthResponse?.userInfo?.verifier.plus(" | ")
-                                        .plus(web3AuthResponse?.userInfo?.verifierId),
-                                    web3AuthResponse?.userInfo?.dappShare!!,
-                                )
-                            }
-                            loginCompletableFuture.complete(web3AuthResponse)
-                            enableMfaCompletableFuture.complete(true)
-                        }
+                        )
+                        throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                     } else {
-                        print(error)
+                        web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
+
+                        if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
+                            KeyStoreManagerUtils.encryptData(
+                                web3AuthResponse?.userInfo?.verifier.plus(" | ")
+                                    .plus(web3AuthResponse?.userInfo?.verifierId),
+                                web3AuthResponse?.userInfo?.dappShare!!,
+                            )
+                        }
+                        loginCompletableFuture.complete(web3AuthResponse)
+                        enableMfaCompletableFuture.complete(true)
                     }
+                } else {
+                    print(error)
                 }
             }
         } else {
@@ -306,18 +289,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      */
     fun logout(context: Context): CompletableFuture<Void> {
         val logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
-        if (ApiHelper.isNetworkAvailable(context)) {
-            val sessionResponse: CompletableFuture<Boolean> =
-                sessionManager.invalidateSession(context)
-            sessionResponse.whenComplete { _, error ->
-                if (error == null) {
-                    logoutCompletableFuture.complete(null)
-                } else {
-                    logoutCompletableFuture.completeExceptionally(Exception(error))
-                }
+        val sessionResponse: CompletableFuture<Boolean> =
+            sessionManager.invalidateSession(context)
+        sessionResponse.whenComplete { _, error ->
+            if (error == null) {
+                logoutCompletableFuture.complete(null)
+            } else {
+                logoutCompletableFuture.completeExceptionally(Exception(error))
             }
-        } else {
-            logoutCompletableFuture.completeExceptionally(Exception(Web3AuthError.getError(ErrorCode.RUNTIME_ERROR)))
         }
         web3AuthResponse = Web3AuthResponse()
         return logoutCompletableFuture
@@ -389,8 +368,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         val projectConfigCompletableFuture: CompletableFuture<Boolean> = CompletableFuture()
         val web3AuthApi =
             ApiHelper.getInstance(web3AuthOption.network.name).create(ApiService::class.java)
+        // TODO: Do not use global scope, docs are explicit about this, consider withContext and runBlocking instead
         GlobalScope.launch {
             try {
+                // TODO: Do network available check for this call
                 val result = web3AuthApi.fetchProjectConfig(
                     web3AuthOption.clientId,
                     web3AuthOption.network.name
@@ -400,7 +381,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                     web3AuthOption.originData =
                         web3AuthOption.originData.mergeMaps(response?.whitelist?.signed_urls)
                     if (response?.whitelabel != null) {
-                        if(web3AuthOption.whiteLabel == null) {
+                        if (web3AuthOption.whiteLabel == null) {
                             web3AuthOption.whiteLabel = response.whitelabel
                         } else {
                             web3AuthOption.whiteLabel =
@@ -438,6 +419,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
      */
     private fun getLoginId(jsonObject: JSONObject, context: Context): CompletableFuture<String> {
+        // TODO: This can be simplified, i.e one future does not need to result in wrapping into another future,
+        //  return the first future (CompletableFuture<String>), though it be taken as far as returning a String instead of the future.
+        //  There are other instances like this, note that completeExceptionally can also throw in itself and is not automatic error handling
         val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
         val sessionResponse: CompletableFuture<String> =
             sessionManager.createSession(jsonObject.toString(), 600, context)
@@ -579,6 +563,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         return signMsgCF
     }
 
+    // TODO: Remove this, should be able to just throw directly
     private fun throwEnableMFAError(error: ErrorCode) {
         if (::enableMfaCompletableFuture.isInitialized)
             enableMfaCompletableFuture.completeExceptionally(
@@ -605,7 +590,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 web3AuthResponse?.privKey
             }
         }
-        return privKey ?: ""
+        return privKey ?: "" // TODO: Throw instead of empty, empty is not a valid result
     }
 
     /**
@@ -623,7 +608,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 web3AuthResponse?.ed25519PrivKey
             }
         }
-        return ed25519Key ?: ""
+        return ed25519Key ?: "" // TODO: Throw instead of empty, empty is not a valid result
     }
 
     /**

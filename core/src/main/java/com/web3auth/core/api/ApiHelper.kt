@@ -14,7 +14,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiHelper {
-
+    // TODO: Abstract this to a single common source, i.e torus-common, then add these to here and fetch-node-details, etc respectively
     val SIGNER_MAP: Map<Network, String> = mapOf(
         Network.MAINNET to "https://signer.web3auth.io",
         Network.TESTNET to "https://signer.web3auth.io",
@@ -45,6 +45,7 @@ object ApiHelper {
             .build()
     }
 
+    // TODO: Abstract this to a single common source, i.e torus-common
     fun isNetworkAvailable(context: Context?): Boolean {
         if (context == null) return false
         val connectivityManager =
