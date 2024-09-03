@@ -1,10 +1,8 @@
 package com.web3auth.core.types
 
-import android.content.Context
 import android.net.Uri
 
 data class Web3AuthOptions(
-    var context: Context,
     val clientId: String,
     val network: Network,
     var buildEnv: BuildEnv? = BuildEnv.PRODUCTION,

@@ -1,5 +1,6 @@
 package com.web3auth.core
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import com.google.gson.GsonBuilder
@@ -31,7 +32,7 @@ import org.json.JSONObject
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
-class Web3Auth(web3AuthOptions: Web3AuthOptions) {
+class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
@@ -40,7 +41,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
-    private var sessionManager: SessionManager = SessionManager(web3AuthOption.context)
+    private var sessionManager: SessionManager = SessionManager(context)
 
     /**
      * Initializes the KeyStoreManager.
@@ -113,10 +114,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      * @param params The login parameters required for the request.
      */
     private fun processRequest(
-        actionType: String, params: LoginParams?
+        actionType: String, params: LoginParams?, context: Context
     ) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
-        val context = web3AuthOption.context
+        val context = context
         val initOptions = getInitOptions()
         val initParams = getInitParams(params)
 
@@ -142,7 +143,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
         paramMap.put("params", initParams)
 
-        val loginIdCf = getLoginId(paramMap)
+        val loginIdCf = getLoginId(paramMap, context)
 
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
@@ -166,20 +167,20 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      *
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
-    fun initialize(): CompletableFuture<Void> {
+    fun initialize(context: Context): CompletableFuture<Void> {
         val initializeCf = CompletableFuture<Void>()
-        KeyStoreManagerUtils.initializePreferences(web3AuthOption.context.applicationContext)
+        KeyStoreManagerUtils.initializePreferences(context.applicationContext)
 
         //initiate keyStore
         initiateKeyStoreManager()
 
         //authorize session
-        if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
+        if (ApiHelper.isNetworkAvailable(context)) {
 
             //fetch project config
             fetchProjectConfig().whenComplete { _, err ->
                 if (err == null) {
-                    this.authorizeSession().whenComplete { resp, error ->
+                    this.authorizeSession(context).whenComplete { resp, error ->
                         if (error == null) {
                             web3AuthResponse = resp
                         } else {
@@ -200,7 +201,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      *
      * @param uri The URI representing the result URL.
      */
-    fun setResultUrl(uri: Uri?) {
+    fun setResultUrl(uri: Uri?, context: Context) {
         val hash = uri?.fragment
         if (hash == null) {
             loginCompletableFuture.completeExceptionally(UserCancelledException())
@@ -230,8 +231,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             sessionManager.saveSessionId(sessionId)
 
             //Rehydrate Session
-            if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
-                this.authorizeSession().whenComplete { resp, error ->
+            if (ApiHelper.isNetworkAvailable(context)) {
+                this.authorizeSession(context).whenComplete { resp, error ->
                     if (error == null) {
                         web3AuthResponse = resp
                         if (web3AuthResponse?.error?.isNotBlank() == true) {
@@ -281,7 +282,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      * @param loginParams The login parameters required for authentication.
      * @return A CompletableFuture<Web3AuthResponse> representing the asynchronous operation, containing the Web3AuthResponse upon successful login.
      */
-    fun login(loginParams: LoginParams): CompletableFuture<Web3AuthResponse> {
+    fun login(loginParams: LoginParams, context: Context): CompletableFuture<Web3AuthResponse> {
         //check for share
         if (web3AuthOption.loginConfig != null) {
             val loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
@@ -293,7 +294,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         }
 
         //login
-        processRequest("login", loginParams)
+        processRequest("login", loginParams, context)
 
         loginCompletableFuture = CompletableFuture()
         return loginCompletableFuture
@@ -304,11 +305,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      *
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
-    fun logout(): CompletableFuture<Void> {
+    fun logout(context: Context): CompletableFuture<Void> {
         val logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
-        if (ApiHelper.isNetworkAvailable(web3AuthOption.context)) {
+        if (ApiHelper.isNetworkAvailable(context)) {
             val sessionResponse: CompletableFuture<Boolean> =
-                sessionManager.invalidateSession(web3AuthOption.context)
+                sessionManager.invalidateSession(context)
             sessionResponse.whenComplete { _, error ->
                 if (error == null) {
                     logoutCompletableFuture.complete(null)
@@ -329,7 +330,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      * @param loginParams The optional login parameters required for authentication. Default is null.
      * @return A CompletableFuture<Boolean> representing the asynchronous operation, indicating whether MFA was successfully enabled.
      */
-    fun enableMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
+    fun enableMFA(loginParams: LoginParams? = null, context: Context): CompletableFuture<Boolean> {
         enableMfaCompletableFuture = CompletableFuture()
         if (web3AuthResponse?.userInfo?.isMfaEnabled == true) {
             throwEnableMFAError(ErrorCode.MFA_ALREADY_ENABLED)
@@ -340,17 +341,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
             throwEnableMFAError(ErrorCode.NOUSERFOUND)
             return enableMfaCompletableFuture
         }
-        processRequest("enable_mfa", loginParams)
+        processRequest("enable_mfa", loginParams, context)
         return enableMfaCompletableFuture
     }
 
     /**
      * Authorize User session in order to avoid re-login
      */
-    private fun authorizeSession(): CompletableFuture<Web3AuthResponse> {
+    private fun authorizeSession(context: Context): CompletableFuture<Web3AuthResponse> {
         val sessionCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
         val sessionResponse: CompletableFuture<String> =
-            sessionManager.authorizeSession(web3AuthOption.context)
+            sessionManager.authorizeSession(context)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 val tempJson = JSONObject(response)
@@ -437,10 +438,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
      * @param jsonObject The JSONObject from which to retrieve the login ID.
      * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
      */
-    private fun getLoginId(jsonObject: JSONObject): CompletableFuture<String> {
+    private fun getLoginId(jsonObject: JSONObject, context: Context): CompletableFuture<String> {
         val createSessionCompletableFuture: CompletableFuture<String> = CompletableFuture()
         val sessionResponse: CompletableFuture<String> =
-            sessionManager.createSession(jsonObject.toString(), 600, web3AuthOption.context)
+            sessionManager.createSession(jsonObject.toString(), 600, context)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 createSessionCompletableFuture.complete(response)
@@ -461,12 +462,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     fun launchWalletServices(
         chainConfig: ChainConfig,
         path: String? = "wallet",
+        context: Context
     ): CompletableFuture<Void> {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
-            val context = web3AuthOption.context
+            val context = context
 
             val initOptions = getInitOptions()
             initOptions.put(
@@ -478,7 +480,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 "options", initOptions
             )
 
-            val loginIdCf = getLoginId(paramMap)
+            val loginIdCf = getLoginId(paramMap, context)
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
@@ -524,13 +526,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         chainConfig: ChainConfig,
         method: String,
         requestParams: JsonArray,
-        path: String? = "wallet/request"
+        path: String? = "wallet/request",
+        context: Context
     ): CompletableFuture<Void> {
         val signMsgCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
-            val context = web3AuthOption.context
+            val context = context
             val initOptions = getInitOptions()
             initOptions.put(
                 "chainConfig", gson.toJson(chainConfig)
@@ -540,7 +543,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                 "options", initOptions
             )
 
-            val loginIdCf = getLoginId(paramMap)
+            val loginIdCf = getLoginId(paramMap, context)
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
