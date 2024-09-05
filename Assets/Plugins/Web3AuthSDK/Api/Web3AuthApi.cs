@@ -9,7 +9,7 @@ using System.Collections.Generic;
 public class Web3AuthApi
 {
     static Web3AuthApi instance;
-    static string baseAddress = "https://session.web3auth.io";
+    static string baseAddress = "https://session.web3auth.io/v2";
 
     public static Web3AuthApi getInstance()
     {
@@ -18,7 +18,7 @@ public class Web3AuthApi
         return instance;
     }
 
-    public IEnumerator authorizeSession(string key, Action<StoreApiResponse> callback)
+    public IEnumerator authorizeSession(string key, string origin, Action<StoreApiResponse> callback)
     {
         //var requestURL = $"{baseAddress}/store/get?key={key}";
         //var request = UnityWebRequest.Get(requestURL);
@@ -26,16 +26,17 @@ public class Web3AuthApi
         data.AddField("key", key);
 
         var request = UnityWebRequest.Post($"{baseAddress}/store/get", data);
+        request.SetRequestHeader("origin", origin);
 
         yield return request.SendWebRequest();
-        // Debug.Log("baseAddress =>" + baseAddress);
-        // Debug.Log("key =>" + key);
-        // Debug.Log("request URL =>"+ requestURL);
-        // Debug.Log("request.isNetworkError =>" + request.isNetworkError);
-        // Debug.Log("request.isHttpError =>" + request.isHttpError);
-        // Debug.Log("request.isHttpError =>" + request.error);
-        // Debug.Log("request.result =>" + request.result);
-        // Debug.Log("request.downloadHandler.text =>" + request.downloadHandler.text);
+         Debug.Log("baseAddress =>" + baseAddress);
+         Debug.Log("key =>" + key);
+         Debug.Log("request URL =>"+ request);
+         Debug.Log("request.isNetworkError =>" + request.isNetworkError);
+         Debug.Log("request.isHttpError =>" + request.isHttpError);
+         Debug.Log("request.isHttpError =>" + request.error);
+         Debug.Log("request.result =>" + request.result);
+         Debug.Log("request.downloadHandler.text =>" + request.downloadHandler.text);
         if (request.result == UnityWebRequest.Result.Success)
         {
             string result = request.downloadHandler.text;

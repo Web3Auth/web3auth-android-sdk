@@ -108,7 +108,7 @@ public class Web3Auth : MonoBehaviour
         {
             throw new Exception("Failed to fetch project config. Please try again later.");
         } else {
-            authorizeSession("");
+            authorizeSession("", this.web3AuthOptions.redirectUrl.ToString());
 
             JsonSerializerSettings settings = new JsonSerializerSettings
             {
@@ -287,7 +287,7 @@ public class Web3Auth : MonoBehaviour
             new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore
-            }), 600);
+            }), 600, "*");
 
         if (!string.IsNullOrEmpty(loginId))
         {
@@ -341,7 +341,7 @@ public class Web3Auth : MonoBehaviour
                 new JsonSerializerSettings
                 {
                     NullValueHandling = NullValueHandling.Ignore
-                }), 600);
+                }), 600, "*");
 
             if (!string.IsNullOrEmpty(loginId))
             {
@@ -427,7 +427,7 @@ public class Web3Auth : MonoBehaviour
         this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, sessionId));
 
         //call authorize session API
-        this.Enqueue(() => authorizeSession(sessionId));
+        this.Enqueue(() => authorizeSession(sessionId, this.web3AuthOptions.redirectUrl.ToString()));
 
 #if !UNITY_EDITOR && UNITY_WEBGL
         if (this.web3AuthResponse != null) 
@@ -550,7 +550,7 @@ public class Web3Auth : MonoBehaviour
                         new JsonSerializerSettings
                         {
                             NullValueHandling = NullValueHandling.Ignore
-                        }), 60000);
+                        }), 600, "*");
 
                     if (!string.IsNullOrEmpty(loginId))
                     {
@@ -598,7 +598,7 @@ public class Web3Auth : MonoBehaviour
         }
     }
 
-    private void authorizeSession(string newSessionId)
+    private void authorizeSession(string newSessionId, string origin)
     {
         string sessionId = "";
         if (string.IsNullOrEmpty(newSessionId))
@@ -614,7 +614,9 @@ public class Web3Auth : MonoBehaviour
         if (!string.IsNullOrEmpty(sessionId))
         {
             var pubKey = KeyStoreManagerUtils.getPubKey(sessionId);
-            StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, (response =>
+            Debug.Log("pubKey: =>" + pubKey);
+            Debug.Log("origin: =>" + origin);
+            StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, origin, (response =>
             {
                 if (response != null)
                 {
@@ -668,7 +670,7 @@ public class Web3Auth : MonoBehaviour
         if (!string.IsNullOrEmpty(sessionId))
         {
             var pubKey = KeyStoreManagerUtils.getPubKey(sessionId);
-            StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, (response =>
+            StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, this.web3AuthOptions.redirectUrl.ToString(), (response =>
             {
                 if (response != null)
                 {
@@ -724,7 +726,7 @@ public class Web3Auth : MonoBehaviour
         }
     }
 
-    private async Task<string> createSession(string data, long sessionTime)
+    private async Task<string> createSession(string data, long sessionTime, string allowedOrigin)
     {
         TaskCompletionSource<string> createSessionResponse = new TaskCompletionSource<string>();
         var newSessionKey = KeyStoreManagerUtils.generateRandomSessionKey();
@@ -756,7 +758,8 @@ public class Web3Auth : MonoBehaviour
                     newSessionKey,
                     jsonData
                 ),
-                timeout = Math.Min(sessionTime, 7 * 86400)
+                timeout = Math.Min(sessionTime, 7 * 86400),
+                allowedOrigin = allowedOrigin
             }, result =>
             {
                 if (result != null)
