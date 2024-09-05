@@ -42,7 +42,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     // TODO: These two should be removed, additionally incorrect use of global variables is being done, see comment re processRequest
-    private var loginCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
+    private lateinit var loginCompletableFuture: CompletableFuture<Web3AuthResponse>
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
 
     private var web3AuthResponse: Web3AuthResponse? = null
@@ -180,11 +180,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
     fun setResultUrl(uri: Uri?, context: Context) {
         val hash = uri?.fragment
         if (hash == null) {
-            loginCompletableFuture.completeExceptionally(UserCancelledException())
-            return
+            if (::loginCompletableFuture.isInitialized) {
+                loginCompletableFuture.completeExceptionally(UserCancelledException())
+                return
+            }
         }
-        val hashUri = Uri.parse(uri.host + "?" + uri.fragment)
-        val error = uri.getQueryParameter("error")
+        val hashUri = Uri.parse(uri?.host + "?" + uri?.fragment)
+        val error = uri?.getQueryParameter("error")
         if (error != null) {
             loginCompletableFuture.completeExceptionally(UnKnownException(error))
             if (::enableMfaCompletableFuture.isInitialized) enableMfaCompletableFuture.completeExceptionally(
@@ -547,6 +549,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
     }
 
     private fun throwLoginError(error: ErrorCode) {
+        if (::loginCompletableFuture.isInitialized)
         loginCompletableFuture.completeExceptionally(
             Exception(
                 Web3AuthError.getError(
