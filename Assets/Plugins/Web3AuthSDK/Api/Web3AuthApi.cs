@@ -22,21 +22,24 @@ public class Web3AuthApi
     {
         //var requestURL = $"{baseAddress}/store/get?key={key}";
         //var request = UnityWebRequest.Get(requestURL);
+        var requestURL = $"{baseAddress}/store/get";
+        //Debug.Log("Request URL => " + requestURL);
+
         WWWForm data = new WWWForm();
         data.AddField("key", key);
 
-        var request = UnityWebRequest.Post($"{baseAddress}/store/get", data);
+        var request = UnityWebRequest.Post(requestURL, data);
         request.SetRequestHeader("origin", origin);
 
         yield return request.SendWebRequest();
-         Debug.Log("baseAddress =>" + baseAddress);
-         Debug.Log("key =>" + key);
-         Debug.Log("request URL =>"+ request);
-         Debug.Log("request.isNetworkError =>" + request.isNetworkError);
-         Debug.Log("request.isHttpError =>" + request.isHttpError);
-         Debug.Log("request.isHttpError =>" + request.error);
-         Debug.Log("request.result =>" + request.result);
-         Debug.Log("request.downloadHandler.text =>" + request.downloadHandler.text);
+         //Debug.Log("baseAddress =>" + baseAddress);
+         //Debug.Log("key =>" + key);
+         //Debug.Log("request URL =>"+ request);
+         //Debug.Log("request.isNetworkError =>" + request.isNetworkError);
+         //Debug.Log("request.isHttpError =>" + request.isHttpError);
+         //Debug.Log("request.isHttpError =>" + request.error);
+         //Debug.Log("request.result =>" + request.result);
+         //Debug.Log("request.downloadHandler.text =>" + request.downloadHandler.text);
         if (request.result == UnityWebRequest.Result.Success)
         {
             string result = request.downloadHandler.text;
