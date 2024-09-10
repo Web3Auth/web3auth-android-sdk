@@ -41,7 +41,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
-    // TODO: These two should be removed, additionally incorrect use of global variables is being done, see comment re processRequest
     private lateinit var loginCompletableFuture: CompletableFuture<Web3AuthResponse>
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
 
@@ -157,7 +156,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         fetchProjectConfig(context).whenComplete { _, err ->
             if (err == null) {
                 //authorize session
-                this.authorizeSession(context).whenComplete { resp, error ->
+                this.authorizeSession(context, web3AuthOption.redirectUrl.toString())
+                    .whenComplete { resp, error ->
                     if (error == null) {
                         web3AuthResponse = resp
                     } else {
@@ -209,7 +209,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             sessionManager.saveSessionId(sessionId)
 
             //Rehydrate Session
-            this.authorizeSession(context).whenComplete { resp, error ->
+            this.authorizeSession(context, web3AuthOption.redirectUrl.toString())
+                .whenComplete { resp, error ->
                 if (error == null) {
                     web3AuthResponse = resp
                     if (web3AuthResponse?.error?.isNotBlank() == true) {
@@ -261,7 +262,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         //login
         processRequest("login", loginParams, context)
 
-        // TODO: This is incorrect, consider refactoring processRequest to return the result future instead, or wait on processRequest until is has assigned the result.
         loginCompletableFuture = CompletableFuture<Web3AuthResponse>()
         return loginCompletableFuture
     }
@@ -310,10 +310,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
     /**
      * Authorize User session in order to avoid re-login
      */
-    private fun authorizeSession(context: Context): CompletableFuture<Web3AuthResponse> {
+    private fun authorizeSession(
+        context: Context,
+        origin: String
+    ): CompletableFuture<Web3AuthResponse> {
         val sessionCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
         val sessionResponse: CompletableFuture<String> =
-            sessionManager.authorizeSession(context)
+            sessionManager.authorizeSession(origin, context)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 val tempJson = JSONObject(response)
@@ -536,7 +539,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         return signMsgCF
     }
 
-    // TODO: Remove this, should be able to just throw directly
     private fun throwEnableMFAError(error: ErrorCode) {
         if (::enableMfaCompletableFuture.isInitialized)
             enableMfaCompletableFuture.completeExceptionally(
@@ -575,7 +577,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             }
         }
         return privKey
-            ?: throw IllegalStateException("No valid private key found") // TODO: Throw instead of empty, empty is not a valid result: done
+            ?: throw IllegalStateException("No valid private key found")
     }
 
     /**
@@ -595,7 +597,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         }
 
         return ed25519Key
-            ?: throw IllegalStateException("No valid Ed25519 private key found") // TODO: Throw instead of empty, empty is not a valid result
+            ?: throw IllegalStateException("No valid Ed25519 private key found")
     }
 
     /**
