@@ -267,6 +267,10 @@ public class Web3Auth : MonoBehaviour
     private async void processRequest(string path, LoginParams loginParams = null)
     {
         redirectUrl = this.initParams["redirectUrl"].ToString();
+        if (redirectUrl.EndsWith("/"))
+        {
+            redirectUrl = redirectUrl.TrimEnd('/');
+        }
 
 #if UNITY_STANDALONE || UNITY_EDITOR
         this.initParams["redirectUrl"] = StartLocalWebserver();
@@ -276,6 +280,7 @@ public class Web3Auth : MonoBehaviour
 #endif
 
         loginParams.redirectUrl = loginParams.redirectUrl ?? new Uri(this.initParams["redirectUrl"].ToString());
+        //Debug.Log("loginParams.redirectUrl: =>" + loginParams.redirectUrl);
         Dictionary<string, object> paramMap = new Dictionary<string, object>();
         paramMap["options"] = this.initParams;
         paramMap["params"] = loginParams == null ? (object)new Dictionary<string, object>() : (object)loginParams;
@@ -332,6 +337,10 @@ public class Web3Auth : MonoBehaviour
             if (!string.IsNullOrEmpty(sessionId))
             {
             redirectUrl = this.initParams["redirectUrl"].ToString();
+            if (redirectUrl.EndsWith("/"))
+            {
+                redirectUrl = redirectUrl.TrimEnd('/');
+            }
     #if UNITY_STANDALONE || UNITY_EDITOR
             this.initParams["redirectUrl"] = StartLocalWebserver();
             redirectUrl = this.initParams["redirectUrl"].ToString().Replace("/complete/", "");
@@ -435,7 +444,6 @@ public class Web3Auth : MonoBehaviour
         this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.REDIRECT_URL, redirectUrl));
 
         //call authorize session API
-        //Debug.Log("redirectUrl: =>" + redirectUrl);
         this.Enqueue(() => authorizeSession(sessionId, redirectUrl));
 
 #if !UNITY_EDITOR && UNITY_WEBGL
@@ -546,6 +554,10 @@ public class Web3Auth : MonoBehaviour
         if (!string.IsNullOrEmpty(sessionId))
         {
                     redirectUrl = this.initParams["redirectUrl"].ToString();
+                    if (redirectUrl.EndsWith("/"))
+                    {
+                        redirectUrl = redirectUrl.TrimEnd('/');
+                   }
             #if UNITY_STANDALONE || UNITY_EDITOR
                     this.initParams["redirectUrl"] = StartLocalWebserver();
                     redirectUrl = this.initParams["redirectUrl"].ToString().Replace("/complete/", "");
@@ -625,7 +637,6 @@ public class Web3Auth : MonoBehaviour
         if (!string.IsNullOrEmpty(sessionId))
         {
             var pubKey = KeyStoreManagerUtils.getPubKey(sessionId);
-            //Debug.Log("pubKey: =>" + pubKey);
             //Debug.Log("origin: =>" + origin);
             StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, origin, (response =>
             {
