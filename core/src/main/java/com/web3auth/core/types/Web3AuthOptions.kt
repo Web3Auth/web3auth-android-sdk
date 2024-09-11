@@ -21,7 +21,7 @@ data class Web3AuthOptions(
 fun getSdkUrl(buildEnv: BuildEnv?): String {
     val sdkUrl: String = when (buildEnv) {
         BuildEnv.STAGING -> {
-            "https://staging-auth.web3auth.io/$openLoginVersion"
+            "https://staging-auth.web3auth.io/$authServiceVersion"
         }
 
         BuildEnv.TESTING -> {
@@ -29,7 +29,7 @@ fun getSdkUrl(buildEnv: BuildEnv?): String {
         }
 
         else -> {
-            "https://auth.web3auth.io/$openLoginVersion"
+            "https://auth.web3auth.io/$authServiceVersion"
         }
     }
     return sdkUrl
@@ -52,8 +52,8 @@ fun getWalletSdkUrl(buildEnv: BuildEnv?): String {
     return sdkUrl
 }
 
-const val openLoginVersion = "v8"
-const val walletServicesVersion = "v2"
+const val authServiceVersion = "v9"
+const val walletServicesVersion = "v3"
 const val WEBVIEW_URL = "walletUrl"
 const val REDIRECT_URL = "redirectUrl"
 const val CUSTOM_TABS_URL = "customTabsUrl"
