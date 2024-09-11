@@ -411,7 +411,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
      */
     private fun getLoginId(jsonObject: JSONObject, context: Context): CompletableFuture<String> {
-        return sessionManager.createSession(jsonObject.toString(), 600, context)
+        return sessionManager.createSession(
+            jsonObject.toString(),
+            600,
+            context,
+            web3AuthOption.redirectUrl.toString()
+        )
     }
 
     /**
