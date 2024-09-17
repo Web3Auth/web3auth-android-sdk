@@ -558,14 +558,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
     }
 
     private fun throwLoginError(error: ErrorCode) {
-        if (::loginCompletableFuture.isInitialized)
-        loginCompletableFuture.completeExceptionally(
-            Exception(
-                Web3AuthError.getError(
-                    error
+        if (::loginCompletableFuture.isInitialized) {
+            loginCompletableFuture.completeExceptionally(
+                Exception(
+                    Web3AuthError.getError(
+                        error
+                    )
                 )
             )
-        )
+        }
     }
 
     /**
