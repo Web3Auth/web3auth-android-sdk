@@ -46,7 +46,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
-    private var sessionManager: SessionManager = SessionManager(context)
+    private var sessionManager: SessionManager = SessionManager(
+        context,
+        web3AuthOptions.sessionTime ?: 600,
+        web3AuthOptions.redirectUrl.toString()
+    )
 
     /**
      * Initializes the KeyStoreManager.
@@ -413,9 +417,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
     private fun getLoginId(jsonObject: JSONObject, context: Context): CompletableFuture<String> {
         return sessionManager.createSession(
             jsonObject.toString(),
-            600,
-            context,
-            web3AuthOption.redirectUrl.toString()
+            context
         )
     }
 

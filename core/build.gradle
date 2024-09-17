@@ -69,7 +69,8 @@ dependencies {
     implementation 'org.web3j:core:4.8.8-android'
 
     //session-manager-sdk
-    implementation 'com.github.Web3Auth:session-manager-android:2.3.0'
+    implementation 'com.github.grvgoel81:session-manager-android:6.0.0'
+    //TODO(): Update Web3Auth version
 
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01"
 
