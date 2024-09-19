@@ -135,30 +135,29 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             print(ex)
         }
 
-        runOnUiThread {
-            if (userInfo != null) {
-                val jsonObject = JSONObject(gson.toJson(web3Auth.getWeb3AuthResponse()))
-                contentTextView.text = jsonObject.toString(4) + "\n Private Key: " + key
-                contentTextView.movementMethod = ScrollingMovementMethod()
-                contentTextView.visibility = View.VISIBLE
-                signInButton.visibility = View.GONE
-                signOutButton.visibility = View.VISIBLE
-                launchWalletButton.visibility = View.VISIBLE
-                signMsgButton.visibility = View.VISIBLE
-                btnSetUpMfa.visibility = View.VISIBLE
-                spinner.visibility = View.GONE
-                hintEmailEditText.visibility = View.GONE
-            } else {
-                contentTextView.text = getString(R.string.not_logged_in)
-                contentTextView.visibility = View.GONE
-                signInButton.visibility = View.VISIBLE
-                signOutButton.visibility = View.GONE
-                btnSetUpMfa.visibility = View.GONE
-                launchWalletButton.visibility = View.GONE
-                signMsgButton.visibility = View.GONE
-                signResultButton.visibility = View.GONE
-                spinner.visibility = View.VISIBLE
-            }
+
+        if (userInfo != null) {
+            val jsonObject = JSONObject(gson.toJson(web3Auth.getWeb3AuthResponse()))
+            contentTextView.text = jsonObject.toString(4) + "\n Private Key: " + key
+            contentTextView.movementMethod = ScrollingMovementMethod()
+            contentTextView.visibility = View.VISIBLE
+            signInButton.visibility = View.GONE
+            signOutButton.visibility = View.VISIBLE
+            launchWalletButton.visibility = View.VISIBLE
+            signMsgButton.visibility = View.VISIBLE
+            btnSetUpMfa.visibility = View.VISIBLE
+            spinner.visibility = View.GONE
+            hintEmailEditText.visibility = View.GONE
+        } else {
+            contentTextView.text = getString(R.string.not_logged_in)
+            contentTextView.visibility = View.GONE
+            signInButton.visibility = View.VISIBLE
+            signOutButton.visibility = View.GONE
+            btnSetUpMfa.visibility = View.GONE
+            launchWalletButton.visibility = View.GONE
+            signMsgButton.visibility = View.GONE
+            signResultButton.visibility = View.GONE
+            spinner.visibility = View.VISIBLE
         }
     }
 
@@ -255,14 +254,12 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 ), "personal_sign", requestParams = params, context = this
             )
             signMsgCompletableFuture.whenComplete { _, error ->
-                runOnUiThread {
-                    if (error == null) {
-                        Log.d("MainActivity_Web3Auth", "Message signed successfully")
-                        signResultButton.visibility = View.VISIBLE
-                    } else {
-                        Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
-                        signResultButton.visibility = View.GONE
-                    }
+                if (error == null) {
+                    Log.d("MainActivity_Web3Auth", "Message signed successfully")
+                    signResultButton.visibility = View.VISIBLE
+                } else {
+                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+                    signResultButton.visibility = View.GONE
                 }
             }
         }

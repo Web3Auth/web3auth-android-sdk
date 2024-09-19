@@ -3,6 +3,8 @@ package com.web3auth.core
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -162,13 +164,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 //authorize session
                 this.authorizeSession(context, web3AuthOption.redirectUrl.toString())
                     .whenComplete { resp, error ->
-                    if (error == null) {
-                        web3AuthResponse = resp
-                    } else {
-                        print(error)
+                        val mainHandler = Handler(Looper.getMainLooper())
+                        mainHandler.post {
+                            if (error == null) {
+                                web3AuthResponse = resp
+                            } else {
+                                print(error)
+                            }
+                            initializeCf.complete(null)
+                        }
                     }
-                    initializeCf.complete(null)
-                }
             } else {
                 initializeCf.completeExceptionally(err)
             }
@@ -215,31 +220,35 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             //Rehydrate Session
             this.authorizeSession(context, web3AuthOption.redirectUrl.toString())
                 .whenComplete { resp, error ->
-                if (error == null) {
-                    web3AuthResponse = resp
-                    if (web3AuthResponse?.error?.isNotBlank() == true) {
-                        throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
-                        throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
-                    } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
-                        throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
-                        throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
-                    } else {
-                        web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
+                    val mainHandler = Handler(Looper.getMainLooper())
+                    mainHandler.post {
+                        if (error == null) {
+                            web3AuthResponse = resp
+                            if (web3AuthResponse?.error?.isNotBlank() == true) {
+                                throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                            } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
+                                throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                            } else {
+                                web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
 
-                        if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
-                            KeyStoreManagerUtils.encryptData(
-                                web3AuthResponse?.userInfo?.verifier.plus(" | ")
-                                    .plus(web3AuthResponse?.userInfo?.verifierId),
-                                web3AuthResponse?.userInfo?.dappShare!!,
-                            )
+                                if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
+                                    KeyStoreManagerUtils.encryptData(
+                                        web3AuthResponse?.userInfo?.verifier.plus(" | ")
+                                            .plus(web3AuthResponse?.userInfo?.verifierId),
+                                        web3AuthResponse?.userInfo?.dappShare!!,
+                                    )
+                                }
+                                loginCompletableFuture.complete(web3AuthResponse)
+                                if (::enableMfaCompletableFuture.isInitialized)
+                                    enableMfaCompletableFuture.complete(true)
+                            }
+                        } else {
+                            print(error)
                         }
-                        loginCompletableFuture.complete(web3AuthResponse)
-                        enableMfaCompletableFuture.complete(true)
                     }
-                } else {
-                    print(error)
                 }
-            }
         } else {
             throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
             throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
@@ -280,10 +289,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         val sessionResponse: CompletableFuture<Boolean> =
             sessionManager.invalidateSession(context)
         sessionResponse.whenComplete { _, error ->
-            if (error == null) {
-                logoutCompletableFuture.complete(null)
-            } else {
-                logoutCompletableFuture.completeExceptionally(Exception(error))
+            val mainHandler = Handler(Looper.getMainLooper())
+            mainHandler.post {
+                if (error == null) {
+                    logoutCompletableFuture.complete(null)
+                } else {
+                    logoutCompletableFuture.completeExceptionally(Exception(error))
+                }
             }
         }
         web3AuthResponse = Web3AuthResponse()
@@ -537,11 +549,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                     intent.putExtra(WEBVIEW_URL, url.toString())
                     intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
                     context.startActivity(intent)
-                    signMsgCF.complete(null)
+                    val mainHandler = Handler(Looper.getMainLooper())
+                    mainHandler.post {
+                        signMsgCF.complete(null)
+                    }
                 }
             }
         } else {
-            signMsgCF.completeExceptionally(Exception("Please login first to launch wallet"))
+            val mainHandler = Handler(Looper.getMainLooper())
+            mainHandler.post {
+                signMsgCF.completeExceptionally(Exception("Please login first to launch wallet"))
+            }
         }
         return signMsgCF
     }
