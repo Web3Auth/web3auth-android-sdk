@@ -200,15 +200,17 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         web3Auth.setResultUrl(intent.data)
 
         // for session response
-        val sessionResponse: CompletableFuture<Void> = web3Auth.initialize()
-        sessionResponse.whenComplete { _, error ->
-            if (error == null) {
-                reRender()
-                println("PrivKey: " + web3Auth.getPrivkey())
-                println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
-                println("Web3Auth UserInfo" + web3Auth.getUserInfo())
-            } else {
-                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+        if (web3Auth.isSessionIdExists()) {
+            val sessionResponse: CompletableFuture<Void> = web3Auth.initialize()
+            sessionResponse.whenComplete { _, error ->
+                if (error == null) {
+                    reRender()
+                    println("PrivKey: " + web3Auth.getPrivkey())
+                    println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
+                    println("Web3Auth UserInfo" + web3Auth.getUserInfo())
+                } else {
+                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+                }
             }
         }
 

@@ -557,6 +557,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         return signMsgCF
     }
 
+    fun isSessionIdExists(): Boolean {
+        val sessionId = sessionManager.getSessionId()
+        return !sessionId.isNullOrEmpty()
+    }
+
     private fun runOnUIThread(action: () -> Unit) {
         val mainHandler = Handler(Looper.getMainLooper())
         mainHandler.post(action)
