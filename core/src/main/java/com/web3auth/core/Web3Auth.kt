@@ -164,8 +164,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 //authorize session
                 this.authorizeSession(context, web3AuthOption.redirectUrl.toString())
                     .whenComplete { resp, error ->
-                        val mainHandler = Handler(Looper.getMainLooper())
-                        mainHandler.post {
+                        runOnUIThread {
                             if (error == null) {
                                 web3AuthResponse = resp
                             } else {
@@ -220,8 +219,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             //Rehydrate Session
             this.authorizeSession(context, web3AuthOption.redirectUrl.toString())
                 .whenComplete { resp, error ->
-                    val mainHandler = Handler(Looper.getMainLooper())
-                    mainHandler.post {
+                    runOnUIThread {
                         if (error == null) {
                             web3AuthResponse = resp
                             if (web3AuthResponse?.error?.isNotBlank() == true) {
@@ -289,8 +287,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         val sessionResponse: CompletableFuture<Boolean> =
             sessionManager.invalidateSession(context)
         sessionResponse.whenComplete { _, error ->
-            val mainHandler = Handler(Looper.getMainLooper())
-            mainHandler.post {
+            runOnUIThread {
                 if (error == null) {
                     logoutCompletableFuture.complete(null)
                 } else {
@@ -549,19 +546,22 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                     intent.putExtra(WEBVIEW_URL, url.toString())
                     intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
                     context.startActivity(intent)
-                    val mainHandler = Handler(Looper.getMainLooper())
-                    mainHandler.post {
+                    runOnUIThread {
                         signMsgCF.complete(null)
                     }
                 }
             }
         } else {
-            val mainHandler = Handler(Looper.getMainLooper())
-            mainHandler.post {
+            runOnUIThread {
                 signMsgCF.completeExceptionally(Exception("Please login first to launch wallet"))
             }
         }
         return signMsgCF
+    }
+
+    private fun runOnUIThread(action: () -> Unit) {
+        val mainHandler = Handler(Looper.getMainLooper())
+        mainHandler.post(action)
     }
 
     private fun throwEnableMFAError(error: ErrorCode) {
