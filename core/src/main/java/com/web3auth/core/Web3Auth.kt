@@ -48,6 +48,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
+    private var appContext: Context = context
     private var sessionManager: SessionManager = SessionManager(
         context,
         web3AuthOptions.sessionTime ?: 600,
@@ -99,7 +100,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * @param params The login parameters required for the request.
      */
     private fun processRequest(
-        actionType: String, params: LoginParams?, context: Context
+        actionType: String, params: LoginParams?
     ) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
         val initOptions = JSONObject(gson.toJson(getInitOptions()))
@@ -128,7 +129,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         }
         paramMap.put("params", initParams)
 
-        val loginIdCf = getLoginId(paramMap, context)
+        val loginIdCf = getLoginId(paramMap)
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
                 val jsonObject = mapOf("loginId" to loginId)
@@ -139,9 +140,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                     Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
                         .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
                 //print("url: => $url")
-                val intent = Intent(context, CustomChromeTabsActivity::class.java)
+                val intent = Intent(appContext, CustomChromeTabsActivity::class.java)
                 intent.putExtra(WEBVIEW_URL, url.toString())
-                context.startActivity(intent)
+                appContext.startActivity(intent)
             }
         }
     }
@@ -151,18 +152,18 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      *
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
-    fun initialize(context: Context): CompletableFuture<Void> {
+    fun initialize(): CompletableFuture<Void> {
         val initializeCf = CompletableFuture<Void>()
-        KeyStoreManagerUtils.initializePreferences(context.applicationContext)
+        KeyStoreManagerUtils.initializePreferences(appContext.applicationContext)
 
         //initiate keyStore
         initiateKeyStoreManager()
 
         //fetch project config
-        fetchProjectConfig(context).whenComplete { _, err ->
+        fetchProjectConfig().whenComplete { _, err ->
             if (err == null) {
                 //authorize session
-                this.authorizeSession(context, web3AuthOption.redirectUrl.toString())
+                this.authorizeSession(web3AuthOption.redirectUrl.toString())
                     .whenComplete { resp, error ->
                         runOnUIThread {
                             if (error == null) {
@@ -185,7 +186,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      *
      * @param uri The URI representing the result URL.
      */
-    fun setResultUrl(uri: Uri?, context: Context) {
+    fun setResultUrl(uri: Uri?) {
         val hash = uri?.fragment
         if (hash == null) {
             if (::loginCompletableFuture.isInitialized) {
@@ -217,7 +218,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             sessionManager.saveSessionId(sessionId)
 
             //Rehydrate Session
-            this.authorizeSession(context, web3AuthOption.redirectUrl.toString())
+            this.authorizeSession(web3AuthOption.redirectUrl.toString())
                 .whenComplete { resp, error ->
                     runOnUIThread {
                         if (error == null) {
@@ -259,7 +260,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * @param loginParams The login parameters required for authentication.
      * @return A CompletableFuture<Web3AuthResponse> representing the asynchronous operation, containing the Web3AuthResponse upon successful login.
      */
-    fun login(loginParams: LoginParams, context: Context): CompletableFuture<Web3AuthResponse> {
+    fun login(loginParams: LoginParams): CompletableFuture<Web3AuthResponse> {
         //check for share
         if (web3AuthOption.loginConfig != null) {
             val loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
@@ -271,7 +272,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         }
 
         //login
-        processRequest("login", loginParams, context)
+        processRequest("login", loginParams)
 
         loginCompletableFuture = CompletableFuture<Web3AuthResponse>()
         return loginCompletableFuture
@@ -282,10 +283,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      *
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
-    fun logout(context: Context): CompletableFuture<Void> {
+    fun logout(): CompletableFuture<Void> {
         val logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
         val sessionResponse: CompletableFuture<Boolean> =
-            sessionManager.invalidateSession(context)
+            sessionManager.invalidateSession(appContext)
         sessionResponse.whenComplete { _, error ->
             runOnUIThread {
                 if (error == null) {
@@ -305,7 +306,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * @param loginParams The optional login parameters required for authentication. Default is null.
      * @return A CompletableFuture<Boolean> representing the asynchronous operation, indicating whether MFA was successfully enabled.
      */
-    fun enableMFA(loginParams: LoginParams? = null, context: Context): CompletableFuture<Boolean> {
+    fun enableMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
         enableMfaCompletableFuture = CompletableFuture()
         if (web3AuthResponse?.userInfo?.isMfaEnabled == true) {
             throwEnableMFAError(ErrorCode.MFA_ALREADY_ENABLED)
@@ -316,7 +317,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             throwEnableMFAError(ErrorCode.NOUSERFOUND)
             return enableMfaCompletableFuture
         }
-        processRequest("enable_mfa", loginParams, context)
+        processRequest("enable_mfa", loginParams)
         return enableMfaCompletableFuture
     }
 
@@ -324,12 +325,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * Authorize User session in order to avoid re-login
      */
     private fun authorizeSession(
-        context: Context,
         origin: String
     ): CompletableFuture<Web3AuthResponse> {
         val sessionCompletableFuture: CompletableFuture<Web3AuthResponse> = CompletableFuture()
         val sessionResponse: CompletableFuture<String> =
-            sessionManager.authorizeSession(origin, context)
+            sessionManager.authorizeSession(origin, appContext)
         sessionResponse.whenComplete { response, error ->
             if (error == null) {
                 val tempJson = JSONObject(response)
@@ -364,11 +364,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         return sessionCompletableFuture
     }
 
-    private fun fetchProjectConfig(context: Context): CompletableFuture<Boolean> {
+    private fun fetchProjectConfig(): CompletableFuture<Boolean> {
         val projectConfigCompletableFuture: CompletableFuture<Boolean> = CompletableFuture()
         val web3AuthApi =
             ApiHelper.getInstance(web3AuthOption.network.name).create(ApiService::class.java)
-        if (!ApiHelper.isNetworkAvailable(context)) {
+        if (!ApiHelper.isNetworkAvailable(appContext)) {
             throw Exception(
                 Web3AuthError.getError(ErrorCode.RUNTIME_ERROR)
             )
@@ -423,10 +423,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
      * @param jsonObject The JSONObject from which to retrieve the login ID.
      * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
      */
-    private fun getLoginId(jsonObject: JSONObject, context: Context): CompletableFuture<String> {
+    private fun getLoginId(jsonObject: JSONObject): CompletableFuture<String> {
         return sessionManager.createSession(
             jsonObject.toString(),
-            context
+            appContext
         )
     }
 
@@ -440,7 +440,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
     fun launchWalletServices(
         chainConfig: ChainConfig,
         path: String? = "wallet",
-        context: Context
     ): CompletableFuture<Void> {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
@@ -457,7 +456,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 "options", initOptions
             )
 
-            val loginIdCf = getLoginId(paramMap, context)
+            val loginIdCf = getLoginId(paramMap)
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
@@ -478,9 +477,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                             .encodedPath(sdkUrl.encodedPath).appendPath(path)
                             .fragment(walletHash).build()
                     //print("wallet launch url: => $url")
-                    val intent = Intent(context, WebViewActivity::class.java)
+                    val intent = Intent(appContext, WebViewActivity::class.java)
                     intent.putExtra(WEBVIEW_URL, url.toString())
-                    context.startActivity(intent)
+                    appContext.startActivity(intent)
                     launchWalletServiceCF.complete(null)
                 }
             }
@@ -504,7 +503,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         method: String,
         requestParams: JsonArray,
         path: String? = "wallet/request",
-        context: Context
     ): CompletableFuture<Void> {
         val signMsgCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
@@ -519,7 +517,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 "options", initOptions
             )
 
-            val loginIdCf = getLoginId(paramMap, context)
+            val loginIdCf = getLoginId(paramMap)
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
@@ -542,10 +540,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                             .encodedPath(sdkUrl.encodedPath).appendEncodedPath(path)
                             .fragment(signMessageHash).build()
                     //print("message signing url: => $url")
-                    val intent = Intent(context, WebViewActivity::class.java)
+                    val intent = Intent(appContext, WebViewActivity::class.java)
                     intent.putExtra(WEBVIEW_URL, url.toString())
                     intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
-                    context.startActivity(intent)
+                    appContext.startActivity(intent)
                     runOnUIThread {
                         signMsgCF.complete(null)
                     }
