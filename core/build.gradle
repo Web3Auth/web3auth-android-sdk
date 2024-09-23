@@ -61,16 +61,15 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
 
     // coroutine
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1'
 
     // android security
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
     implementation 'org.web3j:core:4.8.8-android'
 
     //session-manager-sdk
-    implementation 'com.github.web3auth:session-manager-android:2.4.1'
-    //TODO(): Update Web3Auth version
+    implementation 'com.github.grvgoel81:session-manager-android:7.2.0'
 
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01"
 
