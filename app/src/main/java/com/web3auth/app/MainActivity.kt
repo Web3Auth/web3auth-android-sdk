@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 selectedLoginProvider,
                 extraLoginOptions = extraLoginOptions,
                 mfaLevel = MFALevel.OPTIONAL
-            )
+            ), this
         )
         loginCompletableFuture.whenComplete { _, error ->
             if (error == null) {
@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     }
 
     private fun signOut() {
-        val logoutCompletableFuture = web3Auth.logout()
+        val logoutCompletableFuture = web3Auth.logout(this)
         logoutCompletableFuture.whenComplete { _, error ->
             if (error == null) {
                 reRender()
@@ -197,20 +197,18 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             options, this
         )
 
-        web3Auth.setResultUrl(intent.data)
+        web3Auth.setResultUrl(intent.data, this)
 
         // for session response
-        if (web3Auth.isSessionIdExists()) {
-            val sessionResponse: CompletableFuture<Void> = web3Auth.initialize()
-            sessionResponse.whenComplete { _, error ->
-                if (error == null) {
-                    reRender()
-                    println("PrivKey: " + web3Auth.getPrivkey())
-                    println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
-                    println("Web3Auth UserInfo" + web3Auth.getUserInfo())
-                } else {
-                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
-                }
+        val sessionResponse: CompletableFuture<Void> = web3Auth.initialize(this)
+        sessionResponse.whenComplete { _, error ->
+            if (error == null) {
+                reRender()
+                println("PrivKey: " + web3Auth.getPrivkey())
+                println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
+                println("Web3Auth UserInfo" + web3Auth.getUserInfo())
+            } else {
+                Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
         }
 
@@ -228,7 +226,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     chainId = "0x89",
                     rpcTarget = "https://1rpc.io/matic",
                     chainNamespace = ChainNamespace.EIP155
-                )
+                ), context = this
             )
             launchWalletCompletableFuture.whenComplete { _, error ->
                 if (error == null) {
@@ -253,7 +251,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     chainId = "0x89",
                     rpcTarget = "https://polygon-rpc.com/",
                     chainNamespace = ChainNamespace.EIP155
-                ), "personal_sign", requestParams = params
+                ), "personal_sign", requestParams = params, context = this
             )
             signMsgCompletableFuture.whenComplete { _, error ->
                 if (error == null) {
@@ -273,7 +271,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         btnSetUpMfa.setOnClickListener {
-            val setupMfaCf = web3Auth.enableMFA()
+            val setupMfaCf = web3Auth.enableMFA(context = this)
             setupMfaCf.whenComplete { _, error ->
                 if (error == null) {
                     Log.d("MainActivity_Web3Auth", "MFA setup successfully")
@@ -295,14 +293,14 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        web3Auth.setResultUrl(intent?.data)
+        web3Auth.setResultUrl(intent?.data, this)
     }
 
     override fun onResume() {
         super.onResume()
         if (Web3Auth.getCustomTabsClosed()) {
             Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
-            web3Auth.setResultUrl(null)
+            web3Auth.setResultUrl(null, this)
             Web3Auth.setCustomTabsClosed(false)
         }
     }
