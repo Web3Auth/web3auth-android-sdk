@@ -33,7 +33,7 @@ enum class TypeOfLogin {
     @SerializedName("wechat")
     WECHAT,
 
-    @SerializedName("email_password")
+    @SerializedName("email_passwordless")
     EMAIL_PASSWORDLESS,
 
     @SerializedName("jwt")
