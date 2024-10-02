@@ -103,6 +103,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         )
         if (params?.curve != null) initParams.put("curve", params.curve.name.lowercase(Locale.ROOT))
         if (params?.dappShare != null) initParams.put("dappShare", params.dappShare)
+        if (params?.appState != null) initParams.put("appState", params.appState)
+        if (params?.dappUrl != null) initParams.put("dappUrl", params.dappUrl)
         return initParams
     }
 
