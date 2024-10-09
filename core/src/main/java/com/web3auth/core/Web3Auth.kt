@@ -88,7 +88,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             redirectUrl = params?.redirectUrl?.toString() ?: web3AuthOption.redirectUrl.toString(),
             mfaLevel = params?.mfaLevel?.name?.lowercase(Locale.ROOT),
             curve = params?.curve?.name?.lowercase(Locale.ROOT),
-            dappShare = params?.dappShare
+            dappShare = params?.dappShare,
+            appState = params?.appState,
+            dappUrl = params?.dappUrl
         )
     }
 

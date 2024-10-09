@@ -6,5 +6,7 @@ data class InitParams(
     val redirectUrl: String,
     val mfaLevel: String? = null,
     val curve: String? = null,
-    val dappShare: String? = null
+    val dappShare: String? = null,
+    val appState: String? = null,
+    val dappUrl: String? = null,
 )
