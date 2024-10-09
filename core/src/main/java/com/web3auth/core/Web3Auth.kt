@@ -506,7 +506,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         method: String,
         requestParams: JsonArray,
         path: String? = "wallet/request",
-        context: Context
+        appState: String? = null,
+        context: Context,
     ): CompletableFuture<Void> {
         val signMsgCF: CompletableFuture<Void> = CompletableFuture()
         val sessionId = sessionManager.getSessionId()
@@ -520,6 +521,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             paramMap.put(
                 "options", initOptions
             )
+
+            appState?.let {
+                paramMap.put("appState", it)
+            }
 
             val loginIdCf = getLoginId(paramMap, context)
 
