@@ -28,6 +28,9 @@ object Web3AuthError {
             ErrorCode.MFA_ALREADY_ENABLED -> {
                 "MFA already enabled"
             }
+            ErrorCode.USER_CANCELLED -> {
+                "User Cancelled"
+            }
         }
     }
 }
@@ -40,5 +43,6 @@ enum class ErrorCode {
     APP_CANCELLED,
     SOMETHING_WENT_WRONG,
     INVALID_LOGIN,
-    MFA_ALREADY_ENABLED
+    MFA_ALREADY_ENABLED,
+    USER_CANCELLED
 }
