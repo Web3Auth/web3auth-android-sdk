@@ -21,6 +21,7 @@ import androidx.credentials.exceptions.CreateCredentialInterruptedException
 import androidx.credentials.exceptions.CreateCredentialProviderConfigurationException
 import androidx.credentials.exceptions.CreateCredentialUnknownException
 import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -64,22 +65,23 @@ import com.web3auth.core.types.Web3AuthError
 import com.web3auth.core.types.Web3AuthOptions
 import com.web3auth.core.types.Web3AuthResponse
 import com.web3auth.session_manager_android.SessionManager
-import com.web3auth.session_manager_android.keystore.KeyStoreManager
-import com.web3auth.session_manager_android.types.AES256CBC
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.bouncycastle.util.encoders.Hex
 import org.json.JSONObject
 import org.torusresearch.fetchnodedetails.FetchNodeDetails
 import org.torusresearch.fetchnodedetails.types.NodeDetails
+import org.torusresearch.fetchnodedetails.types.Web3AuthNetwork
 import org.torusresearch.torusutils.TorusUtils
-import org.torusresearch.torusutils.types.TorusCtorOptions
-import org.torusresearch.torusutils.types.TorusPublicKey
-import org.torusresearch.torusutils.types.VerifierArgs
+import org.torusresearch.torusutils.helpers.encryption.Encryption
+import org.torusresearch.torusutils.types.VerifierParams
+import org.torusresearch.torusutils.types.common.TorusOptions
+import org.torusresearch.torusutils.types.common.TorusPublicKey
+import org.torusresearch.torusutils.types.common.ecies.Ecies
 import org.web3j.crypto.Hash
 import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
@@ -238,7 +240,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
                     this.authorizeSession().whenComplete { resp, error ->
                         if (error == null) {
                             web3AuthResponse = resp
-                            //initializeCf.complete(null)
                         } else {
                             print(error)
                         }
@@ -943,18 +944,21 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     fun getPasskeyPublicKey(verifier: String, verifierId: String): TorusPublicKey {
         val fetchNodeDetails =
             FetchNodeDetails(WEB3AUTH_NETWORK_MAP[Network.valueOf(web3AuthOption.network.name)])
-        val opts = TorusCtorOptions(
-            "Custom",
+        val opts = TorusOptions(
             web3AuthOption.clientId,
+            Web3AuthNetwork.valueOf(web3AuthOption.network.name),
+            null,
+            0,
+            true
         )
-        opts.network = web3AuthOption.network.name
-        opts.isEnableOneKey = true
         val torusUtils = TorusUtils(opts)
         val nodeDetails: NodeDetails = fetchNodeDetails.getNodeDetails(verifier, verifierId).get()
         val publicAddress = torusUtils.getPublicAddress(
-            nodeDetails.torusNodeSSSEndpoints, nodeDetails.torusNodePub,
-            VerifierArgs(verifier, verifierId, null)
-        ).get()
+            nodeDetails.torusNodeSSSEndpoints,
+            verifier,
+            verifierId,
+            null
+        )
         return publicAddress
     }
 
@@ -974,57 +978,20 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         )
     }
 
-    /*fun encryptData(x: String, y: String, data: String): String {
-        // Convert the data to JSON and then to a byte array
-        val jsonData = Json.encodeToString(data)
-        val dataBytes = jsonData.toByteArray(Charsets.UTF_8)
-
-        // Convert the public key components to ECPoint
-        val ecSpec: ECParameterSpec = ECNamedCurveTable.getParameterSpec("secp256k1")
-        val ecPoint: ECPoint = ecSpec.curve.createPoint(BigInteger(Hex.decode(x)), BigInteger(Hex.decode(y)))
-
-        // Create the public key from the ECPoint
-        val keySpec = ECPublicKeySpec(ecPoint, ecSpec)
-        val keyFactory = KeyFactory.getInstance("ECDH", "BC")
-        val pubKey: PublicKey = keyFactory.generatePublic(keySpec)
-
-        // Encrypt the data using the public key
-        val cipher = Cipher.getInstance("ECIES", "BC")
-        cipher.init(Cipher.ENCRYPT_MODE, pubKey)
-        val encryptedData = cipher.doFinal(dataBytes)
-
-        // Convert the encrypted data to a hex string
-        val encryptedDataHex = Hex.toHexString(encryptedData)
-
-        // Return the encrypted data as a JSON string
-        return Json.encodeToString(encryptedDataHex)
-    }*/
-
-    @RequiresApi(Build.VERSION_CODES.O)
     fun encryptData(x: String, y: String, data: String): String {
-        val ephemKey = x.plus(y)
-        val privKey = KeyStoreManager.getPrivateKey("")// how to get Privkey
-        val ivKey = KeyStoreManager.randomBytes(16)
-        val aes256cbc = AES256CBC(
-            privKey, ephemKey, KeyStoreManager.convertByteToHexadecimal(ivKey)
-        )
+        val publicKey = x + y
+        val ecies = Encryption.encrypt(Hex.decode(publicKey), data)
 
-        val encryptedData = aes256cbc.encrypt(data.toByteArray(StandardCharsets.UTF_8))
-        return KeyStoreManager.convertByteToHexadecimal(encryptedData)
+        val json = Gson().toJson(ecies)
+        return json
     }
 
     fun decryptData(data: String, privKey: String): String {
-        val ephemKey = KeyStoreManager.getPubKey(privKey)
-        val ivKey = KeyStoreManager.randomBytes(16)
-        val aes256cbc = AES256CBC(
-            privKey, ephemKey, KeyStoreManager.convertByteToHexadecimal(ivKey)
-        )
-        val encryptedData = aes256cbc.encrypt(data.toByteArray(StandardCharsets.UTF_8))
-        val mac = aes256cbc.getMac(encryptedData)
-        val decryptedData = aes256cbc.decrypt(data, KeyStoreManager.convertByteToHexadecimal(mac))
-        return String(decryptedData, StandardCharsets.UTF_8)
-    }
+        val decrypted = Encryption.decrypt(privKey, Ecies(data))
 
+        val json = Gson().toJson(decrypted)
+        return json
+    }
 
     private fun verifyRegistration(
         registrationResponse: CreateCredentialResponse,
@@ -1205,26 +1172,32 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
     private fun getPasskeyPostboxKey(passKeyLoginParams: PassKeyLoginParams): String {
         val fetchNodeDetails =
             FetchNodeDetails(WEB3AUTH_NETWORK_MAP[Network.valueOf(web3AuthOption.network.name)])
-        val opts = TorusCtorOptions(
-            "Custom",
+        val opts = TorusOptions(
             web3AuthOption.clientId,
+            Web3AuthNetwork.valueOf(web3AuthOption.network.name),
+            null,
+            0,
+            true
         )
-        opts.network = web3AuthOption.network.name
-        opts.isEnableOneKey = true
         val torusUtils = TorusUtils(opts)
         val nodeDetails: NodeDetails = fetchNodeDetails.getNodeDetails(
             passKeyLoginParams.verifier,
             passKeyLoginParams.verifierId
         ).get()
+        val verifierParams = VerifierParams(
+            passKeyLoginParams.verifierId,
+            null,
+            null,
+            null
+        )
         val torusKey = torusUtils.retrieveShares(
-            nodeDetails.torusNodeEndpoints, nodeDetails.torusIndexes, passKeyLoginParams.verifier,
-            hashMapOf("verifier_id" to passKeyLoginParams.verifierId), passKeyLoginParams.idToken
-        ).get()
-
+            nodeDetails.torusNodeEndpoints, passKeyLoginParams.verifier,
+            verifierParams, passKeyLoginParams.idToken, null
+        )
         if (torusKey.finalKeyData.privKey == null) {
             throw Exception("Unable to get passkey postbox key")
         }
-        return torusKey.finalKeyData.privKey.padStart(64, '0')
+        return torusKey.finalKeyData.privKey!!.padStart(64, '0')
     }
 
     /**

@@ -90,7 +90,7 @@ dependencies {
     implementation 'androidx.credentials:credentials:1.3.0-beta02'
 
     implementation 'org.torusresearch:fetch-node-details-java:5.0.0'
-    implementation 'com.github.grvgoel81:torus-utils-java:5.0.8'
+    implementation 'org.torusresearch:torus-utils-java:4.0.2'
 
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1"
 
