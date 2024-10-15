@@ -1,6 +1,6 @@
 # Web3Auth Android SDK
 
-[![](https://jitpack.io/v/org.torusresearch/web3auth-android-sdk.svg)](https://jitpack.io/#org.torusresearch/web3auth-android-sdk)
+![SDK Version](https://jitpack.io/v/org.torusresearch/web3auth-android-sdk.svg)
 
 Web3Auth is where passwordless auth meets non-custodial key infrastructure for Web3 apps and wallets. By aggregating OAuth (Google, Twitter, Discord) logins, different wallets and innovative Multi Party Computation (MPC) - Web3Auth provides a seamless login experience to every user on your application.
 
@@ -23,10 +23,9 @@ Checkout the official [Web3Auth Documentation](https://web3auth.io/docs) and [SD
 ## ⏪ Requirements
 
 - Android API version 24 or newer is required.
+- `compileSdkVersion` needs to be 34
 
 ## ⚡ Installation
-
-### Add Web3Auth to Gradle
 
 In your project-level `settings.gradle` file, add JitPack repository:
 
@@ -46,62 +45,19 @@ Then, in your app-level `build.gradle` dependencies section, add the following:
 ```groovy
 dependencies {
     // ...
-    implementation 'org.torusresearch:web3auth-android-sdk:-SNAPSHOT'
+    implementation 'com.github.web3auth:web3auth-android-sdk:8.0.3'
 }
 ```
 
-### Permissions
-
-Open your app's `AndroidManifest.xml` file and add the following permission:
-
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-```
 ## 🌟 Configuration
+Checkout [SDK Reference](https://web3auth.io/docs/sdk/pnp/android/install#update-permissions) to configure for Android. 
 
-### Configure your Web3Auth project
-
-Hop on to the [Web3Auth Dashboard](https://dashboard.web3auth.io/) and create a new project. Use the
-Client ID of the project to start your integration.
-
-![Web3Auth Dashboard](https://github-production-user-asset-6210df.s3.amazonaws.com/6962565/272779464-043f6383-e671-4aa5-80fb-ec87c569e5ab.png)
-
-- Add `{YOUR_APP_PACKAGE_NAME}://auth` to **Whitelist URLs**.
-
-- Copy the Project ID for usage later.
-
-### Configure Deep Link 
-
-Open your app's `AndroidManifest.xml` file and add the following deep link intent filter to your sign-in activity:
-
-```xml
-<intent-filter>
-    <action android:name="android.intent.action.VIEW" />
-
-    <category android:name="android.intent.category.DEFAULT" />
-    <category android:name="android.intent.category.BROWSABLE" />
-
-    <!-- Accept URIs: {YOUR_APP_PACKAGE_NAME}://* -->
-    <data android:scheme="{YOUR_APP_PACKAGE_NAME}" />
-</intent-filter>
-```
-
-Make sure your sign-in activity launchMode is set to **singleTop** in your `AndroidManifest.xml`
-
-```xml
-<activity
-  android:launchMode="singleTop"
-  android:name=".YourActivity">
-  // ...
-</activity>
-```
-
-## 💥 Initialization & Usage
-
-In your sign-in activity', create an `Web3Auth` instance with your Web3Auth project's configurations and 
-configure it like this:
+## 💥 Getting Started
 
 ```kotlin
+import com.web3auth.core.Web3Auth
+import com.web3auth.core.types.Web3AuthOptions
+
 class MainActivity : AppCompatActivity() {
     // ...
     private lateinit var web3Auth: Web3Auth
@@ -111,35 +67,25 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         web3Auth = Web3Auth(
-            Web3AuthOptions(context = this,
-                clientId = getString(R.string.web3auth_project_id),
-                network = Web3Auth.Network.MAINNET,
+            Web3AuthOptions(
+                context = this,
+                clientId = "YOUR_WEB3AUTH_CLIENT_ID", // Pass over your Web3Auth Client ID from Developer Dashboard
+                network = Network.MAINNET,
                 redirectUrl = Uri.parse("{YOUR_APP_PACKAGE_NAME}://auth"),
-                whiteLabel = WhiteLabelData(  // Optional param
-                    "Web3Auth Sample App", null, null, "en", true,
-                    hashMapOf(
-                        "primary" to "#123456"
-                    )
-                )
             )
         )
 
         // Handle user signing in when app is not alive
         web3Auth.setResultUrl(intent?.data)
+    }
 
-        // Call initialize function to get private key and user information value without relogging in user if a user has an active session
-        val sessionResponse: CompletableFuture<Void> = web3Auth.initialize()
-        sessionResponse.whenComplete { _, error ->
-            if (error == null) {
-                println("PrivKey: " + web3Auth.getPrivkey())
-                println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
-                println("Web3Auth UserInfo" + web3Auth.getUserInfo())
-            } else {
-                // render error UI
-            }
+    override fun onResume() {
+        super.onResume()
+        if (Web3Auth.getCustomTabsClosed()) {
+            Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
+            web3Auth.setResultUrl(null)
+            Web3Auth.setCustomTabsClosed(false)
         }
-        
-        // ...
     }
     
     override fun onNewIntent(intent: Intent?) {
@@ -158,9 +104,6 @@ class MainActivity : AppCompatActivity() {
         loginCompletableFuture.whenComplete { _, error ->
             if (error == null) {
                 // render logged in UI
-                println("PrivKey: " + web3Auth.getPrivkey())
-                println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
-                println("Web3Auth UserInfo" + web3Auth.getUserInfo())
             } else {
                 // render login error UI
             }
@@ -174,11 +117,13 @@ class MainActivity : AppCompatActivity() {
 
 ## 🩹 Examples
 
-Checkout the examples for your preferred blockchain and platform in our [examples](https://web3auth.io/docs/examples)
+Checkout the examples for your preferred blockchain and platform in our [examples](https://github.com/Web3Auth/web3auth-pnp-examples/tree/main/android)
 
 ## 🌐 Demo
 
 Checkout the [Web3Auth Demo](https://demo-app.web3auth.io/) to see how Web3Auth can be used in an application.
+
+Have a look at our [Web3Auth PnP Android Quick Start](https://github.com/Web3Auth/web3auth-pnp-examples/tree/main/android/android-quick-start) to help you quickly integrate a basic instance of Web3Auth Plug and Play in your Android app.
 
 Further checkout the [app folder](https://https://github.com/Web3Auth/web3auth-android-sdk/tree/master/app) within this repository, which contains a sample app.
 
