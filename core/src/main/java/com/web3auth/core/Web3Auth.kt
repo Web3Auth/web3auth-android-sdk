@@ -79,7 +79,6 @@ import org.torusresearch.torusutils.helpers.encryption.Encryption
 import org.torusresearch.torusutils.types.VerifierParams
 import org.torusresearch.torusutils.types.common.TorusOptions
 import org.torusresearch.torusutils.types.common.TorusPublicKey
-import org.torusresearch.torusutils.types.common.ecies.Ecies
 import org.web3j.crypto.Hash
 import java.nio.ByteBuffer
 import java.util.Base64
@@ -986,11 +985,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions) {
         return json
     }
 
+    //TODO() to look into this.
     fun decryptData(data: String, privKey: String): String {
-        val decrypted = Encryption.decrypt(privKey, Ecies(data))
+        /*val decrypted = Encryption.decrypt(privKey, Ecies(data))
 
         val json = Gson().toJson(decrypted)
-        return json
+        return json*/
+        return ""
     }
 
     private fun verifyRegistration(
