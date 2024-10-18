@@ -522,10 +522,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                 "options", initOptions
             )
 
-            appState?.let {
-                paramMap.put("appState", it)
-            }
-
             val loginIdCf = getLoginId(paramMap, context)
 
             loginIdCf.whenComplete { loginId, error ->
@@ -536,7 +532,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                         request = RequestData(
                             method = method,
                             params = gson.toJson(requestParams)
-                        )
+                        ),
+                        appState = appState.let { it }
                     )
 
                     val signMessageHash =

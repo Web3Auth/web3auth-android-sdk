@@ -4,7 +4,8 @@ data class SignMessage(
     val loginId: String,
     val sessionId: String,
     val platform: String = "android",
-    val request: RequestData
+    val request: RequestData,
+    val appState: String? = null //Added for mocaverse use-case
 )
 
 data class RequestData(
