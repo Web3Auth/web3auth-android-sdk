@@ -170,7 +170,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                             if (error == null) {
                                 web3AuthResponse = resp
                             } else {
-                                print(error)
+                                initializeCf.completeExceptionally(error)
                             }
                             initializeCf.complete(null)
                         }
@@ -333,7 +333,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         val sessionResponse: CompletableFuture<String> =
             sessionManager.authorizeSession(origin, context)
         sessionResponse.whenComplete { response, error ->
-            if (error == null) {
+            if (response.contains("Error")) {
+                sessionCompletableFuture.completeExceptionally(
+                    Exception(
+                        Web3AuthError.getError(
+                            ErrorCode.NOUSERFOUND
+                        )
+                    )
+                )
+            } else if (error == null) {
                 val tempJson = JSONObject(response)
                 web3AuthResponse = gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                 if (web3AuthResponse?.error?.isNotBlank() == true) {
