@@ -251,7 +251,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     chainId = "0x89",
                     rpcTarget = "https://polygon-rpc.com/",
                     chainNamespace = ChainNamespace.EIP155
-                ), "personal_sign", requestParams = params, context = this
+                ), "personal_sign", requestParams = params, appState = "web3Auth", context = this
             )
             signMsgCompletableFuture.whenComplete { _, error ->
                 if (error == null) {

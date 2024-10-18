@@ -380,7 +380,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
             try {
                 val result = web3AuthApi.fetchProjectConfig(
                     web3AuthOption.clientId,
-                    web3AuthOption.network.name
+                    web3AuthOption.network.name.lowercase()
                 )
                 if (result.isSuccessful && result.body() != null) {
                     val response = result.body()
