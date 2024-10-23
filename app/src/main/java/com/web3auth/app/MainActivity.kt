@@ -122,7 +122,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
-        val signResultButton = findViewById<Button>(R.id.signResultButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
@@ -156,7 +155,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             btnSetUpMfa.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             signMsgButton.visibility = View.GONE
-            signResultButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
     }
@@ -237,7 +235,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
         }
 
-        val signResultButton = findViewById<Button>(R.id.signResultButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
         signMsgButton.setOnClickListener {
             val credentials: Credentials = Credentials.create(web3Auth.getPrivkey())
@@ -253,20 +250,13 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     chainNamespace = ChainNamespace.EIP155
                 ), "personal_sign", requestParams = params, appState = "web3Auth", context = this
             )
-            signMsgCompletableFuture.whenComplete { _, error ->
+            signMsgCompletableFuture.whenComplete { signResult, error ->
                 if (error == null) {
-                    Log.d("MainActivity_Web3Auth", "Message signed successfully")
-                    signResultButton.visibility = View.VISIBLE
+                    showAlertDialog("Sign Result", signResult.toString())
                 } else {
                     Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
-                    signResultButton.visibility = View.GONE
                 }
             }
-        }
-
-        signResultButton.setOnClickListener {
-            val signResult = Web3Auth.getSignResponse()
-            showAlertDialog("Sign Result", signResult.toString())
         }
 
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)

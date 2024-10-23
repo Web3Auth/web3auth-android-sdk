@@ -7,13 +7,18 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Message
 import android.view.ViewTreeObserver.OnScrollChangedListener
-import android.webkit.*
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.gson.GsonBuilder
 import com.web3auth.core.types.REDIRECT_URL
 import com.web3auth.core.types.SignResponse
 import com.web3auth.core.types.WEBVIEW_URL
+import com.web3auth.core.types.WebViewResultCallback
 
 class WebViewActivity : AppCompatActivity() {
 
@@ -21,6 +26,10 @@ class WebViewActivity : AppCompatActivity() {
     private var swipeRefreshLayout: SwipeRefreshLayout? = null
     private var mOnScrollChangedListener: OnScrollChangedListener? = null
     private val gson = GsonBuilder().disableHtmlEscaping().create()
+
+    companion object {
+        var webViewResultCallback: WebViewResultCallback? = null
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +55,7 @@ class WebViewActivity : AppCompatActivity() {
                                 decodeBase64URLString(b64Params!!).toString(Charsets.UTF_8)
                             val signResponse =
                                 gson.fromJson(b64ParamString, SignResponse::class.java)
-                            Web3Auth.setSignResponse(signResponse)
+                            webViewResultCallback?.onSignResponseReceived(signResponse)
                             finish()
                         }
                     }

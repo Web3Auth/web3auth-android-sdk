@@ -31,6 +31,7 @@ import com.web3auth.core.types.WEBVIEW_URL
 import com.web3auth.core.types.Web3AuthError
 import com.web3auth.core.types.Web3AuthOptions
 import com.web3auth.core.types.Web3AuthResponse
+import com.web3auth.core.types.WebViewResultCallback
 import com.web3auth.session_manager_android.SessionManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,12 +40,13 @@ import org.json.JSONObject
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
-class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
+class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResultCallback {
 
     private val gson = GsonBuilder().disableHtmlEscaping().create()
 
     private lateinit var loginCompletableFuture: CompletableFuture<Web3AuthResponse>
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
+    private lateinit var signMsgCF: CompletableFuture<SignResponse>
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
@@ -516,8 +518,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
         path: String? = "wallet/request",
         appState: String? = null,
         context: Context,
-    ): CompletableFuture<Void> {
-        val signMsgCF: CompletableFuture<Void> = CompletableFuture()
+    ): CompletableFuture<SignResponse> {
+        signMsgCF = CompletableFuture()
+        WebViewActivity.webViewResultCallback = this
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
@@ -558,9 +561,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
                     intent.putExtra(WEBVIEW_URL, url.toString())
                     intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
                     context.startActivity(intent)
-                    runOnUIThread {
-                        signMsgCF.complete(null)
-                    }
                 }
             }
         } else {
@@ -665,16 +665,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
     }
 
     companion object {
-
-        private var signResponse: SignResponse? = null
         private var isCustomTabsClosed: Boolean = false
-        fun setSignResponse(_response: SignResponse?) {
-            signResponse = _response
-        }
-
-        fun getSignResponse(): SignResponse? {
-            return signResponse
-        }
 
         fun setCustomTabsClosed(_isCustomTabsClosed: Boolean) {
             isCustomTabsClosed = _isCustomTabsClosed
@@ -682,6 +673,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) {
 
         fun getCustomTabsClosed(): Boolean {
             return isCustomTabsClosed
+        }
+    }
+
+    override fun onSignResponseReceived(signResponse: SignResponse?) {
+        if (signResponse != null) {
+            signMsgCF.complete(signResponse)
         }
     }
 }
