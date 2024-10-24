@@ -521,6 +521,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     ): CompletableFuture<SignResponse> {
         signMsgCF = CompletableFuture()
         WebViewActivity.webViewResultCallback = this
+
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
@@ -680,6 +681,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         if (signResponse != null) {
             signMsgCF.complete(signResponse)
         }
+    }
+
+    override fun onWebViewCancelled() {
+        signMsgCF.completeExceptionally(Exception("User cancelled the operation."))
     }
 }
 
