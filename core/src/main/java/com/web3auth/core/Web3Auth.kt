@@ -47,6 +47,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     private lateinit var loginCompletableFuture: CompletableFuture<Web3AuthResponse>
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
     private lateinit var signMsgCF: CompletableFuture<SignResponse>
+    private var context = context
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
@@ -145,6 +146,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 //print("url: => $url")
                 val intent = Intent(context, CustomChromeTabsActivity::class.java)
                 intent.putExtra(WEBVIEW_URL, url.toString())
+                intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
                 context.startActivity(intent)
             }
         }
@@ -273,7 +275,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 loginParams.dappShare = share
             }
         }
-
+        CustomChromeTabsActivity.webViewResultCallback = this
         //login
         processRequest("login", loginParams, context)
 
@@ -679,6 +681,48 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     override fun onSignResponseReceived(signResponse: SignResponse?) {
         if (signResponse != null) {
             signMsgCF.complete(signResponse)
+        }
+    }
+
+    override fun onSessionResponseReceived(sessionResponse: SessionResponse?) {
+        val sessionId = sessionResponse?.sessionId
+        if (sessionId?.isNotBlank() == true && sessionId.isNotEmpty()) {
+            sessionManager.saveSessionId(sessionId)
+
+            //Rehydrate Session
+            this.authorizeSession(web3AuthOption.redirectUrl.toString(), this.context)
+                .whenComplete { resp, error ->
+                    runOnUIThread {
+                        if (error == null) {
+                            web3AuthResponse = resp
+                            if (web3AuthResponse?.error?.isNotBlank() == true) {
+                                throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                            } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
+                                throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                            } else {
+                                web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
+
+                                if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
+                                    KeyStoreManagerUtils.encryptData(
+                                        web3AuthResponse?.userInfo?.verifier.plus(" | ")
+                                            .plus(web3AuthResponse?.userInfo?.verifierId),
+                                        web3AuthResponse?.userInfo?.dappShare!!,
+                                    )
+                                }
+                                loginCompletableFuture.complete(web3AuthResponse)
+                                if (::enableMfaCompletableFuture.isInitialized)
+                                    enableMfaCompletableFuture.complete(true)
+                            }
+                        } else {
+                            print(error)
+                        }
+                    }
+                }
+        } else {
+            throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
+            throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
         }
     }
 }
