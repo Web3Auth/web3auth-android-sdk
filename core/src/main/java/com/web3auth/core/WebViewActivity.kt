@@ -15,8 +15,8 @@ import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.gson.GsonBuilder
-import com.google.gson.JsonObject
 import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.SignResponse
 import com.web3auth.core.types.WEBVIEW_URL
 import com.web3auth.core.types.WebViewResultCallback
 
@@ -54,7 +54,7 @@ class WebViewActivity : AppCompatActivity() {
                             val b64ParamString =
                                 decodeBase64URLString(b64Params!!).toString(Charsets.UTF_8)
                             val signResponse =
-                                gson.fromJson(b64ParamString, JsonObject::class.java)
+                                gson.fromJson(b64ParamString, SignResponse::class.java)
                             webViewResultCallback?.onSignResponseReceived(signResponse)
                             finish()
                         }

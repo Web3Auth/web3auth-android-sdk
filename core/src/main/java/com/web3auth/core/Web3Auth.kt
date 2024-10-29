@@ -23,6 +23,7 @@ import com.web3auth.core.types.REDIRECT_URL
 import com.web3auth.core.types.RequestData
 import com.web3auth.core.types.SessionResponse
 import com.web3auth.core.types.SignMessage
+import com.web3auth.core.types.SignResponse
 import com.web3auth.core.types.UnKnownException
 import com.web3auth.core.types.UserCancelledException
 import com.web3auth.core.types.UserInfo
@@ -45,7 +46,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
     private lateinit var loginCompletableFuture: CompletableFuture<Web3AuthResponse>
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
-    private lateinit var signMsgCF: CompletableFuture<JsonObject>
+    private lateinit var signMsgCF: CompletableFuture<SignResponse>
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
@@ -517,7 +518,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         path: String? = "wallet/request",
         appState: String? = null,
         context: Context,
-    ): CompletableFuture<JsonObject> {
+    ): CompletableFuture<SignResponse> {
         signMsgCF = CompletableFuture()
         WebViewActivity.webViewResultCallback = this
 
@@ -676,7 +677,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         }
     }
 
-    override fun onSignResponseReceived(signResponse: JsonObject?) {
+    override fun onSignResponseReceived(signResponse: SignResponse?) {
         if (signResponse != null) {
             signMsgCF.complete(signResponse)
         }
