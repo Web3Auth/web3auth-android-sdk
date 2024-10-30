@@ -296,6 +296,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val sessionResponse: CompletableFuture<Boolean> =
             sessionManager.invalidateSession(context)
         sessionResponse.whenComplete { _, error ->
+            SessionManager.deleteSessionIdFromStorage()
             runOnUIThread {
                 if (error == null) {
                     logoutCompletableFuture.complete(null)
