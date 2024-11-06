@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 selectedLoginProvider,
                 extraLoginOptions = extraLoginOptions,
                 mfaLevel = MFALevel.OPTIONAL
-            )
+            ), this
         )
         loginCompletableFuture.whenComplete { _, error ->
             if (error == null) {
@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     }
 
     private fun signOut() {
-        val logoutCompletableFuture = web3Auth.logout()
+        val logoutCompletableFuture = web3Auth.logout(this)
         logoutCompletableFuture.whenComplete { _, error ->
             if (error == null) {
                 reRender()
@@ -122,7 +122,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
-        val signResultButton = findViewById<Button>(R.id.signResultButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
@@ -134,6 +133,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         } catch (ex: Exception) {
             print(ex)
         }
+
 
         if (userInfo != null) {
             val jsonObject = JSONObject(gson.toJson(web3Auth.getWeb3AuthResponse()))
@@ -155,7 +155,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             btnSetUpMfa.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             signMsgButton.visibility = View.GONE
-            signResultButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
     }
@@ -165,7 +164,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         setContentView(R.layout.activity_main)
 
         val options = Web3AuthOptions(
-            context = this,
             clientId = "BFuUqebV5I8Pz5F7a5A2ihW7YVmbv_OHXnHYDv6OltAD5NGr6e-ViNvde3U4BHdn6HvwfkgobhVu4VwC-OSJkik",
             network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
@@ -186,7 +184,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C",
                 )
             ),
-            buildEnv = BuildEnv.TESTING,
+            buildEnv = BuildEnv.PRODUCTION,
             sessionTime = 86400,
         )
 
@@ -194,13 +192,13 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         // Configure Web3Auth
         web3Auth = Web3Auth(
-            options
+            options, this
         )
 
-        web3Auth.setResultUrl(intent.data)
+        web3Auth.setResultUrl(intent.data, this)
 
         // for session response
-        val sessionResponse: CompletableFuture<Void> = web3Auth.initialize()
+        val sessionResponse: CompletableFuture<Void> = web3Auth.initialize(this)
         sessionResponse.whenComplete { _, error ->
             if (error == null) {
                 reRender()
@@ -226,7 +224,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     chainId = "0x89",
                     rpcTarget = "https://1rpc.io/matic",
                     chainNamespace = ChainNamespace.EIP155
-                )
+                ), context = this
             )
             launchWalletCompletableFuture.whenComplete { _, error ->
                 if (error == null) {
@@ -237,7 +235,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
         }
 
-        val signResultButton = findViewById<Button>(R.id.signResultButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
         signMsgButton.setOnClickListener {
             val credentials: Credentials = Credentials.create(web3Auth.getPrivkey())
@@ -251,27 +248,20 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     chainId = "0x89",
                     rpcTarget = "https://polygon-rpc.com/",
                     chainNamespace = ChainNamespace.EIP155
-                ), "personal_sign", requestParams = params
+                ), "personal_sign", requestParams = params, appState = "web3Auth", context = this
             )
-            signMsgCompletableFuture.whenComplete { _, error ->
+            signMsgCompletableFuture.whenComplete { signResult, error ->
                 if (error == null) {
-                    Log.d("MainActivity_Web3Auth", "Message signed successfully")
-                    signResultButton.visibility = View.VISIBLE
+                    showAlertDialog("Sign Result", signResult.toString())
                 } else {
                     Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
-                    signResultButton.visibility = View.GONE
                 }
             }
         }
 
-        signResultButton.setOnClickListener {
-            val signResult = Web3Auth.getSignResponse()
-            showAlertDialog("Sign Result", signResult.toString())
-        }
-
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         btnSetUpMfa.setOnClickListener {
-            val setupMfaCf = web3Auth.enableMFA()
+            val setupMfaCf = web3Auth.enableMFA(context = this)
             setupMfaCf.whenComplete { _, error ->
                 if (error == null) {
                     Log.d("MainActivity_Web3Auth", "MFA setup successfully")
@@ -293,14 +283,14 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        web3Auth.setResultUrl(intent?.data)
+        web3Auth.setResultUrl(intent?.data, this)
     }
 
     override fun onResume() {
         super.onResume()
         if (Web3Auth.getCustomTabsClosed()) {
             Toast.makeText(this, "User closed the browser.", Toast.LENGTH_SHORT).show()
-            web3Auth.setResultUrl(null)
+            web3Auth.setResultUrl(null, this)
             Web3Auth.setCustomTabsClosed(false)
         }
     }
