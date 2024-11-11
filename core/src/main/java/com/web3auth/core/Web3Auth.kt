@@ -172,10 +172,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                         runOnUIThread {
                             if (error == null) {
                                 web3AuthResponse = resp
+                                initializeCf.complete(null)
                             } else {
                                 initializeCf.completeExceptionally(error)
                             }
-                            initializeCf.complete(null)
                         }
                     }
             } else {
