@@ -50,6 +50,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
+    private var context = context
     private var sessionManager: SessionManager = SessionManager(
         context,
         web3AuthOptions.sessionTime ?: 600,
@@ -105,6 +106,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     private fun processRequest(
         actionType: String, params: LoginParams?, context: Context
     ) {
+        CustomChromeTabsActivity.webViewResultCallback = this
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
         val initOptions = JSONObject(gson.toJson(getInitOptions()))
         val initParams = JSONObject(gson.toJson(getInitParams(params)))
@@ -695,7 +697,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     override fun onSessionResponseReceived(sessionResponse: SessionResponse?) {
         val sessionId = sessionResponse?.sessionId
         if (sessionId?.isNotBlank() == true && sessionId.isNotEmpty()) {
-            sessionManager.saveSessionId(sessionId)
+            SessionManager.saveSessionIdToStorage(sessionId)
+            sessionManager.setSessionId(sessionId)
 
             //Rehydrate Session
             this.authorizeSession(web3AuthOption.redirectUrl.toString(), this.context)
@@ -710,7 +713,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                                 throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
                                 throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                             } else {
-                                web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
+                                web3AuthResponse?.sessionId?.let {
+                                    SessionManager.saveSessionIdToStorage(it)
+                                    sessionManager.setSessionId(it)
+                                }
 
                                 if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
                                     KeyStoreManagerUtils.encryptData(
