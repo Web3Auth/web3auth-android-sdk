@@ -47,7 +47,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     private lateinit var loginCompletableFuture: CompletableFuture<Web3AuthResponse>
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
     private lateinit var signMsgCF: CompletableFuture<SignResponse>
-    private var context = context
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
@@ -168,15 +167,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         fetchProjectConfig(context).whenComplete { _, err ->
             if (err == null) {
                 //authorize session
+                sessionManager.setSessionId(SessionManager.getSessionIdFromStorage())
                 this.authorizeSession(web3AuthOption.redirectUrl.toString(), context)
                     .whenComplete { resp, error ->
                         runOnUIThread {
                             if (error == null) {
                                 web3AuthResponse = resp
+                                initializeCf.complete(null)
                             } else {
                                 initializeCf.completeExceptionally(error)
                             }
-                            initializeCf.complete(null)
                         }
                     }
             } else {
@@ -220,7 +220,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val sessionId = sessionResponse.sessionId
 
         if (sessionId.isNotBlank() && sessionId.isNotEmpty()) {
-            sessionManager.saveSessionId(sessionId)
+            SessionManager.saveSessionIdToStorage(sessionId)
+            sessionManager.setSessionId(sessionId)
 
             //Rehydrate Session
             this.authorizeSession(web3AuthOption.redirectUrl.toString(), context)
@@ -235,7 +236,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                                 throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
                                 throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                             } else {
-                                web3AuthResponse?.sessionId?.let { sessionManager.saveSessionId(it) }
+                                web3AuthResponse?.sessionId?.let {
+                                    SessionManager.saveSessionIdToStorage(it)
+                                    sessionManager.setSessionId(it)
+                                }
 
                                 if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
                                     KeyStoreManagerUtils.encryptData(
@@ -275,7 +279,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 loginParams.dappShare = share
             }
         }
-        CustomChromeTabsActivity.webViewResultCallback = this
+
         //login
         processRequest("login", loginParams, context)
 
@@ -293,6 +297,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val sessionResponse: CompletableFuture<Boolean> =
             sessionManager.invalidateSession(context)
         sessionResponse.whenComplete { _, error ->
+            SessionManager.deleteSessionIdFromStorage()
             runOnUIThread {
                 if (error == null) {
                     logoutCompletableFuture.complete(null)
@@ -438,9 +443,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
      */
     private fun getLoginId(jsonObject: JSONObject, context: Context): CompletableFuture<String> {
+        val sessionId = SessionManager.generateRandomSessionKey()
+        sessionManager.setSessionId(sessionId)
         return sessionManager.createSession(
             jsonObject.toString(),
-            context
+            context,
         )
     }
 
@@ -457,7 +464,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         context: Context
     ): CompletableFuture<Void> {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
-        val sessionId = sessionManager.getSessionId()
+        val sessionId = SessionManager.getSessionIdFromStorage()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
 
@@ -523,6 +530,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     ): CompletableFuture<SignResponse> {
         signMsgCF = CompletableFuture()
         WebViewActivity.webViewResultCallback = this
+
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
@@ -724,6 +732,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
             throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
         }
+    }
+
+    override fun onWebViewCancelled() {
+        signMsgCF.completeExceptionally(Exception("User cancelled the operation."))
     }
 }
 

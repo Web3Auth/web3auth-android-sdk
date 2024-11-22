@@ -121,9 +121,11 @@ class WebViewActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        when {
-            webView.canGoBack() -> webView.goBack()
-            else -> super.onBackPressed()
+        if (webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            webViewResultCallback?.onWebViewCancelled()
+            super.onBackPressed()
         }
     }
 
