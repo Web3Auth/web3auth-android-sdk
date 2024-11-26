@@ -122,7 +122,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signOutButton = findViewById<Button>(R.id.signOutButton)
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
-        val signResultButton = findViewById<Button>(R.id.signResultButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
@@ -134,6 +133,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         } catch (ex: Exception) {
             print(ex)
         }
+
 
         if (userInfo != null) {
             val jsonObject = JSONObject(gson.toJson(web3Auth.getWeb3AuthResponse()))
@@ -155,7 +155,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             btnSetUpMfa.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             signMsgButton.visibility = View.GONE
-            signResultButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
         }
     }
@@ -165,7 +164,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         setContentView(R.layout.activity_main)
 
         val options = Web3AuthOptions(
-            context = this,
             clientId = "BFuUqebV5I8Pz5F7a5A2ihW7YVmbv_OHXnHYDv6OltAD5NGr6e-ViNvde3U4BHdn6HvwfkgobhVu4VwC-OSJkik",
             network = Network.SAPPHIRE_DEVNET,
             redirectUrl = Uri.parse("torusapp://org.torusresearch.web3authexample"),
@@ -186,7 +184,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C",
                 )
             ),
-            buildEnv = BuildEnv.TESTING,
+            buildEnv = BuildEnv.PRODUCTION,
             sessionTime = 86400,
         )
 
@@ -194,7 +192,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
 
         // Configure Web3Auth
         web3Auth = Web3Auth(
-            options
+            options, this
         )
 
         web3Auth.setResultUrl(intent.data)
@@ -237,7 +235,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             }
         }
 
-        val signResultButton = findViewById<Button>(R.id.signResultButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
         signMsgButton.setOnClickListener {
             val credentials: Credentials = Credentials.create(web3Auth.getPrivkey())
@@ -251,22 +248,15 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     chainId = "0x89",
                     rpcTarget = "https://polygon-rpc.com/",
                     chainNamespace = ChainNamespace.EIP155
-                ), "personal_sign", requestParams = params
+                ), "personal_sign", requestParams = params, appState = "web3Auth"
             )
-            signMsgCompletableFuture.whenComplete { _, error ->
+            signMsgCompletableFuture.whenComplete { signResult, error ->
                 if (error == null) {
-                    Log.d("MainActivity_Web3Auth", "Message signed successfully")
-                    signResultButton.visibility = View.VISIBLE
+                    showAlertDialog("Sign Result", signResult.toString())
                 } else {
                     Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
-                    signResultButton.visibility = View.GONE
                 }
             }
-        }
-
-        signResultButton.setOnClickListener {
-            val signResult = Web3Auth.getSignResponse()
-            showAlertDialog("Sign Result", signResult.toString())
         }
 
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)

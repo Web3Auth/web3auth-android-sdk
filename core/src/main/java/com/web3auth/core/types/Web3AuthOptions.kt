@@ -1,10 +1,8 @@
 package com.web3auth.core.types
 
-import android.content.Context
 import android.net.Uri
 
 data class Web3AuthOptions(
-    var context: Context,
     val clientId: String,
     val network: Network,
     var buildEnv: BuildEnv? = BuildEnv.PRODUCTION,
@@ -23,7 +21,7 @@ data class Web3AuthOptions(
 fun getSdkUrl(buildEnv: BuildEnv?): String {
     val sdkUrl: String = when (buildEnv) {
         BuildEnv.STAGING -> {
-            "https://staging-auth.web3auth.io/$openLoginVersion"
+            "https://staging-auth.web3auth.io/$authServiceVersion"
         }
 
         BuildEnv.TESTING -> {
@@ -31,7 +29,7 @@ fun getSdkUrl(buildEnv: BuildEnv?): String {
         }
 
         else -> {
-            "https://auth.web3auth.io/$openLoginVersion"
+            "https://auth.web3auth.io/$authServiceVersion"
         }
     }
     return sdkUrl
@@ -54,8 +52,8 @@ fun getWalletSdkUrl(buildEnv: BuildEnv?): String {
     return sdkUrl
 }
 
-const val openLoginVersion = "v8"
-const val walletServicesVersion = "v2"
+const val authServiceVersion = "v9"
+const val walletServicesVersion = "v3"
 const val WEBVIEW_URL = "walletUrl"
 const val REDIRECT_URL = "redirectUrl"
 const val CUSTOM_TABS_URL = "customTabsUrl"
