@@ -45,7 +45,7 @@ Then, in your app-level `build.gradle` dependencies section, add the following:
 ```groovy
 dependencies {
     // ...
-    implementation 'com.github.web3auth:web3auth-android-sdk:8.0.3'
+    implementation 'com.github.web3auth:web3auth-android-sdk:9.0.0'
 }
 ```
 
