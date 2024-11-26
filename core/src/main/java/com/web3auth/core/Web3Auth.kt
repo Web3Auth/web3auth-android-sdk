@@ -145,9 +145,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                     Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
                         .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
                 //print("url: => $url")
-                val intent = Intent(this, CustomChromeTabsActivity::class.java)
+                val intent = Intent(baseContext, CustomChromeTabsActivity::class.java)
                 intent.putExtra(WEBVIEW_URL, url.toString())
-                this.startActivity(intent)
+                baseContext.startActivity(intent)
             }
         }
     }
@@ -159,7 +159,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      */
     fun initialize(): CompletableFuture<Void> {
         val initializeCf = CompletableFuture<Void>()
-        KeyStoreManagerUtils.initializePreferences(this.applicationContext)
+        KeyStoreManagerUtils.initializePreferences(baseContext.applicationContext)
 
         //initiate keyStore
         initiateKeyStoreManager()
@@ -169,7 +169,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             if (err == null) {
                 //authorize session
                 sessionManager.setSessionId(SessionManager.getSessionIdFromStorage())
-                this.authorizeSession(web3AuthOption.redirectUrl.toString(), this)
+                this.authorizeSession(web3AuthOption.redirectUrl.toString(), baseContext)
                     .whenComplete { resp, error ->
                         runOnUIThread {
                             if (error == null) {
@@ -225,7 +225,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             sessionManager.setSessionId(sessionId)
 
             //Rehydrate Session
-            this.authorizeSession(web3AuthOption.redirectUrl.toString(), this)
+            this.authorizeSession(web3AuthOption.redirectUrl.toString(), baseContext)
                 .whenComplete { resp, error ->
                     runOnUIThread {
                         if (error == null) {
@@ -295,7 +295,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      */
     fun logout(): CompletableFuture<Void> {
         val logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
-        val sessionResponse: CompletableFuture<Boolean>? = sessionManager.invalidateSession(this)
+        val sessionResponse: CompletableFuture<Boolean>? =
+            sessionManager.invalidateSession(baseContext)
         sessionResponse?.whenComplete { _, error ->
             SessionManager.deleteSessionIdFromStorage()
             runOnUIThread {
@@ -387,7 +388,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val projectConfigCompletableFuture: CompletableFuture<Boolean> = CompletableFuture()
         val web3AuthApi =
             ApiHelper.getInstance(web3AuthOption.network.name).create(ApiService::class.java)
-        if (!ApiHelper.isNetworkAvailable(this)) {
+        if (!ApiHelper.isNetworkAvailable(baseContext)) {
             throw Exception(
                 Web3AuthError.getError(ErrorCode.RUNTIME_ERROR)
             )
@@ -447,7 +448,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         sessionManager.setSessionId(sessionId)
         return sessionManager.createSession(
             jsonObject.toString(),
-            this,
+            baseContext,
         )
     }
 
@@ -498,9 +499,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                             .encodedPath(sdkUrl.encodedPath).appendPath(path)
                             .fragment(walletHash).build()
                     //print("wallet launch url: => $url")
-                    val intent = Intent(this, WebViewActivity::class.java)
+                    val intent = Intent(baseContext, WebViewActivity::class.java)
                     intent.putExtra(WEBVIEW_URL, url.toString())
-                    this.startActivity(intent)
+                    baseContext.startActivity(intent)
                     launchWalletServiceCF.complete(null)
                 }
             }
@@ -565,10 +566,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                             .encodedPath(sdkUrl.encodedPath).appendEncodedPath(path)
                             .fragment(signMessageHash).build()
                     //print("message signing url: => $url")
-                    val intent = Intent(this, WebViewActivity::class.java)
+                    val intent = Intent(baseContext, WebViewActivity::class.java)
                     intent.putExtra(WEBVIEW_URL, url.toString())
                     intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
-                    this.startActivity(intent)
+                    baseContext.startActivity(intent)
                 }
             }
         } else {
