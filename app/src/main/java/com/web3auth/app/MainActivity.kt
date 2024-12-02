@@ -206,6 +206,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 println("ed25519PrivKey: " + web3Auth.getEd25519PrivKey())
                 println("Web3Auth UserInfo" + web3Auth.getUserInfo())
             } else {
+                //handle retry login
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
         }
