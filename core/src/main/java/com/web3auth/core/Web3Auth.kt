@@ -176,6 +176,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                                 web3AuthResponse = resp
                                 initializeCf.complete(null)
                             } else {
+                                SessionManager.deleteSessionIdFromStorage()
+                                sessionManager.setSessionId("")
                                 initializeCf.completeExceptionally(error)
                             }
                         }
@@ -343,7 +345,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val sessionResponse: CompletableFuture<String> =
             sessionManager.authorizeSession(origin, context)
         sessionResponse.whenComplete { response, error ->
-            if (response.contains("Error")) {
+            if (error != null) {
                 sessionCompletableFuture.completeExceptionally(
                     Exception(
                         Web3AuthError.getError(
@@ -351,7 +353,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                         )
                     )
                 )
-            } else if (error == null) {
+            } else {
                 val tempJson = JSONObject(response)
                 web3AuthResponse = gson.fromJson(tempJson.toString(), Web3AuthResponse::class.java)
                 if (web3AuthResponse?.error?.isNotBlank() == true) {
@@ -371,14 +373,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 } else {
                     sessionCompletableFuture.complete(web3AuthResponse)
                 }
-            } else {
-                sessionCompletableFuture.completeExceptionally(
-                    Exception(
-                        Web3AuthError.getError(
-                            ErrorCode.NOUSERFOUND
-                        )
-                    )
-                )
             }
         }
         return sessionCompletableFuture
