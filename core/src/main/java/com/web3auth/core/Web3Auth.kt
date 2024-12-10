@@ -524,7 +524,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         signMsgCF = CompletableFuture()
         WebViewActivity.webViewResultCallback = this
 
-        val sessionId = sessionManager.getSessionId()
+        val sessionId = SessionManager.getSessionIdFromStorage()
         if (sessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
             val initOptions = JSONObject(gson.toJson(getInitOptions()))
