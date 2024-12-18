@@ -52,6 +52,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
+    private var context = context
     private var sessionManager: SessionManager = SessionManager(
         context,
         web3AuthOptions.sessionTime ?: 600,
@@ -107,6 +108,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     private fun processRequest(
         actionType: String, params: LoginParams?
     ) {
+        CustomChromeTabsActivity.webViewResultCallback = this
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
         val initOptions = JSONObject(gson.toJson(getInitOptions()))
         val initParams = JSONObject(gson.toJson(getInitParams(params)))
@@ -147,6 +149,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 //print("url: => $url")
                 val intent = Intent(baseContext, CustomChromeTabsActivity::class.java)
                 intent.putExtra(WEBVIEW_URL, url.toString())
+                intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl.toString())
                 baseContext.startActivity(intent)
             }
         }
@@ -682,6 +685,52 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     override fun onSignResponseReceived(signResponse: SignResponse?) {
         if (signResponse != null) {
             signMsgCF.complete(signResponse)
+        }
+    }
+
+    override fun onSessionResponseReceived(sessionResponse: SessionResponse?) {
+        val sessionId = sessionResponse?.sessionId
+        if (sessionId?.isNotBlank() == true && sessionId.isNotEmpty()) {
+            SessionManager.saveSessionIdToStorage(sessionId)
+            sessionManager.setSessionId(sessionId)
+
+            //Rehydrate Session
+            this.authorizeSession(web3AuthOption.redirectUrl.toString(), this.context)
+                .whenComplete { resp, error ->
+                    runOnUIThread {
+                        if (error == null) {
+                            web3AuthResponse = resp
+                            if (web3AuthResponse?.error?.isNotBlank() == true) {
+                                throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                            } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
+                                throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                            } else {
+                                web3AuthResponse?.sessionId?.let {
+                                    SessionManager.saveSessionIdToStorage(it)
+                                    sessionManager.setSessionId(it)
+                                }
+
+                                if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
+                                    KeyStoreManagerUtils.encryptData(
+                                        web3AuthResponse?.userInfo?.verifier.plus(" | ")
+                                            .plus(web3AuthResponse?.userInfo?.verifierId),
+                                        web3AuthResponse?.userInfo?.dappShare!!,
+                                    )
+                                }
+                                loginCompletableFuture.complete(web3AuthResponse)
+                                if (::enableMfaCompletableFuture.isInitialized)
+                                    enableMfaCompletableFuture.complete(true)
+                            }
+                        } else {
+                            print(error)
+                        }
+                    }
+                }
+        } else {
+            throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
+            throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
         }
     }
 
