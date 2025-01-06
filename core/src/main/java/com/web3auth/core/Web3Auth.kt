@@ -54,7 +54,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     private var web3AuthOption = web3AuthOptions
     private var sessionManager: SessionManager = SessionManager(
         context,
-        web3AuthOptions.sessionTime ?: 600,
+        web3AuthOptions.sessionTime ?: 86400,
         web3AuthOptions.redirectUrl.toString()
     )
 
