@@ -48,6 +48,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
     private lateinit var loginCompletableFuture: CompletableFuture<Web3AuthResponse>
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
+    private lateinit var manageMfaCompletableFuture: CompletableFuture<Boolean>
     private lateinit var signMsgCF: CompletableFuture<SignResponse>
 
     private var web3AuthResponse: Web3AuthResponse? = null
@@ -117,7 +118,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         )
         paramMap.put("actionType", actionType)
 
-        if (actionType == "enable_mfa") {
+        if (actionType == "enable_mfa" || actionType == "manage_mfa") {
             val userInfo = web3AuthResponse?.userInfo
             initParams.put("loginProvider", userInfo?.typeOfLogin)
             var extraOptionsString = ""
@@ -205,8 +206,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val hashUri = Uri.parse(uri?.host + "?" + uri?.fragment)
         val error = uri?.getQueryParameter("error")
         if (error != null) {
-            loginCompletableFuture.completeExceptionally(UnKnownException(error))
+            if (::loginCompletableFuture.isInitialized) loginCompletableFuture.completeExceptionally(
+                UnKnownException(error)
+            )
+
             if (::enableMfaCompletableFuture.isInitialized) enableMfaCompletableFuture.completeExceptionally(
+                UnKnownException(error)
+            )
+
+            if (::manageMfaCompletableFuture.isInitialized) manageMfaCompletableFuture.completeExceptionally(
                 UnKnownException(error)
             )
             return
@@ -216,6 +224,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         if (b64Params.isNullOrBlank()) {
             throwLoginError(ErrorCode.INVALID_LOGIN)
             throwEnableMFAError(ErrorCode.INVALID_LOGIN)
+            throwManageMFAError(ErrorCode.INVALID_LOGIN)
             return
         }
         val b64ParamString = decodeBase64URLString(b64Params).toString(Charsets.UTF_8)
@@ -235,9 +244,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                             if (web3AuthResponse?.error?.isNotBlank() == true) {
                                 throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
                                 throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwManageMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                             } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
                                 throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
                                 throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwManageMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                             } else {
                                 web3AuthResponse?.sessionId?.let {
                                     SessionManager.saveSessionIdToStorage(it)
@@ -251,9 +262,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                                         web3AuthResponse?.userInfo?.dappShare!!,
                                     )
                                 }
-                                loginCompletableFuture.complete(web3AuthResponse)
+                                if (::loginCompletableFuture.isInitialized)
+                                    loginCompletableFuture.complete(web3AuthResponse)
+
                                 if (::enableMfaCompletableFuture.isInitialized)
                                     enableMfaCompletableFuture.complete(true)
+
+                                if (::manageMfaCompletableFuture.isInitialized)
+                                    manageMfaCompletableFuture.complete(true)
                             }
                         } else {
                             print(error)
@@ -263,6 +279,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         } else {
             throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
             throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+            throwManageMFAError(ErrorCode.SOMETHING_WENT_WRONG)
         }
     }
 
@@ -332,6 +349,22 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         }
         processRequest("enable_mfa", loginParams)
         return enableMfaCompletableFuture
+    }
+
+
+    fun manageMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
+        manageMfaCompletableFuture = CompletableFuture()
+        if (web3AuthResponse?.userInfo?.isMfaEnabled == false) {
+            throwManageMFAError(ErrorCode.MFA_NOT_ENABLED)
+            return manageMfaCompletableFuture
+        }
+        val sessionId = sessionManager.getSessionId()
+        if (sessionId.isBlank()) {
+            throwManageMFAError(ErrorCode.NOUSERFOUND)
+            return manageMfaCompletableFuture
+        }
+        processRequest("manage_mfa", loginParams)
+        return manageMfaCompletableFuture
     }
 
     /**
@@ -582,6 +615,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     private fun throwEnableMFAError(error: ErrorCode) {
         if (::enableMfaCompletableFuture.isInitialized)
             enableMfaCompletableFuture.completeExceptionally(
+                Exception(
+                    Web3AuthError.getError(
+                        error
+                    )
+                )
+            )
+    }
+
+    private fun throwManageMFAError(error: ErrorCode) {
+        if (::manageMfaCompletableFuture.isInitialized)
+            manageMfaCompletableFuture.completeExceptionally(
                 Exception(
                     Web3AuthError.getError(
                         error
