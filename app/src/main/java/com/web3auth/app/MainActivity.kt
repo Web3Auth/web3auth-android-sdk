@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C",
                 )
             ),
-            buildEnv = BuildEnv.STAGING,
+            buildEnv = BuildEnv.TESTING,
             sessionTime = 86400,
         )
 

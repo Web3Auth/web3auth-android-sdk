@@ -76,7 +76,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             buildEnv = web3AuthOption.buildEnv?.name?.lowercase(Locale.ROOT),
             mfaSettings = web3AuthOption.mfaSettings?.let { gson.toJson(it) },
             sessionTime = web3AuthOption.sessionTime,
-            originData = web3AuthOption.originData?.let { gson.toJson(it) }
+            originData = web3AuthOption.originData?.let { gson.toJson(it) },
+            dashboardUrl = web3AuthOption.dashboardUrl
         )
     }
 
@@ -109,43 +110,72 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         actionType: String, params: LoginParams?
     ) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
-        val initOptions = JSONObject(gson.toJson(getInitOptions()))
-        val initParams = JSONObject(gson.toJson(getInitParams(params)))
+
+        val initOptions = if (actionType == "manage_mfa") {
+            getInitOptions().copy(redirectUrl = getInitOptions().dashboardUrl)
+        } else {
+            getInitOptions()
+        }
+
+        val initParams = if (actionType == "manage_mfa") {
+            initOptions.dashboardUrl?.let { getInitParams(params).copy(redirectUrl = it) }
+        } else {
+            getInitParams(params)
+        }
+
+
+        val initOptionsJson = JSONObject(gson.toJson(initOptions))
+        val initParamsJson = JSONObject(gson.toJson(initParams))
 
         val paramMap = JSONObject()
         paramMap.put(
-            "options", initOptions
+            "options", initOptionsJson
         )
         paramMap.put("actionType", actionType)
 
         if (actionType == "enable_mfa" || actionType == "manage_mfa") {
             val userInfo = web3AuthResponse?.userInfo
-            initParams.put("loginProvider", userInfo?.typeOfLogin)
+            initParamsJson.put("loginProvider", userInfo?.typeOfLogin)
             var extraOptionsString = ""
             var existingExtraLoginOptions = ExtraLoginOptions()
-            if (initParams.has("extraLoginOptions")) {
-                extraOptionsString = initParams.getString("extraLoginOptions")
+            if (initParamsJson.has("extraLoginOptions")) {
+                extraOptionsString = initParamsJson.getString("extraLoginOptions")
                 existingExtraLoginOptions =
                     gson.fromJson(extraOptionsString, ExtraLoginOptions::class.java)
             }
             existingExtraLoginOptions.login_hint = userInfo?.verifierId
-            initParams.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
-            initParams.put("mfaLevel", MFALevel.MANDATORY.name.lowercase(Locale.ROOT))
+            initParamsJson.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
+            initParamsJson.put("mfaLevel", MFALevel.MANDATORY.name.lowercase(Locale.ROOT))
             paramMap.put("sessionId", sessionManager.getSessionId())
         }
-        paramMap.put("params", initParams)
+        paramMap.put("params", initParamsJson)
 
-        val loginIdCf = getLoginId(paramMap)
+        val jsonObject = JSONObject(paramMap.toString())
+
+// Convert the JSON object to a string
+        var jsonString = jsonObject.toString()
+
+// Replace all occurrences of escaped slashes
+        jsonString = jsonString.replace("\\/", "/")
+
+// Convert the cleaned string back to a JSONObject
+        val cleanedJsonObject = JSONObject(jsonString)
+
+// Print the cleaned JSON object in a readable format
+        println(cleanedJsonObject.toString(4))
+
+        val loginIdCf = getLoginId(jsonString)
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
                 val jsonObject = mapOf("loginId" to loginId)
+
                 val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
                     .toBase64URLString()
 
                 val url =
                     Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
                         .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
-                //print("url: => $url")
+                print("url: => $url")
                 val intent = Intent(baseContext, CustomChromeTabsActivity::class.java)
                 intent.putExtra(WEBVIEW_URL, url.toString())
                 baseContext.startActivity(intent)
@@ -470,11 +500,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      * @param jsonObject The JSONObject from which to retrieve the login ID.
      * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
      */
-    private fun getLoginId(jsonObject: JSONObject): CompletableFuture<String> {
+    private fun getLoginId(jsonObject: String): CompletableFuture<String> {
         val sessionId = SessionManager.generateRandomSessionKey()
         sessionManager.setSessionId(sessionId)
+        //SessionManager.saveSessionIdToStorage(sessionId)
         return sessionManager.createSession(
-            jsonObject.toString(),
+            jsonObject,
             baseContext,
         )
     }
@@ -505,7 +536,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 "options", initOptions
             )
 
-            val loginIdCf = getLoginId(paramMap)
+            val loginIdCf = getLoginId(paramMap.toString())
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
@@ -569,7 +600,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 "options", initOptions
             )
 
-            val loginIdCf = getLoginId(paramMap)
+            val loginIdCf = getLoginId(paramMap.toString())
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
