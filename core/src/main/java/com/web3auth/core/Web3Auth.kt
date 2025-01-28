@@ -126,6 +126,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val initOptionsJson = JSONObject(gson.toJson(initOptions))
         val initParamsJson = JSONObject(gson.toJson(initParams))
 
+        val sessionId = SessionManager.generateRandomSessionKey()
+
         val paramMap = JSONObject()
         paramMap.put(
             "options", initOptionsJson
@@ -145,6 +147,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             existingExtraLoginOptions.login_hint = userInfo?.verifierId
             initParamsJson.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
             initParamsJson.put("mfaLevel", MFALevel.MANDATORY.name.lowercase(Locale.ROOT))
+            val loginIdObject = mapOf("loginId" to sessionId)
+            initParamsJson.put(
+                "appState",
+                gson.toJson(loginIdObject).toByteArray(Charsets.UTF_8).toBase64URLString()
+            )
             paramMap.put("sessionId", sessionManager.getSessionId())
         }
         paramMap.put("params", initParamsJson)
@@ -154,7 +161,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         var paramsString = jsonObject.toString()
         paramsString = paramsString.replace("\\/", "/")
 
-        val loginIdCf = getLoginId(paramsString)
+        val loginIdCf = getLoginId(sessionId, paramsString)
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
                 val jsonObject = mapOf("loginId" to loginId)
@@ -490,10 +497,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      * @param jsonObject The JSONObject from which to retrieve the login ID.
      * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
      */
-    private fun getLoginId(jsonObject: String): CompletableFuture<String> {
-        val sessionId = SessionManager.generateRandomSessionKey()
+    private fun getLoginId(sessionId: String, jsonObject: String): CompletableFuture<String> {
         sessionManager.setSessionId(sessionId)
-        //SessionManager.saveSessionIdToStorage(sessionId)
         return sessionManager.createSession(
             jsonObject,
             baseContext,
@@ -525,8 +530,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             paramMap.put(
                 "options", initOptions
             )
-
-            val loginIdCf = getLoginId(paramMap.toString())
+            val sessionId = SessionManager.generateRandomSessionKey()
+            val loginIdCf = getLoginId(sessionId, paramMap.toString())
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
@@ -590,7 +595,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 "options", initOptions
             )
 
-            val loginIdCf = getLoginId(paramMap.toString())
+            val sessionId = SessionManager.generateRandomSessionKey()
+            val loginIdCf = getLoginId(sessionId, paramMap.toString())
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
