@@ -595,8 +595,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 "options", initOptions
             )
 
-            val sessionId = SessionManager.generateRandomSessionKey()
-            val loginIdCf = getLoginId(sessionId, paramMap.toString())
+            val loginId = SessionManager.generateRandomSessionKey()
+            val loginIdCf = getLoginId(loginId, paramMap.toString())
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
