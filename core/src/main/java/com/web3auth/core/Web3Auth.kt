@@ -123,7 +123,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             getInitParams(params)
         }
 
-
         val initOptionsJson = JSONObject(gson.toJson(initOptions))
         val initParamsJson = JSONObject(gson.toJson(initParams))
 
@@ -152,19 +151,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
         val jsonObject = JSONObject(paramMap.toString())
 
-// Convert the JSON object to a string
-        var jsonString = jsonObject.toString()
+        var paramsString = jsonObject.toString()
+        paramsString = paramsString.replace("\\/", "/")
 
-// Replace all occurrences of escaped slashes
-        jsonString = jsonString.replace("\\/", "/")
-
-// Convert the cleaned string back to a JSONObject
-        val cleanedJsonObject = JSONObject(jsonString)
-
-// Print the cleaned JSON object in a readable format
-        println(cleanedJsonObject.toString(4))
-
-        val loginIdCf = getLoginId(jsonString)
+        val loginIdCf = getLoginId(paramsString)
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
                 val jsonObject = mapOf("loginId" to loginId)
