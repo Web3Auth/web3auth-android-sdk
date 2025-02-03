@@ -172,7 +172,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 val url =
                     Uri.Builder().scheme(sdkUrl.scheme).encodedAuthority(sdkUrl.encodedAuthority)
                         .encodedPath(sdkUrl.encodedPath).appendPath("start").fragment(hash).build()
-                print("url: => $url")
+                //print("url: => $url")
                 val intent = Intent(baseContext, CustomChromeTabsActivity::class.java)
                 intent.putExtra(WEBVIEW_URL, url.toString())
                 baseContext.startActivity(intent)
