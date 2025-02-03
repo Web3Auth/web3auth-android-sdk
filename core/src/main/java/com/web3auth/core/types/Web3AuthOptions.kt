@@ -56,7 +56,7 @@ fun getWalletSdkUrl(buildEnv: BuildEnv?): String {
 fun getDashBoardUrl(buildEnv: BuildEnv?): String {
     val sdkUrl: String = when (buildEnv) {
         BuildEnv.STAGING -> {
-            "https://staging-account.web3auth.io/$walletAccountConstant"
+            "https://staging-account.web3auth.io/v9/$walletAccountConstant"
         }
 
         BuildEnv.TESTING -> {
@@ -64,7 +64,7 @@ fun getDashBoardUrl(buildEnv: BuildEnv?): String {
         }
 
         else -> {
-            "https://account.web3auth.io/$walletAccountConstant"
+            "https://account.web3auth.io/v9/$walletAccountConstant"
         }
     }
     return sdkUrl

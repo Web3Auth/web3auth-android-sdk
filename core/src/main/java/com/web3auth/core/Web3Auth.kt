@@ -152,7 +152,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 "appState",
                 gson.toJson(loginIdObject).toByteArray(Charsets.UTF_8).toBase64URLString()
             )
-            paramMap.put("sessionId", sessionId)
+            paramMap.put("sessionId", sessionManager.getSessionId())
         }
         paramMap.put("params", initParamsJson)
 
