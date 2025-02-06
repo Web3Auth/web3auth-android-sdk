@@ -790,8 +790,7 @@ public class Web3Auth : MonoBehaviour
                 {
                     try
                     {
-                        // Debug.Log("newSessionKey before saving into keystore =>" + newSessionKey);
-                        this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, newSessionKey));
+                        // Debug.Log("newSessionKey before saving into keystore =>" + newSessionKey)
                         createSessionResponse.SetResult(newSessionKey);
                     }
                     catch (Exception ex)
