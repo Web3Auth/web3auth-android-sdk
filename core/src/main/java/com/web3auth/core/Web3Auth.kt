@@ -152,6 +152,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 "appState",
                 gson.toJson(loginIdObject).toByteArray(Charsets.UTF_8).toBase64URLString()
             )
+            initParamsJson.put("platform", "android")
+            initParamsJson.put("dappUrl", web3AuthOption.redirectUrl)
             paramMap.put("sessionId", sessionManager.getSessionId())
         }
         paramMap.put("params", initParamsJson)
@@ -164,10 +166,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val loginIdCf = getLoginId(sessionId, paramsString)
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
-                val jsonObject = mapOf(
-                    "loginId" to loginId,
-                    "platform" to "android"
-                )
+                val jsonObject = mapOf("loginId" to loginId)
 
                 val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
                     .toBase64URLString()
