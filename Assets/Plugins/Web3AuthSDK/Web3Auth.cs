@@ -782,7 +782,7 @@ public class Web3Auth : MonoBehaviour
                     newSessionKey,
                     jsonData
                 ),
-                timeout = Math.Min(sessionTime, 7 * 86400),
+                timeout = Math.Min(sessionTime, 30 * 86400),
                 allowedOrigin = allowedOrigin
             }, result =>
             {
