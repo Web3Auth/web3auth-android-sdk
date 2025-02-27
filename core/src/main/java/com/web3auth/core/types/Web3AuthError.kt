@@ -19,15 +19,23 @@ object Web3AuthError {
             ErrorCode.RUNTIME_ERROR -> {
                 "Runtime Error"
             }
+
             ErrorCode.APP_CANCELLED -> {
                 "App Cancelled"
             }
+
             ErrorCode.INVALID_LOGIN -> {
                 "Invalid Login"
             }
+
             ErrorCode.MFA_ALREADY_ENABLED -> {
                 "MFA already enabled"
             }
+
+            ErrorCode.MFA_NOT_ENABLED -> {
+                "MFA is not enabled. Please enable MFA first."
+            }
+
             ErrorCode.USER_CANCELLED -> {
                 "User Cancelled"
             }
@@ -44,5 +52,6 @@ enum class ErrorCode {
     SOMETHING_WENT_WRONG,
     INVALID_LOGIN,
     MFA_ALREADY_ENABLED,
+    MFA_NOT_ENABLED,
     USER_CANCELLED
 }

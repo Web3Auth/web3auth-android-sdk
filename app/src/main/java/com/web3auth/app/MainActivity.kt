@@ -123,6 +123,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val launchWalletButton = findViewById<Button>(R.id.launchWalletButton)
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
+        val btnManageMfa = findViewById<Button>(R.id.btn_manageMfa)
         val spinner = findViewById<TextInputLayout>(R.id.verifierList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
         var key: String? = null
@@ -145,6 +146,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             launchWalletButton.visibility = View.VISIBLE
             signMsgButton.visibility = View.VISIBLE
             btnSetUpMfa.visibility = View.VISIBLE
+            btnManageMfa.visibility = View.VISIBLE
             spinner.visibility = View.GONE
             hintEmailEditText.visibility = View.GONE
         } else {
@@ -153,6 +155,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             signInButton.visibility = View.VISIBLE
             signOutButton.visibility = View.GONE
             btnSetUpMfa.visibility = View.GONE
+            btnManageMfa.visibility = View.GONE
             launchWalletButton.visibility = View.GONE
             signMsgButton.visibility = View.GONE
             spinner.visibility = View.VISIBLE
@@ -184,7 +187,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C",
                 )
             ),
-            buildEnv = BuildEnv.PRODUCTION,
+            buildEnv = BuildEnv.TESTING,
             sessionTime = 86400,
         )
 
@@ -266,6 +269,18 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             setupMfaCf.whenComplete { _, error ->
                 if (error == null) {
                     Log.d("MainActivity_Web3Auth", "MFA setup successfully")
+                } else {
+                    Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
+                }
+            }
+        }
+
+        val btnManageMfa = findViewById<Button>(R.id.btn_manageMfa)
+        btnManageMfa.setOnClickListener {
+            val manageMfaCf = web3Auth.manageMFA()
+            manageMfaCf.whenComplete { _, error ->
+                if (error == null) {
+                    Log.d("MainActivity_Web3Auth", "MFA manage successfully")
                 } else {
                     Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
                 }
