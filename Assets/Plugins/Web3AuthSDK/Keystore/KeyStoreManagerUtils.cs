@@ -28,6 +28,7 @@ public class KeyStoreManagerUtils
     public static string IV_KEY = "ivKey";
     public static string EPHEM_PUBLIC_Key = "ephemPublicKey";
     public static string MAC = "mac";
+    public static string REDIRECT_URL = "redirectUrl";
 
     public static string getPubKey(string sessionId)
     {

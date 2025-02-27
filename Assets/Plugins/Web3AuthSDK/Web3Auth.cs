@@ -64,6 +64,7 @@ public class Web3Auth : MonoBehaviour
 
     [SerializeField]
     private Web3Auth.Network network;
+    private string redirectUrl;
 
     private static readonly Queue<Action> _executionQueue = new Queue<Action>();
 
@@ -108,7 +109,8 @@ public class Web3Auth : MonoBehaviour
         {
             throw new Exception("Failed to fetch project config. Please try again later.");
         } else {
-            authorizeSession("");
+            var redirectUrl = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.REDIRECT_URL);
+            authorizeSession("", redirectUrl);
 
             JsonSerializerSettings settings = new JsonSerializerSettings
             {
@@ -264,13 +266,21 @@ public class Web3Auth : MonoBehaviour
 
     private async void processRequest(string path, LoginParams loginParams = null)
     {
+        redirectUrl = this.initParams["redirectUrl"].ToString();
+        if (redirectUrl.EndsWith("/"))
+        {
+            redirectUrl = redirectUrl.TrimEnd('/');
+        }
+
 #if UNITY_STANDALONE || UNITY_EDITOR
         this.initParams["redirectUrl"] = StartLocalWebserver();
+        redirectUrl = this.initParams["redirectUrl"].ToString().Replace("/complete/", "");
 #elif UNITY_WEBGL
         this.initParams["redirectUrl"] = Utils.GetCurrentURL();
 #endif
 
         loginParams.redirectUrl = loginParams.redirectUrl ?? new Uri(this.initParams["redirectUrl"].ToString());
+        //Debug.Log("loginParams.redirectUrl: =>" + loginParams.redirectUrl);
         Dictionary<string, object> paramMap = new Dictionary<string, object>();
         paramMap["options"] = this.initParams;
         paramMap["params"] = loginParams == null ? (object)new Dictionary<string, object>() : (object)loginParams;
@@ -287,7 +297,7 @@ public class Web3Auth : MonoBehaviour
             new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore
-            }), 600);
+            }), 600, "*");
 
         if (!string.IsNullOrEmpty(loginId))
         {
@@ -326,8 +336,14 @@ public class Web3Auth : MonoBehaviour
             string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
             if (!string.IsNullOrEmpty(sessionId))
             {
+            redirectUrl = this.initParams["redirectUrl"].ToString();
+            if (redirectUrl.EndsWith("/"))
+            {
+                redirectUrl = redirectUrl.TrimEnd('/');
+            }
     #if UNITY_STANDALONE || UNITY_EDITOR
             this.initParams["redirectUrl"] = StartLocalWebserver();
+            redirectUrl = this.initParams["redirectUrl"].ToString().Replace("/complete/", "");
     #elif UNITY_WEBGL
             this.initParams["redirectUrl"] = Utils.GetCurrentURL();
     #endif
@@ -341,7 +357,7 @@ public class Web3Auth : MonoBehaviour
                 new JsonSerializerSettings
                 {
                     NullValueHandling = NullValueHandling.Ignore
-                }), 600);
+                }), 600, "*");
 
             if (!string.IsNullOrEmpty(loginId))
             {
@@ -425,9 +441,10 @@ public class Web3Auth : MonoBehaviour
         }
         string sessionId = sessionResponse.sessionId;
         this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, sessionId));
+        this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.REDIRECT_URL, redirectUrl));
 
         //call authorize session API
-        this.Enqueue(() => authorizeSession(sessionId));
+        this.Enqueue(() => authorizeSession(sessionId, redirectUrl));
 
 #if !UNITY_EDITOR && UNITY_WEBGL
         if (this.web3AuthResponse != null) 
@@ -536,8 +553,14 @@ public class Web3Auth : MonoBehaviour
         string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
         if (!string.IsNullOrEmpty(sessionId))
         {
+                    redirectUrl = this.initParams["redirectUrl"].ToString();
+                    if (redirectUrl.EndsWith("/"))
+                    {
+                        redirectUrl = redirectUrl.TrimEnd('/');
+                   }
             #if UNITY_STANDALONE || UNITY_EDITOR
                     this.initParams["redirectUrl"] = StartLocalWebserver();
+                    redirectUrl = this.initParams["redirectUrl"].ToString().Replace("/complete/", "");
             #elif UNITY_WEBGL
                     this.initParams["redirectUrl"] = Utils.GetCurrentURL();
             #endif
@@ -550,7 +573,7 @@ public class Web3Auth : MonoBehaviour
                         new JsonSerializerSettings
                         {
                             NullValueHandling = NullValueHandling.Ignore
-                        }), 60000);
+                        }), 600, "*");
 
                     if (!string.IsNullOrEmpty(loginId))
                     {
@@ -598,7 +621,7 @@ public class Web3Auth : MonoBehaviour
         }
     }
 
-    private void authorizeSession(string newSessionId)
+    private void authorizeSession(string newSessionId, string origin)
     {
         string sessionId = "";
         if (string.IsNullOrEmpty(newSessionId))
@@ -614,7 +637,8 @@ public class Web3Auth : MonoBehaviour
         if (!string.IsNullOrEmpty(sessionId))
         {
             var pubKey = KeyStoreManagerUtils.getPubKey(sessionId);
-            StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, (response =>
+            //Debug.Log("origin: =>" + origin);
+            StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, origin, (response =>
             {
                 if (response != null)
                 {
@@ -641,6 +665,7 @@ public class Web3Auth : MonoBehaviour
                         if (!string.IsNullOrEmpty(this.web3AuthResponse.sessionId))
                         {
                             KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, this.web3AuthResponse.sessionId);
+                            //Debug.Log("redirectUrl: =>" + redirectUrl);
                         }
 
                         if (!string.IsNullOrEmpty(web3AuthResponse.userInfo?.dappShare))
@@ -665,10 +690,11 @@ public class Web3Auth : MonoBehaviour
     private void sessionTimeOutAPI()
     {
         string sessionId = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.SESSION_ID);
+        string redirectUrl = KeyStoreManagerUtils.getPreferencesData(KeyStoreManagerUtils.REDIRECT_URL);
         if (!string.IsNullOrEmpty(sessionId))
         {
             var pubKey = KeyStoreManagerUtils.getPubKey(sessionId);
-            StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, (response =>
+            StartCoroutine(Web3AuthApi.getInstance().authorizeSession(pubKey, redirectUrl, (response =>
             {
                 if (response != null)
                 {
@@ -724,7 +750,7 @@ public class Web3Auth : MonoBehaviour
         }
     }
 
-    private async Task<string> createSession(string data, long sessionTime)
+    private async Task<string> createSession(string data, long sessionTime, string allowedOrigin)
     {
         TaskCompletionSource<string> createSessionResponse = new TaskCompletionSource<string>();
         var newSessionKey = KeyStoreManagerUtils.generateRandomSessionKey();
@@ -756,15 +782,15 @@ public class Web3Auth : MonoBehaviour
                     newSessionKey,
                     jsonData
                 ),
-                timeout = Math.Min(sessionTime, 30 * 86400)
+                timeout = Math.Min(sessionTime, 30 * 86400),
+                allowedOrigin = allowedOrigin
             }, result =>
             {
                 if (result != null)
                 {
                     try
                     {
-                        // Debug.Log("newSessionKey before saving into keystore =>" + newSessionKey);
-                        this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, newSessionKey));
+                        // Debug.Log("newSessionKey before saving into keystore =>" + newSessionKey)
                         createSessionResponse.SetResult(newSessionKey);
                     }
                     catch (Exception ex)
