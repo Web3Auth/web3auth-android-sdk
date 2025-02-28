@@ -13,7 +13,7 @@ data class Web3AuthOptions(
     val useCoreKitKey: Boolean? = false,
     val chainNamespace: ChainNamespace? = ChainNamespace.EIP155,
     val mfaSettings: MfaSettings? = null,
-    val sessionTime: Int? = 86400,
+    val sessionTime: Int? = 30 * 86400,
     var walletSdkUrl: String? = getWalletSdkUrl(buildEnv),
     var dashboardUrl: String? = getDashBoardUrl(buildEnv),
     var originData: Map<String, String>? = null
