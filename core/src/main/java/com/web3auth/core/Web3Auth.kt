@@ -147,7 +147,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             existingExtraLoginOptions.login_hint = userInfo?.verifierId
             initParamsJson.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
             initParamsJson.put("mfaLevel", MFALevel.MANDATORY.name.lowercase(Locale.ROOT))
-            val loginIdObject = mapOf("loginId" to sessionId)
+            val loginIdObject = mapOf("loginId" to sessionId, "platform" to "android")
             initParamsJson.put(
                 "appState",
                 gson.toJson(loginIdObject).toByteArray(Charsets.UTF_8).toBase64URLString()
@@ -165,10 +165,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val loginIdCf = getLoginId(sessionId, paramsString)
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
-                val jsonObject = mapOf(
-                    "loginId" to loginId,
-                    "platform" to "android"
-                )
+                val jsonObject = mapOf("loginId" to loginId)
 
                 val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
                     .toBase64URLString()
@@ -369,10 +366,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      */
     fun enableMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
         enableMfaCompletableFuture = CompletableFuture()
-        if (web3AuthResponse?.userInfo?.isMfaEnabled == true) {
+        /*if (web3AuthResponse?.userInfo?.isMfaEnabled == true) {
             throwEnableMFAError(ErrorCode.MFA_ALREADY_ENABLED)
             return enableMfaCompletableFuture
-        }
+        }*/
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isBlank()) {
             throwEnableMFAError(ErrorCode.NOUSERFOUND)
