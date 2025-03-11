@@ -256,6 +256,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             return
         }
         val b64ParamString = decodeBase64URLString(b64Params).toString(Charsets.UTF_8)
+
+        if (b64ParamString.contains("actionType")) {
+            return
+        }
+
         val sessionResponse = gson.fromJson(b64ParamString, SessionResponse::class.java)
         val sessionId = sessionResponse.sessionId
 
@@ -366,10 +371,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      */
     fun enableMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
         enableMfaCompletableFuture = CompletableFuture()
-        /*if (web3AuthResponse?.userInfo?.isMfaEnabled == true) {
+        if (web3AuthResponse?.userInfo?.isMfaEnabled == true) {
             throwEnableMFAError(ErrorCode.MFA_ALREADY_ENABLED)
             return enableMfaCompletableFuture
-        }*/
+        }
         val sessionId = sessionManager.getSessionId()
         if (sessionId.isBlank()) {
             throwEnableMFAError(ErrorCode.NOUSERFOUND)
