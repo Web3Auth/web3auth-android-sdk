@@ -258,6 +258,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val b64ParamString = decodeBase64URLString(b64Params).toString(Charsets.UTF_8)
 
         if (b64ParamString.contains("actionType")) {
+            if (::manageMfaCompletableFuture.isInitialized)
+                manageMfaCompletableFuture.complete(true)
             return
         }
 
@@ -300,9 +302,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
                                 if (::enableMfaCompletableFuture.isInitialized)
                                     enableMfaCompletableFuture.complete(true)
-
-                                if (::manageMfaCompletableFuture.isInitialized)
-                                    manageMfaCompletableFuture.complete(true)
                             }
                         } else {
                             print(error)

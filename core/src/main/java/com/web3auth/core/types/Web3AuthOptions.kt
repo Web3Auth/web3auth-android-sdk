@@ -17,7 +17,13 @@ data class Web3AuthOptions(
     var walletSdkUrl: String? = getWalletSdkUrl(buildEnv),
     var dashboardUrl: String? = getDashBoardUrl(buildEnv),
     var originData: Map<String, String>? = null
-)
+) {
+    init {
+        if (dashboardUrl == null) {
+            dashboardUrl = getDashBoardUrl(buildEnv)
+        }
+    }
+}
 
 fun getSdkUrl(buildEnv: BuildEnv?): String {
     val sdkUrl: String = when (buildEnv) {
