@@ -117,6 +117,7 @@ public class Web3AuthSample : MonoBehaviour
         mfaSetupButton.onClick.AddListener(enableMFA);
         launchWalletServicesButton.onClick.AddListener(launchWalletServices);
         signMessageButton.onClick.AddListener(request);
+        signResponseButton.onClick.AddListener(manageMFA);
 
         verifierDropdown.AddOptions(verifierList.Select(x => x.name).ToList());
         verifierDropdown.onValueChanged.AddListener(onVerifierDropDownChange);
@@ -218,6 +219,26 @@ public class Web3AuthSample : MonoBehaviour
             };
         }
         web3Auth.enableMFA(options);
+    }
+
+    private void manageMFA()
+    {
+        var selectedProvider = verifierList[verifierDropdown.value].loginProvider;
+
+        var options = new LoginParams()
+        {
+            loginProvider = selectedProvider,
+            mfaLevel = MFALevel.MANDATORY
+        };
+
+        if (selectedProvider == Provider.EMAIL_PASSWORDLESS)
+        {
+            options.extraLoginOptions = new ExtraLoginOptions()
+            {
+                login_hint = emailAddressField.text
+            };
+        }
+        web3Auth.manageMFA(options);
     }
 
     private void launchWalletServices() {

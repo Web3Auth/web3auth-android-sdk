@@ -642,7 +642,7 @@ GameObject:
   - component: {fileID: 311891818}
   - component: {fileID: 311891817}
   m_Layer: 5
-  m_Name: Sign Response
+  m_Name: Mange MFA
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1389,7 +1389,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Get Sign response
+  m_Text: Manage MFA
 --- !u!222 &537563201
 CanvasRenderer:
   m_ObjectHideFlags: 0
