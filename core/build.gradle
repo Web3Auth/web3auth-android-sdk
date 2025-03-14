@@ -69,7 +69,7 @@ dependencies {
     implementation 'org.web3j:core:4.8.8-android'
 
     //session-manager-sdk
-    implementation 'com.github.Web3Auth:session-manager-android:3.1.2'
+    implementation 'com.github.Web3Auth:session-manager-android:3.1.3'
 
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01"
 
