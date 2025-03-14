@@ -21,6 +21,7 @@ import com.web3auth.core.types.LoginConfigItem
 import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.MFALevel
 import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.RedirectResponse
 import com.web3auth.core.types.RequestData
 import com.web3auth.core.types.SessionResponse
 import com.web3auth.core.types.SignMessage
@@ -258,9 +259,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val b64ParamString = decodeBase64URLString(b64Params).toString(Charsets.UTF_8)
 
         if (b64ParamString.contains("actionType")) {
-            if (::manageMfaCompletableFuture.isInitialized)
-                manageMfaCompletableFuture.complete(true)
-            return
+            val response = gson.fromJson(b64ParamString, RedirectResponse::class.java)
+            if (response.actionType == "manage_mfa") {
+                if (::manageMfaCompletableFuture.isInitialized)
+                    manageMfaCompletableFuture.complete(true)
+                return
+            }
         }
 
         val sessionResponse = gson.fromJson(b64ParamString, SessionResponse::class.java)

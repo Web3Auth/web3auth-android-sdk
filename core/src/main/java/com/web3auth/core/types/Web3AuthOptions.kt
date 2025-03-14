@@ -15,12 +15,12 @@ data class Web3AuthOptions(
     val mfaSettings: MfaSettings? = null,
     val sessionTime: Int? = 30 * 86400,
     var walletSdkUrl: String? = getWalletSdkUrl(buildEnv),
-    var dashboardUrl: String? = getDashBoardUrl(buildEnv),
+    var dashboardUrl: String? = getDashboardUrl(buildEnv),
     var originData: Map<String, String>? = null
 ) {
     init {
         if (dashboardUrl == null) {
-            dashboardUrl = getDashBoardUrl(buildEnv)
+            dashboardUrl = getDashboardUrl(buildEnv)
         }
     }
 }
@@ -59,10 +59,10 @@ fun getWalletSdkUrl(buildEnv: BuildEnv?): String {
     return sdkUrl
 }
 
-fun getDashBoardUrl(buildEnv: BuildEnv?): String {
+fun getDashboardUrl(buildEnv: BuildEnv?): String {
     val sdkUrl: String = when (buildEnv) {
         BuildEnv.STAGING -> {
-            "https://staging-account.web3auth.io/v9/$walletAccountConstant"
+            "https://staging-account.web3auth.io/$authDashboardVersion/$walletAccountConstant"
         }
 
         BuildEnv.TESTING -> {
@@ -70,7 +70,7 @@ fun getDashBoardUrl(buildEnv: BuildEnv?): String {
         }
 
         else -> {
-            "https://account.web3auth.io/v9/$walletAccountConstant"
+            "https://account.web3auth.io/$authDashboardVersion/$walletAccountConstant"
         }
     }
     return sdkUrl
@@ -78,6 +78,7 @@ fun getDashBoardUrl(buildEnv: BuildEnv?): String {
 
 const val authServiceVersion = "v9"
 const val walletServicesVersion = "v3"
+const val authDashboardVersion = "v9"
 const val walletAccountConstant = "wallet/account"
 const val WEBVIEW_URL = "walletUrl"
 const val REDIRECT_URL = "redirectUrl"
