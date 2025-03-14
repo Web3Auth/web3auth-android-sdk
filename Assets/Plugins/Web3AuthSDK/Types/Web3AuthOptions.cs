@@ -43,11 +43,11 @@ public class Web3AuthOptions {
     public string dashboardUrl {
         get {
             if (buildEnv == Web3Auth.BuildEnv.STAGING)
-                return "https://staging-account.web3auth.io/wallet/account";
+                return "https://staging-account.web3auth.io/v9/wallet/account";
             else if (buildEnv == Web3Auth.BuildEnv.TESTING)
                 return "https://develop-account.web3auth.io/wallet/account";
             else
-                return "https://account.web3auth.io/wallet/account";
+                return "https://account.web3auth.io/v9/wallet/account";
         }
         set { }
     }

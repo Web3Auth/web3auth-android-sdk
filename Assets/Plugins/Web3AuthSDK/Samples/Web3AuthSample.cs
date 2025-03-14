@@ -104,6 +104,7 @@ public class Web3AuthSample : MonoBehaviour
         web3Auth.onLogout += onLogout;
         web3Auth.onMFASetup += onMFASetup;
         web3Auth.onSignResponse += onSignResponse;
+        web3Auth.onManageMFA += onManageMFA;
 
         emailAddressField.gameObject.SetActive(false);
         logoutButton.gameObject.SetActive(false);
@@ -159,6 +160,10 @@ public class Web3AuthSample : MonoBehaviour
     private void onSignResponse(SignResponse signResponse)
     {
         Debug.Log("Retrieved SignResponse: " + signResponse);
+    }
+
+    private void onManageMFA(bool response) {
+        Debug.Log("Manage MFA: " + response);
     }
 
     private void onVerifierDropDownChange(int selectedIndex)

@@ -47,6 +47,7 @@ public class Web3Auth : MonoBehaviour
     public event Action<Web3AuthResponse> onLogin;
     public event Action onLogout;
     public event Action<bool> onMFASetup;
+    public event Action<bool> onManageMFA;
     public event Action<SignResponse> onSignResponse;
 
     private static SignResponse signResponse = null;
@@ -286,7 +287,7 @@ public class Web3Auth : MonoBehaviour
         //Debug.Log("loginParams.redirectUrl: =>" + loginParams.redirectUrl);
         var sessionId = KeyStoreManagerUtils.generateRandomSessionKey();
         if(path == "manage_mfa") {
-            loginParams.dappUrl = this.initParams["dashboardUrl"].ToString();
+            loginParams.dappUrl = this.initParams["redirectUrl"].ToString();
             loginParams.redirectUrl = new Uri(this.initParams["dashboardUrl"].ToString());
             this.initParams["redirectUrl"] = new Uri(this.initParams["dashboardUrl"].ToString());
             var loginIdObject = new Dictionary<string, string>
@@ -441,7 +442,12 @@ public class Web3Auth : MonoBehaviour
         string decodedString = decodeBase64Params(b64Params);
         if (decodedString.Contains("actionType"))
         {
-            return;
+            RedirectResponse response = JsonUtility.FromJson<RedirectResponse>(decodedString);
+            if (response.actionType == "manage_mfa")
+            {
+                this.Enqueue(() => this.onManageMFA?.Invoke(true));
+                return;
+            }
         }
         if(isRequestResponse) {
             try
