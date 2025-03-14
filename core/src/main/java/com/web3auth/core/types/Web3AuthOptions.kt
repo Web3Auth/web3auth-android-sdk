@@ -13,10 +13,17 @@ data class Web3AuthOptions(
     val useCoreKitKey: Boolean? = false,
     val chainNamespace: ChainNamespace? = ChainNamespace.EIP155,
     val mfaSettings: MfaSettings? = null,
-    val sessionTime: Int? = 86400,
+    val sessionTime: Int? = 30 * 86400,
     var walletSdkUrl: String? = getWalletSdkUrl(buildEnv),
+    var dashboardUrl: String? = getDashboardUrl(buildEnv),
     var originData: Map<String, String>? = null
-)
+) {
+    init {
+        if (dashboardUrl == null) {
+            dashboardUrl = getDashboardUrl(buildEnv)
+        }
+    }
+}
 
 fun getSdkUrl(buildEnv: BuildEnv?): String {
     val sdkUrl: String = when (buildEnv) {
@@ -52,8 +59,27 @@ fun getWalletSdkUrl(buildEnv: BuildEnv?): String {
     return sdkUrl
 }
 
+fun getDashboardUrl(buildEnv: BuildEnv?): String {
+    val sdkUrl: String = when (buildEnv) {
+        BuildEnv.STAGING -> {
+            "https://staging-account.web3auth.io/$authDashboardVersion/$walletAccountConstant"
+        }
+
+        BuildEnv.TESTING -> {
+            "https://develop-account.web3auth.io/$walletAccountConstant"
+        }
+
+        else -> {
+            "https://account.web3auth.io/$authDashboardVersion/$walletAccountConstant"
+        }
+    }
+    return sdkUrl
+}
+
 const val authServiceVersion = "v9"
 const val walletServicesVersion = "v3"
+const val authDashboardVersion = "v9"
+const val walletAccountConstant = "wallet/account"
 const val WEBVIEW_URL = "walletUrl"
 const val REDIRECT_URL = "redirectUrl"
 const val CUSTOM_TABS_URL = "customTabsUrl"

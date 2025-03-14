@@ -21,6 +21,7 @@ import com.web3auth.core.types.LoginConfigItem
 import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.MFALevel
 import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.RedirectResponse
 import com.web3auth.core.types.RequestData
 import com.web3auth.core.types.SessionResponse
 import com.web3auth.core.types.SignMessage
@@ -48,13 +49,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
     private lateinit var loginCompletableFuture: CompletableFuture<Web3AuthResponse>
     private lateinit var enableMfaCompletableFuture: CompletableFuture<Boolean>
+    private lateinit var manageMfaCompletableFuture: CompletableFuture<Boolean>
     private lateinit var signMsgCF: CompletableFuture<SignResponse>
 
     private var web3AuthResponse: Web3AuthResponse? = null
     private var web3AuthOption = web3AuthOptions
     private var sessionManager: SessionManager = SessionManager(
         context,
-        web3AuthOptions.sessionTime ?: 86400,
+        web3AuthOptions.sessionTime ?: 30 * 86400,
         web3AuthOptions.redirectUrl.toString()
     )
 
@@ -75,7 +77,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             buildEnv = web3AuthOption.buildEnv?.name?.lowercase(Locale.ROOT),
             mfaSettings = web3AuthOption.mfaSettings?.let { gson.toJson(it) },
             sessionTime = web3AuthOption.sessionTime,
-            originData = web3AuthOption.originData?.let { gson.toJson(it) }
+            originData = web3AuthOption.originData?.let { gson.toJson(it) },
+            dashboardUrl = web3AuthOption.dashboardUrl
         )
     }
 
@@ -108,36 +111,63 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         actionType: String, params: LoginParams?
     ) {
         val sdkUrl = Uri.parse(web3AuthOption.sdkUrl)
-        val initOptions = JSONObject(gson.toJson(getInitOptions()))
-        val initParams = JSONObject(gson.toJson(getInitParams(params)))
+
+        val initOptions = if (actionType == "manage_mfa") {
+            getInitOptions().copy(redirectUrl = getInitOptions().dashboardUrl)
+        } else {
+            getInitOptions()
+        }
+
+        val initParams = if (actionType == "manage_mfa") {
+            initOptions.dashboardUrl?.let { getInitParams(params).copy(redirectUrl = it) }
+        } else {
+            getInitParams(params)
+        }
+
+        val initOptionsJson = JSONObject(gson.toJson(initOptions))
+        val initParamsJson = JSONObject(gson.toJson(initParams))
+
+        val sessionId = SessionManager.generateRandomSessionKey()
 
         val paramMap = JSONObject()
         paramMap.put(
-            "options", initOptions
+            "options", initOptionsJson
         )
         paramMap.put("actionType", actionType)
 
-        if (actionType == "enable_mfa") {
+        if (actionType == "enable_mfa" || actionType == "manage_mfa") {
             val userInfo = web3AuthResponse?.userInfo
-            initParams.put("loginProvider", userInfo?.typeOfLogin)
+            initParamsJson.put("loginProvider", userInfo?.typeOfLogin)
             var extraOptionsString = ""
             var existingExtraLoginOptions = ExtraLoginOptions()
-            if (initParams.has("extraLoginOptions")) {
-                extraOptionsString = initParams.getString("extraLoginOptions")
+            if (initParamsJson.has("extraLoginOptions")) {
+                extraOptionsString = initParamsJson.getString("extraLoginOptions")
                 existingExtraLoginOptions =
                     gson.fromJson(extraOptionsString, ExtraLoginOptions::class.java)
             }
             existingExtraLoginOptions.login_hint = userInfo?.verifierId
-            initParams.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
-            initParams.put("mfaLevel", MFALevel.MANDATORY.name.lowercase(Locale.ROOT))
+            initParamsJson.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
+            initParamsJson.put("mfaLevel", MFALevel.MANDATORY.name.lowercase(Locale.ROOT))
+            val loginIdObject = mapOf("loginId" to sessionId, "platform" to "android")
+            initParamsJson.put(
+                "appState",
+                gson.toJson(loginIdObject).toByteArray(Charsets.UTF_8).toBase64URLString()
+            )
+            initParamsJson.put("dappUrl", web3AuthOption.redirectUrl)
             paramMap.put("sessionId", sessionManager.getSessionId())
         }
-        paramMap.put("params", initParams)
+        paramMap.put("params", initParamsJson)
 
-        val loginIdCf = getLoginId(paramMap)
+        val jsonObject = JSONObject(paramMap.toString())
+
+        var paramsString = jsonObject.toString()
+        paramsString = paramsString.replace("\\/", "/")
+
+        val loginIdCf = getLoginId(sessionId, paramsString)
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
                 val jsonObject = mapOf("loginId" to loginId)
+
                 val hash = "b64Params=" + gson.toJson(jsonObject).toByteArray(Charsets.UTF_8)
                     .toBase64URLString()
 
@@ -205,8 +235,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val hashUri = Uri.parse(uri?.host + "?" + uri?.fragment)
         val error = uri?.getQueryParameter("error")
         if (error != null) {
-            loginCompletableFuture.completeExceptionally(UnKnownException(error))
+            if (::loginCompletableFuture.isInitialized) loginCompletableFuture.completeExceptionally(
+                UnKnownException(error)
+            )
+
             if (::enableMfaCompletableFuture.isInitialized) enableMfaCompletableFuture.completeExceptionally(
+                UnKnownException(error)
+            )
+
+            if (::manageMfaCompletableFuture.isInitialized) manageMfaCompletableFuture.completeExceptionally(
                 UnKnownException(error)
             )
             return
@@ -216,9 +253,20 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         if (b64Params.isNullOrBlank()) {
             throwLoginError(ErrorCode.INVALID_LOGIN)
             throwEnableMFAError(ErrorCode.INVALID_LOGIN)
+            throwManageMFAError(ErrorCode.INVALID_LOGIN)
             return
         }
         val b64ParamString = decodeBase64URLString(b64Params).toString(Charsets.UTF_8)
+
+        if (b64ParamString.contains("actionType")) {
+            val response = gson.fromJson(b64ParamString, RedirectResponse::class.java)
+            if (response.actionType == "manage_mfa") {
+                if (::manageMfaCompletableFuture.isInitialized)
+                    manageMfaCompletableFuture.complete(true)
+                return
+            }
+        }
+
         val sessionResponse = gson.fromJson(b64ParamString, SessionResponse::class.java)
         val sessionId = sessionResponse.sessionId
 
@@ -235,9 +283,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                             if (web3AuthResponse?.error?.isNotBlank() == true) {
                                 throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
                                 throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwManageMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                             } else if (web3AuthResponse?.privKey.isNullOrBlank() && web3AuthResponse?.factorKey.isNullOrBlank()) {
                                 throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
                                 throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                                throwManageMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                             } else {
                                 web3AuthResponse?.sessionId?.let {
                                     SessionManager.saveSessionIdToStorage(it)
@@ -251,7 +301,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                                         web3AuthResponse?.userInfo?.dappShare!!,
                                     )
                                 }
-                                loginCompletableFuture.complete(web3AuthResponse)
+                                if (::loginCompletableFuture.isInitialized)
+                                    loginCompletableFuture.complete(web3AuthResponse)
+
                                 if (::enableMfaCompletableFuture.isInitialized)
                                     enableMfaCompletableFuture.complete(true)
                             }
@@ -263,6 +315,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         } else {
             throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
             throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+            throwManageMFAError(ErrorCode.SOMETHING_WENT_WRONG)
         }
     }
 
@@ -332,6 +385,22 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         }
         processRequest("enable_mfa", loginParams)
         return enableMfaCompletableFuture
+    }
+
+
+    fun manageMFA(loginParams: LoginParams? = null): CompletableFuture<Boolean> {
+        manageMfaCompletableFuture = CompletableFuture()
+        if (web3AuthResponse?.userInfo?.isMfaEnabled == false) {
+            throwManageMFAError(ErrorCode.MFA_NOT_ENABLED)
+            return manageMfaCompletableFuture
+        }
+        val sessionId = sessionManager.getSessionId()
+        if (sessionId.isBlank()) {
+            throwManageMFAError(ErrorCode.NOUSERFOUND)
+            return manageMfaCompletableFuture
+        }
+        processRequest("manage_mfa", loginParams)
+        return manageMfaCompletableFuture
     }
 
     /**
@@ -437,11 +506,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      * @param jsonObject The JSONObject from which to retrieve the login ID.
      * @return A CompletableFuture<String> representing the asynchronous operation, containing the login ID.
      */
-    private fun getLoginId(jsonObject: JSONObject): CompletableFuture<String> {
-        val sessionId = SessionManager.generateRandomSessionKey()
+    private fun getLoginId(sessionId: String, jsonObject: String): CompletableFuture<String> {
         sessionManager.setSessionId(sessionId)
         return sessionManager.createSession(
-            jsonObject.toString(),
+            jsonObject,
             baseContext,
         )
     }
@@ -471,8 +539,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             paramMap.put(
                 "options", initOptions
             )
-
-            val loginIdCf = getLoginId(paramMap)
+            val sessionId = SessionManager.generateRandomSessionKey()
+            val loginIdCf = getLoginId(sessionId, paramMap.toString())
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
@@ -536,7 +604,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 "options", initOptions
             )
 
-            val loginIdCf = getLoginId(paramMap)
+            val loginId = SessionManager.generateRandomSessionKey()
+            val loginIdCf = getLoginId(loginId, paramMap.toString())
 
             loginIdCf.whenComplete { loginId, error ->
                 if (error == null) {
@@ -582,6 +651,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     private fun throwEnableMFAError(error: ErrorCode) {
         if (::enableMfaCompletableFuture.isInitialized)
             enableMfaCompletableFuture.completeExceptionally(
+                Exception(
+                    Web3AuthError.getError(
+                        error
+                    )
+                )
+            )
+    }
+
+    private fun throwManageMFAError(error: ErrorCode) {
+        if (::manageMfaCompletableFuture.isInitialized)
+            manageMfaCompletableFuture.completeExceptionally(
                 Exception(
                     Web3AuthError.getError(
                         error
