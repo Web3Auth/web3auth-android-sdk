@@ -36,6 +36,8 @@
         android:layout_margin="32dp"
         android:minHeight="48dp"
         android:visibility="gone"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         android:backgroundTint="@color/black"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
