@@ -526,8 +526,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         path: String? = "wallet"
     ): CompletableFuture<Void> {
         val launchWalletServiceCF: CompletableFuture<Void> = CompletableFuture()
-        val sessionId = SessionManager.getSessionIdFromStorage()
-        if (sessionId.isNotBlank()) {
+        val savedSessionId = SessionManager.getSessionIdFromStorage()
+        if (savedSessionId.isNotBlank()) {
             val sdkUrl = Uri.parse(web3AuthOption.walletSdkUrl)
 
             val initOptions = JSONObject(gson.toJson(getInitOptions()))
@@ -548,7 +548,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                     walletMap.addProperty(
                         "loginId", loginId
                     )
-                    walletMap.addProperty("sessionId", sessionId)
+                    walletMap.addProperty("sessionId", savedSessionId)
                     walletMap.addProperty("platform", "android")
 
                     val walletHash =
