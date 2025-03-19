@@ -77,7 +77,7 @@ fun getDashboardUrl(buildEnv: BuildEnv?): String {
 }
 
 const val authServiceVersion = "v9"
-const val walletServicesVersion = "v3"
+const val walletServicesVersion = "v4"
 const val authDashboardVersion = "v9"
 const val walletAccountConstant = "wallet/account"
 const val WEBVIEW_URL = "walletUrl"
