@@ -1,54 +1,82 @@
 package com.web3auth.core
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
-import androidx.browser.customtabs.CustomTabsIntent
+import com.google.gson.GsonBuilder
+import com.web3auth.core.types.REDIRECT_URL
+import com.web3auth.core.types.SessionResponse
 import com.web3auth.core.types.WEBVIEW_URL
+import com.web3auth.core.types.WebViewResultCallback
 
 class CustomChromeTabsActivity : AppCompatActivity() {
 
-    private lateinit var customTabLauncher: ActivityResultLauncher<Intent>
+    private lateinit var webView: WebView
+    private val gson = GsonBuilder().disableHtmlEscaping().create()
+
+    companion object {
+        var webViewResultCallback: WebViewResultCallback? = null
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_cct)
+        webView = findViewById(R.id.webView)
 
-        customTabLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_CANCELED) {
-                    Web3Auth.setCustomTabsClosed(true)
-                    finish()
-                }
-            }
-
+        // Handle loading URL from intent extras
         val extras = intent.extras
         if (extras != null) {
             val webViewUrl = extras.getString(WEBVIEW_URL)
+            val redirectUrl = extras.getString(REDIRECT_URL)
             if (webViewUrl != null) {
-                launchCustomTabs(webViewUrl)
+                webView.webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                        if (redirectUrl?.isNotEmpty() == true) {
+                            if (url?.contains(redirectUrl) == true) {
+                                val uri = Uri.parse(url)
+                                val hashUri = Uri.parse(uri.host + "?" + uri.fragment)
+                                val b64Params = hashUri.getQueryParameter("b64Params")
+                                val b64ParamString =
+                                    decodeBase64URLString(b64Params!!).toString(Charsets.UTF_8)
+                                val sessionResponse =
+                                    gson.fromJson(b64ParamString, SessionResponse::class.java)
+                                println("Session Response: $sessionResponse")
+                                webViewResultCallback?.onSessionResponseReceived(sessionResponse)
+                                //WebViewActivity.webViewResultCallback?.onSignResponseReceived(signResponse)
+                                finish()
+                                return true
+                            }
+                        }
+                        return false
+                    }
+
+                    override fun onPageFinished(view: WebView?, url: String?) {
+
+                    }
+                }
+            }
+
+            if (webViewUrl != null) {
+                webView.loadUrl(webViewUrl)
             }
         }
+
+        val webSettings = webView.settings
+        webSettings.javaScriptEnabled = true
+        webSettings.domStorageEnabled = true
+        webSettings.setSupportMultipleWindows(true)
+        webView.settings.userAgentString = null
+
     }
 
-    private fun launchCustomTabs(url: String) {
-        val defaultBrowser = this.getDefaultBrowser()
-        val customTabsBrowsers = this.getCustomTabsBrowsers()
-        if (customTabsBrowsers.contains(defaultBrowser)) {
-            val intent = CustomTabsIntent.Builder().build().intent
-            intent.data = Uri.parse(url)
-            intent.`package` = defaultBrowser
-            customTabLauncher.launch(intent)
-        } else if (customTabsBrowsers.isNotEmpty()) {
-            val intent = CustomTabsIntent.Builder().build().intent
-            intent.data = Uri.parse(url)
-            intent.`package` = customTabsBrowsers[0]
-            customTabLauncher.launch(intent)
+    override fun onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack()
         } else {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            super.onBackPressed()
         }
     }
 }

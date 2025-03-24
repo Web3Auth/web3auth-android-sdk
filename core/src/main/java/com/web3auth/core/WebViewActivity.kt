@@ -57,10 +57,8 @@ class WebViewActivity : AppCompatActivity() {
                                 gson.fromJson(b64ParamString, SignResponse::class.java)
                             webViewResultCallback?.onSignResponseReceived(signResponse)
                             finish()
+                            return true
                         }
-                    }
-                    if (webViewUrl != null) {
-                        view?.loadUrl(webViewUrl)
                     }
                     return false
                 }

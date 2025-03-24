@@ -4,6 +4,9 @@
     android:layout_height="match_parent"
     tools:context=".WebViewActivity">
 
-    <!-- You can add any views or layout elements here as needed -->
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </RelativeLayout>
