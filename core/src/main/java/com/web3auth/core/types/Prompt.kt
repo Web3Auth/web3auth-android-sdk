@@ -1,6 +1,8 @@
 package com.web3auth.core.types
 
+import androidx.annotation.Keep
 
+@Keep
 enum class Prompt(private val label: String) {
     NONE("none"),
     LOGIN("login"),

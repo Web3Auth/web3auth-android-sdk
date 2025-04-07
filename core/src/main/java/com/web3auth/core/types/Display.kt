@@ -1,5 +1,8 @@
 package com.web3auth.core.types
 
+import androidx.annotation.Keep
+
+@Keep
 enum class Display(private val label: String) {
     PAGE("page"), POPUP("popup"), TOUCH("touch"), WAP("wap");
 

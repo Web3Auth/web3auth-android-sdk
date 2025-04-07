@@ -1,7 +1,9 @@
 package com.web3auth.core.types
 
 import android.net.Uri
+import androidx.annotation.Keep
 
+@Keep
 data class Web3AuthOptions(
     val clientId: String,
     val network: Network,

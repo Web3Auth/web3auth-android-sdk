@@ -1,17 +1,20 @@
 package com.web3auth.core.types
 
+import androidx.annotation.Keep
+
+@Keep
 data class LoginConfigItem(
-    var verifier: String,
-    var typeOfLogin: TypeOfLogin,
-    var name: String? = null,
-    var description: String? = null,
-    var clientId: String,
-    var verifierSubIdentifier: String? = null,
-    var logoHover: String? = null,
-    var logoLight: String? = null,
-    var logoDark: String? = null,
-    var mainOption: Boolean? = false,
-    var showOnModal: Boolean? = true,
-    var showOnDesktop: Boolean? = true,
-    var showOnMobile: Boolean? = true,
+    @Keep var verifier: String,
+    @Keep var typeOfLogin: TypeOfLogin,
+    @Keep var name: String? = null,
+    @Keep var description: String? = null,
+    @Keep var clientId: String,
+    @Keep var verifierSubIdentifier: String? = null,
+    @Keep var logoHover: String? = null,
+    @Keep var logoLight: String? = null,
+    @Keep var logoDark: String? = null,
+    @Keep var mainOption: Boolean? = false,
+    @Keep var showOnModal: Boolean? = true,
+    @Keep var showOnDesktop: Boolean? = true,
+    @Keep var showOnMobile: Boolean? = true,
 )

@@ -1,10 +1,13 @@
 package com.web3auth.core.types
 
+import androidx.annotation.Keep
+
+@Keep
 data class MfaSettings(
-    private var deviceShareFactor: MfaSetting? = null,
-    private var backUpShareFactor: MfaSetting? = null,
-    private var socialBackupFactor: MfaSetting? = null,
-    private var passwordFactor: MfaSetting? = null,
-    private var passkeysFactor: MfaSetting? = null,
-    private var authenticatorFactor: MfaSetting? = null,
+    @Keep private var deviceShareFactor: MfaSetting? = null,
+    @Keep private var backUpShareFactor: MfaSetting? = null,
+    @Keep private var socialBackupFactor: MfaSetting? = null,
+    @Keep private var passwordFactor: MfaSetting? = null,
+    @Keep private var passkeysFactor: MfaSetting? = null,
+    @Keep private var authenticatorFactor: MfaSetting? = null,
 )

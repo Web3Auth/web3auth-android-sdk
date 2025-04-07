@@ -1,14 +1,17 @@
 package com.web3auth.core.types
 
+import androidx.annotation.Keep
+
+@Keep
 data class InitOptions(
-    val clientId: String,
-    val network: String,
-    var redirectUrl: String? = null,
-    val whiteLabel: String? = null,
-    val loginConfig: String? = null,
-    val buildEnv: String? = null,
-    val mfaSettings: String? = null,
-    val sessionTime: Int? = null,
-    val originData: String? = null,
-    val dashboardUrl: String? = null,
+    @Keep val clientId: String,
+    @Keep val network: String,
+    @Keep var redirectUrl: String? = null,
+    @Keep val whiteLabel: String? = null,
+    @Keep val loginConfig: String? = null,
+    @Keep val buildEnv: String? = null,
+    @Keep val mfaSettings: String? = null,
+    @Keep val sessionTime: Int? = null,
+    @Keep val originData: String? = null,
+    @Keep val dashboardUrl: String? = null,
 )
