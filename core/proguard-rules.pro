@@ -23,3 +23,22 @@
 -keep class * implements com.google.gson.TypeAdapterFactory
 -keep class * implements com.google.gson.JsonSerializer
 -keep class * implements com.google.gson.JsonDeserializer
+
+-keepattributes *Annotation*
+-keep class com.google.gson.annotations.SerializedName
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# Keep all JsonElement types from Gson
+-keep class com.google.gson.JsonArray { *; }
+-keep class com.google.gson.JsonObject { *; }
+-keep class com.google.gson.JsonElement { *; }
+
+# Preserve annotations and parameter names
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod
+
+# If using Gson or any reflection-based serialization:
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
