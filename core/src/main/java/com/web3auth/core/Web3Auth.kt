@@ -748,12 +748,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     }
 
     companion object {
+        @JvmStatic
         private var isCustomTabsClosed: Boolean = false
 
+        @JvmStatic
         fun setCustomTabsClosed(_isCustomTabsClosed: Boolean) {
             isCustomTabsClosed = _isCustomTabsClosed
         }
 
+        @JvmStatic
         fun getCustomTabsClosed(): Boolean {
             return isCustomTabsClosed
         }

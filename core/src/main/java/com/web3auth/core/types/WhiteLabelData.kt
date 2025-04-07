@@ -1,12 +1,16 @@
 package com.web3auth.core.types
 
+import androidx.annotation.Keep
+import java.io.Serializable
+
+@Keep
 data class WhiteLabelData(
-    var appName: String? = null,
-    var appUrl: String? = null,
-    var logoLight: String? = null,
-    var logoDark: String? = null,
-    var defaultLanguage: Language? = Language.EN,
-    var mode: ThemeModes? = null,
-    var useLogoLoader: Boolean? = false,
-    var theme: HashMap<String, String?>? = null
-)
+    @Keep var appName: String? = null,
+    @Keep var appUrl: String? = null,
+    @Keep var logoLight: String? = null,
+    @Keep var logoDark: String? = null,
+    @Keep var defaultLanguage: Language? = Language.EN,
+    @Keep var mode: ThemeModes? = null,
+    @Keep var useLogoLoader: Boolean? = false,
+    @Keep var theme: HashMap<String, String?>? = null
+) : Serializable

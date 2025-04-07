@@ -1,21 +1,28 @@
 package com.web3auth.core.types
 
+import androidx.annotation.Keep
+
 object Web3AuthError {
 
+    @JvmStatic
     fun getError(errorCode: ErrorCode): String {
         return when (errorCode) {
             ErrorCode.NOUSERFOUND -> {
                 "No user found, please login again!"
             }
+
             ErrorCode.ENCODING_ERROR -> {
                 "Encoding Error"
             }
+
             ErrorCode.DECODING_ERROR -> {
                 "Decoding Error"
             }
+
             ErrorCode.SOMETHING_WENT_WRONG -> {
                 "Something went wrong!"
             }
+
             ErrorCode.RUNTIME_ERROR -> {
                 "Runtime Error"
             }
@@ -43,6 +50,7 @@ object Web3AuthError {
     }
 }
 
+@Keep
 enum class ErrorCode {
     NOUSERFOUND,
     ENCODING_ERROR,

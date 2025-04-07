@@ -1,14 +1,16 @@
 package com.web3auth.core.types
 
 import android.net.Uri
+import androidx.annotation.Keep
 
+@Keep
 data class LoginParams(
-    val loginProvider: Provider,
-    var dappShare: String? = null,
-    val extraLoginOptions: ExtraLoginOptions? = null,
-    @Transient var redirectUrl: Uri? = null,
-    val appState: String? = null,
-    val mfaLevel: MFALevel? = null,
-    val curve: Curve? = Curve.SECP256K1,
-    val dappUrl: String? = null,
+    @Keep val loginProvider: Provider,
+    @Keep var dappShare: String? = null,
+    @Keep val extraLoginOptions: ExtraLoginOptions? = null,
+    @Keep @Transient var redirectUrl: Uri? = null,
+    @Keep val appState: String? = null,
+    @Keep val mfaLevel: MFALevel? = null,
+    @Keep val curve: Curve? = Curve.SECP256K1,
+    @Keep val dappUrl: String? = null,
 )

@@ -5,6 +5,7 @@ plugins {
 }
 
 android {
+    namespace 'com.web3auth.core'
     compileSdk 34
 
     defaultConfig {
@@ -17,7 +18,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             consumerProguardFiles 'proguard-rules.pro', 'gson.pro', 'retrofit2.pro'
         }

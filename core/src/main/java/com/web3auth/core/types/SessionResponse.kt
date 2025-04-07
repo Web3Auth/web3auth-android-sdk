@@ -1,9 +1,13 @@
 package com.web3auth.core.types
 
+import androidx.annotation.Keep
+
+@Keep
 data class SessionResponse(
-    val sessionId: String
+    @Keep val sessionId: String
 )
 
+@Keep
 data class RedirectResponse(
-    val actionType: String
+    @Keep val actionType: String
 )

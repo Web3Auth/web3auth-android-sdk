@@ -1,7 +1,10 @@
 package com.web3auth.core.types
 
+import androidx.annotation.Keep
+
+@Keep
 data class SignResponse(
-    val success: Boolean,
-    val result: String?,
-    val error: String?
+    @Keep val success: Boolean,
+    @Keep val result: String?,
+    @Keep val error: String?
 )
