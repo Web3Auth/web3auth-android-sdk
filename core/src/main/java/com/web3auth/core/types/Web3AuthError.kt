@@ -4,6 +4,7 @@ import androidx.annotation.Keep
 
 object Web3AuthError {
 
+    @JvmStatic
     fun getError(errorCode: ErrorCode): String {
         return when (errorCode) {
             ErrorCode.NOUSERFOUND -> {
@@ -13,12 +14,15 @@ object Web3AuthError {
             ErrorCode.ENCODING_ERROR -> {
                 "Encoding Error"
             }
+
             ErrorCode.DECODING_ERROR -> {
                 "Decoding Error"
             }
+
             ErrorCode.SOMETHING_WENT_WRONG -> {
                 "Something went wrong!"
             }
+
             ErrorCode.RUNTIME_ERROR -> {
                 "Runtime Error"
             }

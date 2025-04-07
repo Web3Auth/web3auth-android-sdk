@@ -42,3 +42,28 @@
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
+
+# Keep the Web3Auth class and prevent any obfuscation or stripping
+-keep class com.web3auth.core.Web3Auth {
+    *;
+}
+
+-keepclassmembers class com.web3auth.core.Web3Auth$Companion {
+    public *;
+}
+-keep class com.web3auth.core.Web3Auth {
+    public static final com.web3auth.core.Web3Auth$Companion Companion;
+}
+-keep interface com.web3auth.core.types.WebViewResultCallback {
+    *;
+}
+
+-keep class com.web3auth.core.types.Web3AuthError {
+    *;
+}
+-keepclassmembers class com.web3auth.core.types.Web3AuthError {
+    public static <methods>;
+}
+-keep enum com.web3auth.core.types.ErrorCode {
+    *;
+}
