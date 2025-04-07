@@ -17,7 +17,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnable true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             consumerProguardFiles 'proguard-rules.pro', 'gson.pro', 'retrofit2.pro'
         }
