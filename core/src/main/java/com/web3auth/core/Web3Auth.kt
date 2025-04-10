@@ -17,7 +17,6 @@ import com.web3auth.core.types.ErrorCode
 import com.web3auth.core.types.ExtraLoginOptions
 import com.web3auth.core.types.InitOptions
 import com.web3auth.core.types.InitParams
-import com.web3auth.core.types.LoginConfigItem
 import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.MFALevel
 import com.web3auth.core.types.REDIRECT_URL
@@ -73,7 +72,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             network = web3AuthOption.network.name.lowercase(Locale.ROOT),
             redirectUrl = web3AuthOption.redirectUrl.toString(),
             whiteLabel = web3AuthOption.whiteLabel?.let { gson.toJson(it) },
-            loginConfig = web3AuthOption.loginConfig?.let { gson.toJson(it) },
+            authConnectionConfig = web3AuthOption.authConnectionConfig?.let { gson.toJson(it) },
             buildEnv = web3AuthOption.buildEnv?.name?.lowercase(Locale.ROOT),
             mfaSettings = web3AuthOption.mfaSettings?.let { gson.toJson(it) },
             sessionTime = web3AuthOption.sessionTime,
@@ -90,7 +89,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      */
     private fun getInitParams(params: LoginParams?): InitParams {
         return InitParams(
-            loginProvider = params?.loginProvider?.name?.lowercase(Locale.ROOT),
+            authConnection = params?.authConnection?.name?.lowercase(Locale.ROOT),
             extraLoginOptions = params?.extraLoginOptions?.let { gson.toJson(it) },
             redirectUrl = params?.redirectUrl?.toString() ?: web3AuthOption.redirectUrl.toString(),
             mfaLevel = params?.mfaLevel?.name?.lowercase(Locale.ROOT),
@@ -145,7 +144,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 existingExtraLoginOptions =
                     gson.fromJson(extraOptionsString, ExtraLoginOptions::class.java)
             }
-            existingExtraLoginOptions.login_hint = userInfo?.verifierId
+            existingExtraLoginOptions.login_hint = userInfo?.userId
             initParamsJson.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
             initParamsJson.put("mfaLevel", MFALevel.MANDATORY.name.lowercase(Locale.ROOT))
             val loginIdObject = mapOf("loginId" to sessionId, "platform" to "android")
@@ -296,8 +295,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
                                 if (web3AuthResponse?.userInfo?.dappShare?.isNotEmpty() == true) {
                                     KeyStoreManagerUtils.encryptData(
-                                        web3AuthResponse?.userInfo?.verifier.plus(" | ")
-                                            .plus(web3AuthResponse?.userInfo?.verifierId),
+                                        web3AuthResponse?.userInfo?.authConnectionId.plus(" | ")
+                                            .plus(web3AuthResponse?.userInfo?.userId),
                                         web3AuthResponse?.userInfo?.dappShare!!,
                                     )
                                 }
@@ -326,22 +325,21 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      * @return A CompletableFuture<Web3AuthResponse> representing the asynchronous operation, containing the Web3AuthResponse upon successful login.
      */
     fun login(loginParams: LoginParams): CompletableFuture<Web3AuthResponse> {
-        //check for share
-        if (web3AuthOption.loginConfig != null) {
-            val loginConfigItem: LoginConfigItem? = web3AuthOption.loginConfig?.values?.first()
-            val share: String? =
-                KeyStoreManagerUtils.decryptData(loginConfigItem?.verifier.toString())
-            if (share?.isNotEmpty() == true) {
-                loginParams.dappShare = share
+        web3AuthOption.authConnectionConfig
+            ?.firstOrNull()
+            ?.let { config ->
+                val decryptedShare = KeyStoreManagerUtils.decryptData(config.authConnectionId)
+                if (!decryptedShare.isNullOrEmpty()) {
+                    loginParams.dappShare = decryptedShare
+                }
             }
-        }
 
-        //login
         processRequest("login", loginParams)
 
-        loginCompletableFuture = CompletableFuture<Web3AuthResponse>()
+        loginCompletableFuture = CompletableFuture()
         return loginCompletableFuture
     }
+
 
     /**
      * Logs out the user asynchronously.

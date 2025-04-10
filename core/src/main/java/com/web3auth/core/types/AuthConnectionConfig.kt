@@ -3,9 +3,9 @@ package com.web3auth.core.types
 import androidx.annotation.Keep
 
 @Keep
-data class LoginConfigItem(
-    @Keep var verifier: String,
-    @Keep var typeOfLogin: TypeOfLogin,
+data class AuthConnectionConfig(
+    @Keep var authConnectionId: String,
+    @Keep var authConnection: AuthConnection,
     @Keep var name: String? = null,
     @Keep var description: String? = null,
     @Keep var clientId: String,

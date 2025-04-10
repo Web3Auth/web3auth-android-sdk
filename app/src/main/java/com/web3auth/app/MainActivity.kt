@@ -21,18 +21,18 @@ import com.google.gson.JsonArray
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.isEmailValid
 import com.web3auth.core.isPhoneNumberValid
+import com.web3auth.core.types.AUTH_CONNECTION
+import com.web3auth.core.types.AuthConnection
+import com.web3auth.core.types.AuthConnectionConfig
 import com.web3auth.core.types.BuildEnv
 import com.web3auth.core.types.ChainConfig
 import com.web3auth.core.types.ChainNamespace
 import com.web3auth.core.types.ExtraLoginOptions
 import com.web3auth.core.types.Language
-import com.web3auth.core.types.LoginConfigItem
 import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.MFALevel
 import com.web3auth.core.types.Network
-import com.web3auth.core.types.Provider
 import com.web3auth.core.types.ThemeModes
-import com.web3auth.core.types.TypeOfLogin
 import com.web3auth.core.types.UserInfo
 import com.web3auth.core.types.Web3AuthOptions
 import com.web3auth.core.types.Web3AuthResponse
@@ -44,31 +44,31 @@ import java.util.concurrent.CompletableFuture
 class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     private lateinit var web3Auth: Web3Auth
 
-    private val verifierList: List<LoginVerifier> = listOf(
-        LoginVerifier("Google", Provider.GOOGLE),
-        LoginVerifier("Facebook", Provider.FACEBOOK),
-        LoginVerifier("Twitch", Provider.TWITCH),
-        LoginVerifier("Discord", Provider.DISCORD),
-        LoginVerifier("Reddit", Provider.REDDIT),
-        LoginVerifier("Apple", Provider.APPLE),
-        LoginVerifier("Github", Provider.GITHUB),
-        LoginVerifier("LinkedIn", Provider.LINKEDIN),
-        LoginVerifier("Twitter", Provider.TWITTER),
-        LoginVerifier("Line", Provider.LINE),
-        LoginVerifier("Hosted Email Passwordless", Provider.EMAIL_PASSWORDLESS),
-        LoginVerifier("SMS Passwordless", Provider.SMS_PASSWORDLESS),
-        LoginVerifier("JWT", Provider.JWT),
-        LoginVerifier("Farcaster", Provider.FARCASTER)
+    private val authConnectionList: List<AuthConnectionLogin> = listOf(
+        AuthConnectionLogin("Google", AUTH_CONNECTION.GOOGLE),
+        AuthConnectionLogin("Facebook", AUTH_CONNECTION.FACEBOOK),
+        AuthConnectionLogin("Twitch", AUTH_CONNECTION.TWITCH),
+        AuthConnectionLogin("Discord", AUTH_CONNECTION.DISCORD),
+        AuthConnectionLogin("Reddit", AUTH_CONNECTION.REDDIT),
+        AuthConnectionLogin("Apple", AUTH_CONNECTION.APPLE),
+        AuthConnectionLogin("Github", AUTH_CONNECTION.GITHUB),
+        AuthConnectionLogin("LinkedIn", AUTH_CONNECTION.LINKEDIN),
+        AuthConnectionLogin("Twitter", AUTH_CONNECTION.TWITTER),
+        AuthConnectionLogin("Line", AUTH_CONNECTION.LINE),
+        AuthConnectionLogin("Hosted Email Passwordless", AUTH_CONNECTION.EMAIL_PASSWORDLESS),
+        AuthConnectionLogin("SMS Passwordless", AUTH_CONNECTION.SMS_PASSWORDLESS),
+        AuthConnectionLogin("JWT", AUTH_CONNECTION.JWT),
+        AuthConnectionLogin("Farcaster", AUTH_CONNECTION.FARCASTER)
     )
 
-    private var selectedLoginProvider: Provider = Provider.GOOGLE
+    private var selectedLoginProvider: AUTH_CONNECTION = AUTH_CONNECTION.GOOGLE
 
     private val gson = Gson()
 
     private fun signIn() {
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
         var extraLoginOptions: ExtraLoginOptions? = null
-        if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS) {
+        if (selectedLoginProvider == AUTH_CONNECTION.EMAIL_PASSWORDLESS) {
             val hintEmail = hintEmailEditText.text.toString()
             if (hintEmail.isBlank() || !hintEmail.isEmailValid()) {
                 Toast.makeText(this, "Please enter a valid Email.", Toast.LENGTH_LONG).show()
@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             extraLoginOptions = ExtraLoginOptions(login_hint = hintEmail)
         }
 
-        if (selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
+        if (selectedLoginProvider == AUTH_CONNECTION.SMS_PASSWORDLESS) {
             val hintPhNo = hintEmailEditText.text.toString()
             if (hintPhNo.isBlank() || !hintPhNo.isPhoneNumberValid()) {
                 Toast.makeText(this, "Please enter a valid Number.", Toast.LENGTH_LONG).show()
@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val signMsgButton = findViewById<Button>(R.id.signMsgButton)
         val btnSetUpMfa = findViewById<Button>(R.id.btnSetUpMfa)
         val btnManageMfa = findViewById<Button>(R.id.btn_manageMfa)
-        val spinner = findViewById<TextInputLayout>(R.id.verifierList)
+        val spinner = findViewById<TextInputLayout>(R.id.authConnectionList)
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
         var key: String? = null
         var userInfo: UserInfo? = null
@@ -180,14 +180,14 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                     "onPrimary" to "#0000FF"
                 )
             ),
-            loginConfig = hashMapOf(
-                "loginConfig" to LoginConfigItem(
-                    "web3auth-auth0-email-passwordless-sapphire-devnet",
-                    typeOfLogin = TypeOfLogin.JWT,
-                    clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C",
+            authConnectionConfig = listOf(
+                AuthConnectionConfig(
+                    authConnectionId = "web3auth-auth0-email-passwordless-sapphire-devnet",
+                    authConnection = AuthConnection.JWT,
+                    clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C"
                 )
             ),
-            buildEnv = BuildEnv.PRODUCTION,
+            buildEnv = BuildEnv.TESTING,
             sessionTime = 86400,
         )
 
@@ -288,7 +288,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         }
 
         val spinner = findViewById<AutoCompleteTextView>(R.id.spinnerTextView)
-        val loginVerifierList: List<String> = verifierList.map { item ->
+        val loginVerifierList: List<String> = authConnectionList.map { item ->
             item.name
         }
         val adapter: ArrayAdapter<String> =
@@ -312,17 +312,17 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
     }
 
     override fun onItemClick(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-        selectedLoginProvider = verifierList[p2].loginProvider
+        selectedLoginProvider = authConnectionList[p2].authConnection
 
         val hintEmailEditText = findViewById<EditText>(R.id.etEmailHint)
 
-        if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS) {
+        if (selectedLoginProvider == AUTH_CONNECTION.EMAIL_PASSWORDLESS) {
             hintEmailEditText.hint = "Enter Email"
-        } else if (selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
+        } else if (selectedLoginProvider == AUTH_CONNECTION.SMS_PASSWORDLESS) {
             hintEmailEditText.hint = "Enter Phone Number"
         }
 
-        if (selectedLoginProvider == Provider.EMAIL_PASSWORDLESS || selectedLoginProvider == Provider.SMS_PASSWORDLESS) {
+        if (selectedLoginProvider == AUTH_CONNECTION.EMAIL_PASSWORDLESS || selectedLoginProvider == AUTH_CONNECTION.SMS_PASSWORDLESS) {
             hintEmailEditText.visibility = View.VISIBLE
         } else {
             hintEmailEditText.visibility = View.GONE
