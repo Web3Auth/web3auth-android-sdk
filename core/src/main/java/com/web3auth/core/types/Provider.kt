@@ -4,7 +4,7 @@ import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 
 @Keep
-enum class Provider {
+enum class AUTH_CONNECTION {
     @SerializedName("google")
     GOOGLE,
 
@@ -48,7 +48,7 @@ enum class Provider {
     EMAIL_PASSWORDLESS,
 
     @SerializedName("jwt")
-    JWT,
+    JWT, // needs to check whether removed or not
 
     @SerializedName("sms_passwordless")
     SMS_PASSWORDLESS,

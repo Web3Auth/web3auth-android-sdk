@@ -11,7 +11,7 @@ data class Web3AuthOptions(
     @Transient var redirectUrl: Uri,
     var sdkUrl: String = getSdkUrl(buildEnv),
     var whiteLabel: WhiteLabelData? = null,
-    val loginConfig: HashMap<String, LoginConfigItem>? = null,
+    val authConnectionConfig: List<AuthConnectionConfig>? = null,
     val useCoreKitKey: Boolean? = false,
     val chainNamespace: ChainNamespace? = ChainNamespace.EIP155,
     val mfaSettings: MfaSettings? = null,
@@ -78,7 +78,7 @@ fun getDashboardUrl(buildEnv: BuildEnv?): String {
     return sdkUrl
 }
 
-const val authServiceVersion = "v9"
+const val authServiceVersion = "v10"
 const val walletServicesVersion = "v4"
 const val authDashboardVersion = "v9"
 const val walletAccountConstant = "wallet/account"

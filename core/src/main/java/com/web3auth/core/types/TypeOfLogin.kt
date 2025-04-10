@@ -4,7 +4,7 @@ import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 
 @Keep
-enum class TypeOfLogin {
+enum class AuthConnection {
     @SerializedName("google")
     GOOGLE,
 

@@ -5,7 +5,7 @@ import androidx.annotation.Keep
 
 @Keep
 data class LoginParams(
-    @Keep val loginProvider: Provider,
+    @Keep val authConnection: AUTH_CONNECTION,
     @Keep var dappShare: String? = null,
     @Keep val extraLoginOptions: ExtraLoginOptions? = null,
     @Keep @Transient var redirectUrl: Uri? = null,
