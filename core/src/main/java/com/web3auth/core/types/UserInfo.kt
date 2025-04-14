@@ -10,7 +10,7 @@ data class UserInfo (
     @Keep var groupedAuthConnectionId: String = "",
     @Keep var authConnectionId: String = "",
     @Keep var userId: String = "",
-    @Keep var typeOfLogin: String = "",
+    @Keep var authConnection: String = "",
     @Keep var dappShare: String = "",
     @Keep var idToken: String = "",
     @Keep var oAuthIdToken: String = "",

@@ -136,7 +136,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
         if (actionType == "enable_mfa" || actionType == "manage_mfa") {
             val userInfo = web3AuthResponse?.userInfo
-            initParamsJson.put("loginProvider", userInfo?.typeOfLogin)
+            initParamsJson.put("authConnection", userInfo?.authConnection)
             var extraOptionsString = ""
             var existingExtraLoginOptions = ExtraLoginOptions()
             if (initParamsJson.has("extraLoginOptions")) {
