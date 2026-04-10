@@ -601,6 +601,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                         )
                         if (::loginCompletableFuture.isInitialized)
                             loginCompletableFuture.complete(web3AuthResponse)
+                    } else {
+                        if (::loginCompletableFuture.isInitialized)
+                            loginCompletableFuture.completeExceptionally(err)
                     }
                 }
             }
