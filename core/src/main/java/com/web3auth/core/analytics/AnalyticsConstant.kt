@@ -21,11 +21,12 @@ object AnalyticsEvents {
     const val REQUEST_FUNCTION_COMPLETED = "Request Function Completed"
     const val REQUEST_FUNCTION_FAILED = "Request Function Failed"
 
-    const val SDK_VERSION = "10.0.0"
+    const val ANDROID_SDK_VERSION = "10.0.0"
 }
 
 object AnalyticsSdkType {
     const val ANDROID = "android"
+    const val FLUTTER = "flutter"
 }
 
 object SegmentKeys {
