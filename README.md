@@ -22,7 +22,7 @@ Checkout the official [Web3Auth Documentation](https://web3auth.io/docs) and [SD
 
 ## ⏪ Requirements
 
-- Android API version 24 or newer is required.
+- Android API version 26 or newer is required.
 - `compileSdkVersion` needs to be 34
 
 ## ⚡ Installation
@@ -45,7 +45,7 @@ Then, in your app-level `build.gradle` dependencies section, add the following:
 ```groovy
 dependencies {
     // ...
-    implementation 'com.github.web3auth:web3auth-android-sdk:9.0.0'
+    implementation 'com.github.web3auth:web3auth-android-sdk:10.0.1'
 }
 ```
 
@@ -56,7 +56,12 @@ Checkout [SDK Reference](https://web3auth.io/docs/sdk/pnp/android/install#update
 
 ```kotlin
 import com.web3auth.core.Web3Auth
+import com.web3auth.core.types.AuthConnection
+import com.web3auth.core.types.LoginParams
 import com.web3auth.core.types.Web3AuthOptions
+import com.web3auth.core.types.Web3AuthResponse
+import org.torusresearch.fetchnodedetails.types.Web3AuthNetwork
+import java.util.concurrent.CompletableFuture
 
 class MainActivity : AppCompatActivity() {
     // ...
@@ -68,11 +73,11 @@ class MainActivity : AppCompatActivity() {
 
         web3Auth = Web3Auth(
             Web3AuthOptions(
-                context = this,
                 clientId = "YOUR_WEB3AUTH_CLIENT_ID", // Pass over your Web3Auth Client ID from Developer Dashboard
-                network = Network.MAINNET,
-                redirectUrl = Uri.parse("{YOUR_APP_PACKAGE_NAME}://auth"),
-            )
+                web3AuthNetwork = Web3AuthNetwork.SAPPHIRE_MAINNET,
+                redirectUrl = "{YOUR_APP_PACKAGE_NAME}://auth",
+            ),
+            this
         )
 
         // Handle user signing in when app is not alive
@@ -98,8 +103,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onClickLogin() {
-        val selectedLoginProvider = Provider.GOOGLE   // Can be Google, Facebook, Twitch etc
-        val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.login(LoginParams(selectedLoginProvider))
+        val loginParams = LoginParams(
+            authConnection = AuthConnection.GOOGLE // Can be Google, Facebook, Twitch etc
+        )
+        val loginCompletableFuture: CompletableFuture<Web3AuthResponse> = web3Auth.connectTo(loginParams)
         
         loginCompletableFuture.whenComplete { _, error ->
             if (error == null) {
@@ -117,15 +124,15 @@ class MainActivity : AppCompatActivity() {
 
 ## 🩹 Examples
 
-Checkout the examples for your preferred blockchain and platform in our [examples](https://github.com/Web3Auth/web3auth-pnp-examples/tree/main/android)
+Checkout the examples for your preferred blockchain and platform in our [examples](https://github.com/Web3Auth/web3auth-android-examples)
 
 ## 🌐 Demo
 
 Checkout the [Web3Auth Demo](https://demo-app.web3auth.io/) to see how Web3Auth can be used in an application.
 
-Have a look at our [Web3Auth PnP Android Quick Start](https://github.com/Web3Auth/web3auth-pnp-examples/tree/main/android/android-quick-start) to help you quickly integrate a basic instance of Web3Auth Plug and Play in your Android app.
+Have a look at our [Web3Auth PnP Android Quick Start](https://github.com/Web3Auth/web3auth-android-examples/tree/main/android-quick-start) to help you quickly integrate a basic instance of Web3Auth Plug and Play in your Android app.
 
-Further checkout the [app folder](https://https://github.com/Web3Auth/web3auth-android-sdk/tree/master/app) within this repository, which contains a sample app.
+Further checkout the [app folder](https://github.com/Web3Auth/web3auth-android-sdk/tree/master/app) within this repository, which contains a sample app.
 
 ## 💬 Troubleshooting and Support
 
