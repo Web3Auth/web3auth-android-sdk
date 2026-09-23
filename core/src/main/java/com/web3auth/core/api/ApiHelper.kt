@@ -5,26 +5,16 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import com.google.gson.GsonBuilder
+import com.web3auth.core.types.BuildEnv
+import com.web3auth.core.types.Web3AuthUrls
 import com.web3auth.session_manager_android.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import org.torusresearch.fetchnodedetails.types.Web3AuthNetwork
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiHelper {
-    // TODO: Abstract this to a single common source, i.e torus-common, then add these to here and fetch-node-details, etc respectively
-    private val SIGNER_MAP: Map<Web3AuthNetwork, String> = mapOf(
-        Web3AuthNetwork.MAINNET to "https://signer.web3auth.io",
-        Web3AuthNetwork.TESTNET to "https://signer.web3auth.io",
-        Web3AuthNetwork.CYAN to "https://signer-polygon.web3auth.io",
-        Web3AuthNetwork.AQUA to "https://signer-polygon.web3auth.io",
-        Web3AuthNetwork.SAPPHIRE_MAINNET to "https://signer.web3auth.io",
-        Web3AuthNetwork.SAPPHIRE_DEVNET to "https://signer.web3auth.io"
-    )
-
-    private const val sessionBaseUrl = "https://session.web3auth.io"
 
     private val okHttpClient = OkHttpClient().newBuilder()
         .readTimeout(60, TimeUnit.SECONDS)
@@ -38,14 +28,26 @@ object ApiHelper {
 
     private val builder = GsonBuilder().disableHtmlEscaping().create()
 
-    fun getInstance(network: String): Retrofit {
-        return Retrofit.Builder().baseUrl(SIGNER_MAP[Web3AuthNetwork.valueOf(network)])
+    /**
+     * Project config client. Auth v11 uses [DASHBOARD_PUBLIC_API_MAP] (signer-service)
+     * keyed by build env, not the legacy network-specific signer host.
+     */
+    fun getInstance(buildEnv: BuildEnv): Retrofit {
+        val baseUrl = Web3AuthUrls.dashboardPublicApiUrl(buildEnv).trimEnd('/') + "/"
+        return Retrofit.Builder().baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create(builder))
             .client(okHttpClient)
             .build()
     }
 
-    // TODO: Abstract this to a single common source, i.e torus-common
+    @Deprecated(
+        message = "Use getInstance(BuildEnv) — project config is keyed by build env in Auth v11.",
+        replaceWith = ReplaceWith("getInstance(buildEnv)")
+    )
+    fun getInstance(network: String): Retrofit {
+        return getInstance(BuildEnv.PRODUCTION)
+    }
+
     fun isNetworkAvailable(context: Context?): Boolean {
         if (context == null) return false
         val connectivityManager =

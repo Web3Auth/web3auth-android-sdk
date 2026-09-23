@@ -98,6 +98,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 println("PrivKey: " + web3Auth.getPrivateKey())
                 println("ed25519PrivKey: " + web3Auth.getEd25519PrivateKey())
                 println("Web3Auth UserInfo" + web3Auth.getUserInfo())
+                web3Auth.getUserInfoAsync().whenComplete { info, infoError ->
+                    if (infoError == null) {
+                        Log.d("MainActivity_Web3Auth", "idToken present=${info.idToken.isNotBlank()}")
+                    }
+                }
             } else {
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")
             }
@@ -220,16 +225,23 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
             clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ",
             web3AuthNetwork = Web3AuthNetwork.SAPPHIRE_MAINNET,
             redirectUrl = "torusapp://org.torusresearch.web3authexample",
+            // Auth v11: auth/dashboard URLs default to /v11 (TESTING stays unversioned).
+            // citadelServerUrl / storageServerUrl default from Web3AuthUrls per build env.
             //sdkUrl = "https://auth.mocaverse.xyz",
             //walletSdkUrl = "https://lrc-mocaverse.web3auth.io",
             walletServicesConfig = WalletServicesConfig(
                 whiteLabel = WhiteLabelData(
-                    "Web3Auth Sample App", null, null, null,
-                    Language.EN, ThemeModes.LIGHT, true,
-                    hashMapOf(
+                    appName = "Web3Auth Sample App",
+                    defaultLanguage = Language.EN,
+                    mode = ThemeModes.LIGHT,
+                    useLogoLoader = true,
+                    theme = hashMapOf(
                         "primary" to "#123456",
                         "onPrimary" to "#0000FF"
-                    )
+                    ),
+                    consentRequired = false,
+                    tncLink = "https://web3auth.io/docs/legal/terms-and-conditions",
+                    privacyPolicy = "https://web3auth.io/docs/legal/privacy-policy",
                 )
             ),
             //authConnectionConfig = authConfig,
@@ -240,14 +252,17 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                                 clientId = "d84f6xvbdV75VTGmHiMWfZLeSPk8M07C"
                             )
                         ),*/
-            authBuildEnv = BuildEnv.TESTING,
+            // Must match the dashboard project: sapphire_mainnet client IDs use PRODUCTION.
+            // TESTING hits develop-auth and will fail redirect whitelist checks for prod projects.
+            authBuildEnv = BuildEnv.PRODUCTION,
             defaultChainId = "0x1",
+            // Leave null to hydrate sessionTime from project config (else 30-day default).
             sessionTime = 86400,
         )
 
         println("params: $options")
 
-        // Configure Web3Auth
+        // Configure Web3Auth (v11 uses AuthSessionManager + citadel for session tokens)
         web3Auth = Web3Auth(
             options, this
         )
@@ -255,7 +270,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         //Set intent result url from Web3Auth redirect
         web3Auth.setResultUrl(intent.data)
 
-        // for session response
+        // for session response — rehydrates via citadel (SFA falls back to session-service)
         val sessionResponse: CompletableFuture<Void> = web3Auth.initialize()
         sessionResponse.whenComplete { _, error ->
             if (error == null) {
@@ -263,6 +278,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                 println("PrivKey: " + web3Auth.getPrivateKey())
                 println("ed25519PrivKey: " + web3Auth.getEd25519PrivateKey())
                 println("Web3Auth UserInfo" + web3Auth.getUserInfo())
+                web3Auth.getAccessToken().whenComplete { token, tokenError ->
+                    if (tokenError == null) {
+                        Log.d("MainActivity_Web3Auth", "accessToken present=${!token.isNullOrBlank()}")
+                    }
+                }
             } else {
                 //handle retry login
                 Log.d("MainActivity_Web3Auth", error.message ?: "Something went wrong")

@@ -13,6 +13,7 @@ data class WalletUiConfig(
     val enableSendButton: Boolean? = null,
     val enableSwapButton: Boolean? = null,
     val enableReceiveButton: Boolean? = null,
+    val enableDefiPositionsDisplay: Boolean? = null,
     val portfolioWidgetPosition: ButtonPositionType? = null,
     val defaultPortfolio: DefaultPortfolioType? = null
 )
@@ -36,5 +37,8 @@ enum class DefaultPortfolioType {
     TOKEN,
 
     @SerializedName("nft")
-    NFT
+    NFT,
+
+    @SerializedName("defi")
+    DEFI
 }

@@ -12,5 +12,8 @@ data class WhiteLabelData(
     @Keep var defaultLanguage: Language? = Language.EN,
     @Keep var mode: ThemeModes? = null,
     @Keep var useLogoLoader: Boolean? = false,
-    @Keep var theme: HashMap<String, String?>? = null
+    @Keep var theme: HashMap<String, String?>? = null,
+    @Keep var consentRequired: Boolean? = null,
+    @Keep var tncLink: String? = null,
+    @Keep var privacyPolicy: String? = null,
 ) : Serializable
