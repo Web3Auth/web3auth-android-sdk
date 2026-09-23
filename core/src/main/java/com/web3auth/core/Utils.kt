@@ -15,6 +15,17 @@ fun ByteArray.toBase64URLString(): String = Base64.encodeToString(this, BASE64_U
 
 fun decodeBase64URLString(src: String): ByteArray = Base64.decode(src, BASE64_URL_FLAGS)
 
+/**
+ * Wallet Services v5 session-manager pads with `padStart(64).slice(0,64)` and does **not**
+ * strip a `0x` prefix. Passing `0x`-prefixed ids (session-manager-android v4) mangles the key
+ * and rehydrates an empty privKey. Always send unprefixed 64-char hex to the wallet WebView.
+ */
+fun String.strip0x(): String =
+    if (startsWith("0x", ignoreCase = true)) substring(2) else this
+
+fun String.strip0xForWalletSession(): String =
+    strip0x().padStart(64, '0').take(64)
+
 val ALLOWED_CUSTOM_TABS_PACKAGES =
     arrayOf(
         "com.android.chrome", // Chrome stable
@@ -90,7 +101,10 @@ fun WhiteLabelData.merge(other: WhiteLabelData): WhiteLabelData {
         defaultLanguage = this.defaultLanguage ?: other.defaultLanguage,
         mode = this.mode ?: other.mode,
         useLogoLoader = this.useLogoLoader ?: other.useLogoLoader,
-        theme = mergedTheme
+        theme = mergedTheme,
+        consentRequired = this.consentRequired ?: other.consentRequired,
+        tncLink = this.tncLink ?: other.tncLink,
+        privacyPolicy = this.privacyPolicy ?: other.privacyPolicy,
     )
 }
 

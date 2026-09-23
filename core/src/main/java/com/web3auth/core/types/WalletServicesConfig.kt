@@ -5,8 +5,9 @@ import com.google.gson.annotations.SerializedName
 
 @Keep
 data class WalletServicesConfig(
-    @Keep val confirmationStrategy: ConfirmationStrategy? = ConfirmationStrategy.DEFAULT,
-    @Keep var whiteLabel: WhiteLabelData? = null
+    @Keep val confirmationStrategy: ConfirmationStrategy? = null,
+    @Keep var whiteLabel: WhiteLabelData? = null,
+    @Keep var enableKeyExport: Boolean? = null,
 )
 
 @Keep
