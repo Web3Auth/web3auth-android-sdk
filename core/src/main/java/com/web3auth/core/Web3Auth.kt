@@ -543,6 +543,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 if (tokenError != null) {
                     actionType?.let { processRequestFailAnalytics(it, ErrorCode.SOMETHING_WENT_WRONG) }
                     throwLoginError(ErrorCode.SOMETHING_WENT_WRONG)
+                    throwEnableMFAError(ErrorCode.SOMETHING_WENT_WRONG)
+                    throwManageMFAError(ErrorCode.SOMETHING_WENT_WRONG)
                     return@whenComplete
                 }
                 // Rehydrate Session via citadel
@@ -733,6 +735,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     private fun connect(
         loginParams: LoginParams,
         ctx: Context,
+        subVerifierInfoArray: Array<Web3AuthSubVerifierInfo>? = null,
+    ) {
+        // Drop any prior PnP citadel tokens so initialize()/refreshSession() cannot
+        // restore the previous user over this new SFA session-service session.
+        authSessionManager.clearSessionDataAsync().whenComplete { _, _ ->
+            completeSfaConnect(loginParams, subVerifierInfoArray)
+        }
+    }
+
+    private fun completeSfaConnect(
+        loginParams: LoginParams,
         subVerifierInfoArray: Array<Web3AuthSubVerifierInfo>? = null,
     ) {
         val torusKey = subVerifierInfoArray.let {
@@ -927,6 +940,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     /**
      * Logs out the user asynchronously.
      *
+     * Invalidates the session-service row (SFA / ephemeral store) and clears
+     * citadel tokens. Local state is always cleared; the returned future completes
+     * successfully after local cleanup so SFA callers are not left hanging when
+     * citadel has no tokens.
+     *
      * @return A CompletableFuture<Void> representing the asynchronous operation.
      */
     fun logout(): CompletableFuture<Void> {
@@ -934,28 +952,47 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             AnalyticsEvents.LOGOUT_STARTED
         )
         val logoutCompletableFuture: CompletableFuture<Void> = CompletableFuture()
-        authSessionManager.logoutAsync().whenComplete { _, error ->
-            StorageManager.deleteSessionIdFromStorage()
-            runOnUIThread {
-                if (error == null) {
-                    AnalyticsManager.trackEvent(
-                        AnalyticsEvents.LOGOUT_COMPLETED
-                    )
-                    logoutCompletableFuture.complete(null)
+        val storedSessionId = StorageManager.getSessionIdFromStorage()
+
+        val invalidateStore: CompletableFuture<*> = if (storedSessionId.isNotBlank()) {
+            storageManager.setSessionId(storedSessionId)
+            storageManager.invalidateSession()
+        } else {
+            CompletableFuture.completedFuture(true)
+        }
+
+        authSessionManager.getAccessTokenAsync().whenComplete { accessToken, _ ->
+            val clearCitadel: CompletableFuture<*> =
+                if (!accessToken.isNullOrBlank()) {
+                    authSessionManager.logoutAsync()
                 } else {
-                    AnalyticsManager.trackEvent(
-                        AnalyticsEvents.LOGOUT_FAILED,
-                        mutableMapOf<String, Any>(
-                            "error_message" to "Logout Failed: ${error.message}"
-                        )
-                    )
-                    logoutCompletableFuture.completeExceptionally(Exception(error))
+                    authSessionManager.clearSessionDataAsync()
                 }
-                AnalyticsManager.reset()
+
+            CompletableFuture.allOf(invalidateStore, clearCitadel).whenComplete { _, error ->
+                StorageManager.deleteSessionIdFromStorage()
+                SharedPrefsHelper.clear()
+                web3AuthResponse = Web3AuthResponse()
+                runOnUIThread {
+                    if (error != null) {
+                        AnalyticsManager.trackEvent(
+                            AnalyticsEvents.LOGOUT_FAILED,
+                            mutableMapOf<String, Any>(
+                                "error_message" to "Logout Failed: ${error.message}"
+                            )
+                        )
+                    } else {
+                        AnalyticsManager.trackEvent(
+                            AnalyticsEvents.LOGOUT_COMPLETED
+                        )
+                    }
+                    // Always complete after local clear so SFA / partial failures
+                    // do not leave callers waiting after state is already wiped.
+                    logoutCompletableFuture.complete(null)
+                    AnalyticsManager.reset()
+                }
             }
         }
-        SharedPrefsHelper.clear()
-        web3AuthResponse = Web3AuthResponse()
         return logoutCompletableFuture
     }
 
@@ -977,14 +1014,18 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             )
         )
         enableMfaCompletableFuture = CompletableFuture()
+        if (SharedPrefsHelper.getBoolean(IS_SFA) || !loginParams?.idToken.isNullOrEmpty()) {
+            throwEnableMFAError(ErrorCode.ENABLE_MFA_NOT_ALLOWED)
+            return enableMfaCompletableFuture
+        }
         if (web3AuthResponse?.userInfo?.isMfaEnabled == true) {
             throwEnableMFAError(ErrorCode.MFA_ALREADY_ENABLED)
             return enableMfaCompletableFuture
         }
-        authSessionManager.getSessionIdAsync().whenComplete { sessionId, _ ->
-            if (sessionId.isNullOrBlank()) {
+        hasActiveSession { hasSession ->
+            if (!hasSession) {
                 throwEnableMFAError(ErrorCode.NOUSERFOUND)
-                return@whenComplete
+                return@hasActiveSession
             }
             processRequest("enable_mfa", loginParams)
         }
@@ -1004,18 +1045,38 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         )
         AnalyticsManager.trackEvent(AnalyticsEvents.MFA_MANAGEMENT_SELECTED)
         manageMfaCompletableFuture = CompletableFuture()
+        if (SharedPrefsHelper.getBoolean(IS_SFA) || !loginParams?.idToken.isNullOrEmpty()) {
+            throwManageMFAError(ErrorCode.ENABLE_MFA_NOT_ALLOWED)
+            return manageMfaCompletableFuture
+        }
         if (web3AuthResponse?.userInfo?.isMfaEnabled == false) {
             throwManageMFAError(ErrorCode.MFA_NOT_ENABLED)
             return manageMfaCompletableFuture
         }
-        authSessionManager.getSessionIdAsync().whenComplete { sessionId, _ ->
-            if (sessionId.isNullOrBlank()) {
+        hasActiveSession { hasSession ->
+            if (!hasSession) {
                 throwManageMFAError(ErrorCode.NOUSERFOUND)
-                return@whenComplete
+                return@hasActiveSession
             }
             processRequest("manage_mfa", loginParams)
         }
         return manageMfaCompletableFuture
+    }
+
+    /**
+     * True when citadel or session-service (SFA) has a session, or in-memory keys exist.
+     */
+    private fun hasActiveSession(onResult: (Boolean) -> Unit) {
+        authSessionManager.getSessionIdAsync().whenComplete { citadelSessionId, _ ->
+            if (!citadelSessionId.isNullOrBlank()) {
+                onResult(true)
+                return@whenComplete
+            }
+            val storageSessionId = StorageManager.getSessionIdFromStorage()
+            val hasKeys = !web3AuthResponse?.privateKey.isNullOrBlank() ||
+                !web3AuthResponse?.factorKey.isNullOrBlank()
+            onResult(storageSessionId.isNotBlank() || hasKeys)
+        }
     }
 
     /**
@@ -1669,7 +1730,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 intent.putExtra(REDIRECT_URL, web3AuthOption.redirectUrl)
                 baseContext.startActivity(intent)
             } else {
-                signMsgCF.completeExceptionally(error)
+                signMsgCF.completeExceptionally(
+                    error ?: Exception("Failed to create wallet loginId")
+                )
             }
         }
     }
