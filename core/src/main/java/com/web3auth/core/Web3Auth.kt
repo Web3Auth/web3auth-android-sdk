@@ -370,9 +370,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val loginIdCf = getLoginId(sessionId, paramsString)
         loginIdCf.whenComplete { loginId, error ->
             if (error == null) {
-                if (web3AuthOption.whiteLabel?.consentRequired == true) {
-                    AnalyticsManager.trackEvent(AnalyticsEvents.USER_CONSENT_STARTED)
-                }
                 val configParams = mutableMapOf(
                     "loginId" to loginId,
                     "recordId" to recordId,
@@ -455,7 +452,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val hash = uri?.fragment
         if (hash == null) {
             if (::loginCompletableFuture.isInitialized) {
-                trackConsentIfNeeded(AnalyticsEvents.USER_CONSENT_DECLINED)
                 loginCompletableFuture.completeExceptionally(UserCancelledException())
                 return
             }
@@ -463,7 +459,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         val hashUri = Uri.parse(uri?.host + "?" + uri?.fragment)
         val error = uri?.getQueryParameter("error")
         if (error != null) {
-            trackConsentIfNeeded(AnalyticsEvents.USER_CONSENT_ERRORED)
             if (::loginCompletableFuture.isInitialized) loginCompletableFuture.completeExceptionally(
                 UnKnownException(error)
             )
@@ -589,9 +584,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
                                     val completeLoginUi = {
                                         actionType?.let { processRequestCompleteAnalytics(it) }
-                                        if (actionType == "login") {
-                                            trackConsentIfNeeded(AnalyticsEvents.USER_CONSENT_ACCEPTED)
-                                        }
 
                                         if (::loginCompletableFuture.isInitialized)
                                             loginCompletableFuture.complete(web3AuthResponse)
@@ -1317,12 +1309,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         }
     }
 
-    private fun trackConsentIfNeeded(event: String) {
-        if (web3AuthOption.whiteLabel?.consentRequired == true) {
-            AnalyticsManager.trackEvent(event)
-        }
-    }
-
     private fun buildInitializationAnalyticsProperties(): MutableMap<String, Any?> {
         val projectChains = projectConfigResponse?.chains
         val optionChain = web3AuthOption.chains
@@ -1359,7 +1345,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             "whitelabel_app_name" to wl?.appName,
             "whitelabel_tnc_link_enabled" to !wl?.tncLink.isNullOrBlank(),
             "whitelabel_privacy_policy_enabled" to !wl?.privacyPolicy.isNullOrBlank(),
-            "whitelabel_consent_required" to (wl?.consentRequired == true),
             "aa_smart_account_type" to sa?.smartAccountType?.name?.lowercase(Locale.ROOT),
             "aa_chain_ids" to sa?.chains?.map { it.chainId },
             "aa_bundler_urls" to sa?.chains?.map { it.bundlerConfig.url },

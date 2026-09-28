@@ -27,12 +27,6 @@ object AnalyticsEvents {
     const val IDENTITY_TOKEN_COMPLETED = "Identity Token Completed"
     const val IDENTITY_TOKEN_FAILED = "Identity Token Failed"
     const val MFA_MANAGEMENT_SELECTED = "MFA Management Selected"
-    const val USER_CONSENT_STARTED = "User Consent Started"
-    const val USER_CONSENT_ACCEPTED = "User Consent Accepted"
-    const val USER_CONSENT_DECLINED = "User Consent Declined"
-    const val USER_CONSENT_ERRORED = "User Consent Errored"
-    const val TERMS_OF_SERVICE_CLICKED = "Terms of Service Clicked"
-    const val PRIVACY_POLICY_CLICKED = "Privacy Policy Clicked"
 }
 
 object AnalyticsIntegrationType {

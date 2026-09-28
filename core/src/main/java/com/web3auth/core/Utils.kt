@@ -102,7 +102,6 @@ fun WhiteLabelData.merge(other: WhiteLabelData): WhiteLabelData {
         mode = this.mode ?: other.mode,
         useLogoLoader = this.useLogoLoader ?: other.useLogoLoader,
         theme = mergedTheme,
-        consentRequired = this.consentRequired ?: other.consentRequired,
         tncLink = this.tncLink ?: other.tncLink,
         privacyPolicy = this.privacyPolicy ?: other.privacyPolicy,
     )

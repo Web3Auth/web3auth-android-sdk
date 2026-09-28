@@ -239,7 +239,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
                         "primary" to "#123456",
                         "onPrimary" to "#0000FF"
                     ),
-                    consentRequired = false,
                     tncLink = "https://web3auth.io/docs/legal/terms-and-conditions",
                     privacyPolicy = "https://web3auth.io/docs/legal/privacy-policy",
                 )
