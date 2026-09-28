@@ -1,23 +1,16 @@
 plugins {
     id 'com.android.application'
-    id 'kotlin-android'
+    id 'org.jetbrains.kotlin.android'
 }
 
 android {
-    signingConfigs {
-        release {
-            storeFile file('/Users/tanuj/Desktop/Torus/open login/open_login')
-            storePassword 'torus123'
-            keyAlias 'key0'
-            keyPassword 'torus123'
-        }
-    }
+    namespace 'com.web3auth.app'
     compileSdk 34
 
     defaultConfig {
         applicationId "com.web3auth.app"
-        minSdkVersion 26
-        targetSdkVersion 34
+        minSdk 26
+        targetSdk 34
         versionCode 1
         versionName "1.0"
         manifestPlaceholders = [
@@ -33,7 +26,6 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
         }
     }
     compileOptions {
@@ -47,7 +39,7 @@ android {
 
 dependencies {
     // Default
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.4.2'
     implementation 'com.google.android.material:material:1.6.1'

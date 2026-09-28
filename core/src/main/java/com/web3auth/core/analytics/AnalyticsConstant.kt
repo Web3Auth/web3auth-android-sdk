@@ -21,7 +21,16 @@ object AnalyticsEvents {
     const val REQUEST_FUNCTION_COMPLETED = "Request Function Completed"
     const val REQUEST_FUNCTION_FAILED = "Request Function Failed"
 
-    const val SDK_VERSION = "10.0.0"
+    const val SDK_VERSION = "11.0.0"
+
+    const val IDENTITY_TOKEN_STARTED = "Identity Token Started"
+    const val IDENTITY_TOKEN_COMPLETED = "Identity Token Completed"
+    const val IDENTITY_TOKEN_FAILED = "Identity Token Failed"
+    const val MFA_MANAGEMENT_SELECTED = "MFA Management Selected"
+}
+
+object AnalyticsIntegrationType {
+    const val NATIVE_SDK = "Native SDK"
 }
 
 object AnalyticsSdkType {

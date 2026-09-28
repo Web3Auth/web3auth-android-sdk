@@ -11,6 +11,7 @@ data class WhitelistResponse(
 
 @Keep
 data class ProjectConfigResponse(
+    @SerializedName(value = "userDataInIdToken", alternate = ["userDataIncludedInToken"])
     @Keep var userDataInIdToken: Boolean? = true,
     @Keep val sessionTime: Int? = 30 * 86400,
     @Keep val enableKeyExport: Boolean? = false,
@@ -19,6 +20,11 @@ data class ProjectConfigResponse(
     @Keep val smartAccounts: SmartAccountsConfig? = null,
     @Keep val walletUiConfig: WalletUiConfig? = null,
     @Keep val embeddedWalletAuth: List<AuthConnectionConfig>? = null,
+    /**
+     * Dashboard may return an object map (or empty `{}`) rather than a list.
+     * Kept as [JsonElement] so either shape parses; native SDK does not consume it yet.
+     */
+    @Keep val externalWalletAuth: com.google.gson.JsonElement? = null,
     @Keep val sms_otp_enabled: Boolean?,
     @Keep val wallet_connect_enabled: Boolean?,
     @Keep val walletConnectProjectId: String?,
@@ -33,7 +39,13 @@ data class SmartAccountsConfig(
     val smartAccountType: SmartAccountType,
 
     @SerializedName("chains")
-    val chains: List<ChainConfig>
+    val chains: List<ChainConfig>,
+
+    @SerializedName("eipStandard")
+    val eipStandard: String? = null,
+
+    @SerializedName("walletScope")
+    val walletScope: SmartAccountWalletScope? = null,
 )
 
 @Keep

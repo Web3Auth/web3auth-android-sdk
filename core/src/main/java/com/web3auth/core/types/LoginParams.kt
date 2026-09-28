@@ -15,4 +15,6 @@ data class LoginParams(
     @Keep var dappUrl: String? = null,
     @Keep var loginHint: String? = null,
     @Keep val idToken: String? = null,
+    @Keep val recordId: String? = null,
+    @Keep val loginSource: String? = null,
 )

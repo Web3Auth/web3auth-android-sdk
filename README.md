@@ -8,6 +8,43 @@ Web3Auth is where passwordless auth meets non-custodial key infrastructure for W
 
 Checkout the official [Web3Auth Documentation](https://web3auth.io/docs) and [SDK Reference](https://web3auth.io/docs/sdk/android/) to get started!
 
+## 🔁 Migrating from v10 → v11
+
+Auth v11 uses **citadel** session tokens (`sessionId`, `accessToken`, `refreshToken`, `idToken`) and Wallet Services **v6**.
+
+### Steps
+
+1. Bump the dependency to **11.x**:
+   ```groovy
+   implementation 'com.github.web3auth:web3auth-android-sdk:11.0.0'
+   ```
+2. Remove any `MFALevel.DEFAULT` usages. Use only `OPTIONAL`, `MANDATORY`, or `NONE`.
+3. Stop hard-coding `/v10` auth or dashboard URLs. Rely on SDK defaults from `authBuildEnv` (`PRODUCTION` / `STAGING` use `/v11`; `TESTING` stays unversioned).
+4. After constructing `Web3Auth`, call `initialize()` so the session rehydrates via citadel (SFA falls back to session-service when citadel authorize fails).
+5. Prefer `getAccessToken()` and `getUserInfoAsync()` when you need token-backed identity data. Use `refreshSession()` to re-authorize; `logout()` clears citadel tokens.
+6. Optional whitelabel consent:
+   ```kotlin
+   WhiteLabelData(
+       appName = "My App",
+       consentRequired = true,
+       tncLink = "https://example.com/terms",
+       privacyPolicy = "https://example.com/privacy",
+   )
+   ```
+7. Re-test login, session restore, MFA, `showWalletUI()` / `request()`, and logout on staging and production.
+
+### Breaking notes
+
+| Area | Change |
+| --- | --- |
+| Session | Citadel tokens via `AuthSessionManager` (SFA still falls back to session-service) |
+| Auth / dashboard URLs | `/v11` (do not hard-code `/v10`) |
+| Wallet Services | Host `/v6`; launch passes citadel `sessionId` + `accessToken` |
+| MFA | `MFALevel.DEFAULT` removed |
+| Login audit | `/start` `b64Params` include `recordId` and `loginSource` |
+| Whitelabel | Optional `consentRequired`, `tncLink`, `privacyPolicy` |
+| Project config | Fetched from dashboard public API by `buildEnv` |
+
 ## 💡 Features
 - Plug and Play, OAuth based Web3 Authentication Service
 - Fully decentralized, non-custodial key infrastructure
@@ -45,7 +82,7 @@ Then, in your app-level `build.gradle` dependencies section, add the following:
 ```groovy
 dependencies {
     // ...
-    implementation 'com.github.web3auth:web3auth-android-sdk:9.0.0'
+    implementation 'com.github.web3auth:web3auth-android-sdk:11.0.0'
 }
 ```
 
