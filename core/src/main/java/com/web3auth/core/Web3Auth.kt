@@ -700,18 +700,13 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             )
             val groupedId = loginParams.groupedAuthConnectionId
             if (!groupedId.isNullOrEmpty()) {
-                val aggregateParams = LoginParams(
-                    AuthConnection.CUSTOM,
-                    authConnectionId = groupedId,
-                    idToken = loginParams.idToken
-                )
                 val subVerifierInfoArray = arrayOf(
                     Web3AuthSubVerifierInfo(
                         loginParams.authConnectionId.toString(),
                         idToken = loginParams.idToken.toString()
                     )
                 )
-                connect(aggregateParams, baseContext, subVerifierInfoArray)
+                connect(loginParams, baseContext, subVerifierInfoArray)
             } else {
                 connect(loginParams, baseContext)
             }
@@ -831,8 +826,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         lateinit var retrieveSharesResponse: TorusKey
 
         val userId = getUserIdFromJWT(loginParams.idToken.toString())
+        // Aggregate SFA uses the group verifier id for node lookup / retrieveShares;
+        // non-aggregate uses the connection id. UserInfo still keeps both original fields.
+        val torusAuthConnectionId = if (!subVerifierInfoArray.isNullOrEmpty()) {
+            loginParams.groupedAuthConnectionId?.takeIf { it.isNotEmpty() }
+                ?: loginParams.authConnectionId
+        } else {
+            loginParams.authConnectionId
+        }
         val nodeDetails: NodeDetails =
-            nodeDetailManager.getNodeDetails(loginParams.authConnectionId, userId)
+            nodeDetailManager.getNodeDetails(torusAuthConnectionId, userId)
                 .get()
 
         val endpoints = nodeDetails.torusNodeEndpoints
@@ -870,7 +873,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                     endpoints,
                     indexes,
                     nodePubkeys,
-                    loginParams.authConnectionId.toString(),
+                    torusAuthConnectionId.toString(),
                     verifierParams,
                     aggregateIdToken,
                     null,
@@ -887,7 +890,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                     endpoints,
                     indexes,
                     nodePubkeys,
-                    loginParams.authConnectionId.toString(),
+                    torusAuthConnectionId.toString(),
                     verifierParams,
                     loginParams.idToken.toString(),
                     null,
