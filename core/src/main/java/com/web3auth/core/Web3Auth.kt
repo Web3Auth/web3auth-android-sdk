@@ -631,6 +631,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
      * @return A CompletableFuture<Web3AuthResponse> representing the asynchronous operation, containing the Web3AuthResponse upon successful login.
      */
     private fun login(loginParams: LoginParams): CompletableFuture<Web3AuthResponse> {
+        if (!::loginCompletableFuture.isInitialized) {
+            loginCompletableFuture = CompletableFuture()
+        }
+
         web3AuthOption.authConnectionConfig
             ?.firstOrNull()
             ?.let { config ->
@@ -641,8 +645,6 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             }
 
         processRequest("login", loginParams)
-
-        loginCompletableFuture = CompletableFuture()
         return loginCompletableFuture
     }
 
@@ -657,6 +659,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             sessionNamespace = if (!loginParams.idToken.isNullOrEmpty()) "sfa" else resolveSessionNamespace()
         )
         authSessionManager = createAuthSessionManager(baseContext)
+
+        // Assign before any async SFA/PnP work so callbacks can never race an uninitialized future.
+        loginCompletableFuture = CompletableFuture()
 
         val analyticsProps = mutableMapOf<String, Any>(
             "connector" to "auth",
@@ -676,17 +681,15 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                     "is_sfa" to false,
                 )
             )
-            if (!loginParams.loginHint.isNullOrEmpty()) {
+            val pnpParams = if (!loginParams.loginHint.isNullOrEmpty()) {
                 val updatedExtraLoginOptions = loginParams.extraLoginOptions?.copy(
                     login_hint = loginParams.loginHint
                 ) ?: ExtraLoginOptions(login_hint = loginParams.loginHint)
-
                 loginParams.copy(extraLoginOptions = updatedExtraLoginOptions)
             } else {
                 loginParams
-            }.also {
-                login(it) // PnP login
             }
+            login(pnpParams)
         } else {
             SharedPrefsHelper.putBoolean(IS_SFA, true)
             AnalyticsManager.trackEvent(
@@ -695,32 +698,20 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                     "is_sfa" to true,
                 )
             )
-            loginParams.groupedAuthConnectionId?.let {
-                if (it.isNullOrEmpty()) {
-                    connect(loginParams, baseContext)
-                } else {
-                    val _loginParams = LoginParams(
-                        AuthConnection.CUSTOM,
-                        authConnectionId = loginParams.groupedAuthConnectionId,
-                        idToken = loginParams.idToken
+            val groupedId = loginParams.groupedAuthConnectionId
+            if (!groupedId.isNullOrEmpty()) {
+                val subVerifierInfoArray = arrayOf(
+                    Web3AuthSubVerifierInfo(
+                        loginParams.authConnectionId.toString(),
+                        idToken = loginParams.idToken.toString()
                     )
-                    val subVerifierInfoArray = arrayOf(
-                        Web3AuthSubVerifierInfo(
-                            loginParams.authConnectionId.toString(),
-                            idToken = loginParams.idToken.toString()
-                        )
-                    )
-                    connect(
-                        _loginParams,
-                        baseContext,
-                        subVerifierInfoArray = subVerifierInfoArray
-                    ) // SFA login
-                }
+                )
+                connect(loginParams, baseContext, subVerifierInfoArray)
+            } else {
+                connect(loginParams, baseContext)
             }
-            connect(loginParams, baseContext) // SFA login
         }
 
-        loginCompletableFuture = CompletableFuture()
         return loginCompletableFuture
     }
 
@@ -731,9 +722,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     ) {
         // Drop any prior PnP citadel tokens so initialize()/refreshSession() cannot
         // restore the previous user over this new SFA session-service session.
-        authSessionManager.clearSessionDataAsync().whenComplete { _, _ ->
-            completeSfaConnect(loginParams, subVerifierInfoArray)
-        }
+        SfaConnectFlow.start(
+            future = loginCompletableFuture,
+            clearSession = { authSessionManager.clearSessionDataAsync() },
+            runConnect = { completeSfaConnect(loginParams, subVerifierInfoArray) },
+        )
     }
 
     private fun completeSfaConnect(
@@ -754,23 +747,19 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             torusKey.finalKeyData?.privKey
         }
 
-        var decodedUserInfo: UserInfo?
-
-        try {
+        val decodedUserInfo: UserInfo? = try {
             val jwt = loginParams.idToken?.let { decodeJwt(it) }
-            jwt.let {
-                decodedUserInfo = UserInfo(
-                    email = it?.getClaim("email")?.asString() ?: "",
-                    name = it?.getClaim("name")?.asString() ?: "",
-                    profileImage = it?.getClaim("picture")?.asString() ?: "",
-                    authConnectionId = loginParams.authConnectionId.toString(),
-                    authConnection = AuthConnection.CUSTOM.name.lowercase(Locale.ROOT),
-                    groupedAuthConnectionId = loginParams.groupedAuthConnectionId ?: "",
-                    userId = it?.getClaim("user_id")?.asString() ?: "",
-                )
-            }
+            UserInfo(
+                email = jwt?.getClaim("email")?.asString() ?: "",
+                name = jwt?.getClaim("name")?.asString() ?: "",
+                profileImage = jwt?.getClaim("picture")?.asString() ?: "",
+                authConnectionId = loginParams.authConnectionId.toString(),
+                authConnection = AuthConnection.CUSTOM.name.lowercase(Locale.ROOT),
+                groupedAuthConnectionId = loginParams.groupedAuthConnectionId ?: "",
+                userId = jwt?.getClaim("user_id")?.asString() ?: "",
+            )
         } catch (e: Exception) {
-            throw Exception(Web3AuthError.getError(ErrorCode.INVALID_LOGIN))
+            throw Exception(Web3AuthError.getError(ErrorCode.INVALID_LOGIN), e)
         }
 
         val response = Web3AuthResponse(
@@ -808,14 +797,26 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                             AnalyticsEvents.CONNECTION_COMPLETED,
                             properties
                         )
-                        if (::loginCompletableFuture.isInitialized)
-                            loginCompletableFuture.complete(web3AuthResponse)
+                        completeLoginSuccess(web3AuthResponse)
                     } else {
-                        if (::loginCompletableFuture.isInitialized)
-                            loginCompletableFuture.completeExceptionally(err)
+                        completeLoginExceptionally(err)
                     }
                 }
             }
+    }
+
+    private fun completeLoginSuccess(response: Web3AuthResponse?) {
+        if (::loginCompletableFuture.isInitialized && !loginCompletableFuture.isDone) {
+            loginCompletableFuture.complete(response)
+        }
+    }
+
+    private fun completeLoginExceptionally(error: Throwable?) {
+        if (::loginCompletableFuture.isInitialized && !loginCompletableFuture.isDone) {
+            loginCompletableFuture.completeExceptionally(
+                error ?: Exception(Web3AuthError.getError(ErrorCode.SOMETHING_WENT_WRONG))
+            )
+        }
     }
 
     private fun getTorusKey(
@@ -825,8 +826,16 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         lateinit var retrieveSharesResponse: TorusKey
 
         val userId = getUserIdFromJWT(loginParams.idToken.toString())
+        // Aggregate SFA uses the group verifier id for node lookup / retrieveShares;
+        // non-aggregate uses the connection id. UserInfo still keeps both original fields.
+        val torusAuthConnectionId = if (!subVerifierInfoArray.isNullOrEmpty()) {
+            loginParams.groupedAuthConnectionId?.takeIf { it.isNotEmpty() }
+                ?: loginParams.authConnectionId
+        } else {
+            loginParams.authConnectionId
+        }
         val nodeDetails: NodeDetails =
-            nodeDetailManager.getNodeDetails(loginParams.authConnectionId, userId)
+            nodeDetailManager.getNodeDetails(torusAuthConnectionId, userId)
                 .get()
 
         val endpoints = nodeDetails.torusNodeEndpoints
@@ -864,7 +873,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                     endpoints,
                     indexes,
                     nodePubkeys,
-                    loginParams.authConnectionId.toString(),
+                    torusAuthConnectionId.toString(),
                     verifierParams,
                     aggregateIdToken,
                     null,
@@ -881,7 +890,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                     endpoints,
                     indexes,
                     nodePubkeys,
-                    loginParams.authConnectionId.toString(),
+                    torusAuthConnectionId.toString(),
                     verifierParams,
                     loginParams.idToken.toString(),
                     null,
