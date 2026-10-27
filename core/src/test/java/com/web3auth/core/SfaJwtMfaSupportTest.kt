@@ -9,7 +9,6 @@ import com.web3auth.core.types.Web3AuthError
 import com.web3auth.core.types.ErrorCode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -21,38 +20,43 @@ import org.junit.Test
 class SfaJwtMfaSupportTest {
 
     @Test
-    fun isUpgradedTrue_requiresAuthMfaFlow_doesNotMapToUserAlreadyEnabledThrow() {
-        assertTrue(SfaJwtMfaSupport.requiresAuthMfaFlow(true))
-        // Decision helper must not surface the legacy hard-fail error string as the path.
-        assertNotEquals(
-            Web3AuthError.getError(ErrorCode.USER_ALREADY_ENABLED_MFA),
-            "auth_mfa_flow",
-        )
+    fun jwtConnect_defaultsToAuthFirst_toAvoidTokenIsUsed() {
+        assertTrue(SfaJwtMfaSupport.shouldUseAuthFirstForJwt("firebase-jwt", mfaLevel = null))
+        assertTrue(SfaJwtMfaSupport.shouldUseAuthFirstForJwt("firebase-jwt", mfaLevel = MFALevel.MANDATORY))
+        // Silent local SFA only when app opts out of Auth (known non-MFA).
+        assertFalse(SfaJwtMfaSupport.shouldUseAuthFirstForJwt("firebase-jwt", mfaLevel = MFALevel.NONE))
+        assertFalse(SfaJwtMfaSupport.shouldUseAuthFirstForJwt(null, null))
+    }
+
+    @Test
+    fun buildJwtAuthLoginParams_putsIdTokenInExtraLoginOptions_withoutConsumingSemantics() {
         val params = SfaJwtMfaSupport.buildJwtAuthLoginParams(
             loginParams = sampleJwtLoginParams(),
             loginHint = "firebase-uid-1",
             clientId = "firebase-client",
         )
-        assertEquals(MFALevel.MANDATORY, params.mfaLevel)
+        // Default login does not force mandatory; Auth prompts MFA when needed.
+        assertNull(params.mfaLevel)
         assertEquals("firebase-jwt", params.extraLoginOptions?.id_token)
         assertEquals("firebase-uid-1", params.extraLoginOptions?.login_hint)
         assertEquals("firebase-client", params.extraLoginOptions?.client_id)
     }
 
     @Test
-    fun isUpgradedFalseOrNull_doesNotRequireAuthMfaFlow() {
-        assertFalse(SfaJwtMfaSupport.requiresAuthMfaFlow(false))
-        assertFalse(SfaJwtMfaSupport.requiresAuthMfaFlow(null))
+    fun forceMfaMandatory_setsMfaLevel() {
+        val params = SfaJwtMfaSupport.buildJwtAuthLoginParams(
+            loginParams = sampleJwtLoginParams(),
+            loginHint = "uid",
+            forceMfaMandatory = true,
+        )
+        assertEquals(MFALevel.MANDATORY, params.mfaLevel)
     }
 
     @Test
-    fun nonUpgradedPath_preservesLocalShareSemantics() {
-        // Non-upgraded SFA stays on local getTorusKey — represented here as "no Auth MFA params required".
+    fun isUpgradedFalseOrNull_doesNotRequireAuthMfaFlow() {
         assertFalse(SfaJwtMfaSupport.requiresAuthMfaFlow(false))
-        val original = sampleJwtLoginParams()
-        // Building Auth params is only for upgraded path; original login params stay JWT-only without mfaLevel.
-        assertNull(original.mfaLevel)
-        assertNotNull(original.idToken)
+        assertFalse(SfaJwtMfaSupport.requiresAuthMfaFlow(null))
+        assertTrue(SfaJwtMfaSupport.requiresAuthMfaFlow(true))
     }
 
     @Test
@@ -81,7 +85,6 @@ class SfaJwtMfaSupportTest {
         assertEquals("jwt-from-firebase", authParams.extraLoginOptions?.id_token)
         assertEquals("user-123", authParams.extraLoginOptions?.login_hint)
         assertEquals("client-abc", authParams.extraLoginOptions?.client_id)
-        assertEquals(MFALevel.MANDATORY, authParams.mfaLevel)
     }
 
     @Test

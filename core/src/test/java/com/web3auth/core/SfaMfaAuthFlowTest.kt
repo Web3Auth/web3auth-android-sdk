@@ -9,12 +9,10 @@ import com.web3auth.core.types.Web3AuthError
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Test
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Orchestration tests for SFA connect → Auth MFA vs local share path.
@@ -23,64 +21,42 @@ import java.util.concurrent.atomic.AtomicReference
 class SfaMfaAuthFlowTest {
 
     @Test(timeout = 5_000)
-    fun upgradedSfaConnect_launchesAuthMfa_andDoesNotThrowUserAlreadyEnabledMfa() {
+    fun jwtConnect_authFirst_neverCallsLocalShareBeforeAuth() {
+        val loginParams = LoginParams(
+            authConnection = AuthConnection.CUSTOM,
+            authConnectionId = "w3a-firebase-demo",
+            idToken = "fresh-firebase-jwt",
+        )
+        assertTrue(SfaJwtMfaSupport.shouldUseAuthFirstForJwt(loginParams.idToken, loginParams.mfaLevel))
+
+        val authParams = SfaJwtMfaSupport.buildJwtAuthLoginParams(
+            loginParams = loginParams,
+            loginHint = "uid-1",
+            clientId = "client-1",
+        )
+        // Fresh JWT placed in extras for a single Auth verify — not pre-consumed by Torus.
+        assertEquals("fresh-firebase-jwt", authParams.extraLoginOptions?.id_token)
+        assertEquals("uid-1", authParams.extraLoginOptions?.login_hint)
+    }
+
+    @Test(timeout = 5_000)
+    fun silentSfaOptIn_mfaLevelNone_usesLocalSharePath() {
         val future = CompletableFuture<String>()
         val clearDone = CompletableFuture<Void>().also { it.complete(null) }
-        val authLaunched = AtomicBoolean(false)
-        val authParams = AtomicReference<LoginParams?>(null)
+        val localShareUsed = AtomicBoolean(false)
+
         val loginParams = LoginParams(
             authConnection = AuthConnection.CUSTOM,
             authConnectionId = "w3a-firebase-demo",
             idToken = "firebase-jwt",
+            mfaLevel = MFALevel.NONE,
         )
+        assertFalse(SfaJwtMfaSupport.shouldUseAuthFirstForJwt(loginParams.idToken, loginParams.mfaLevel))
 
         SfaConnectFlow.start(
             future = future,
             clearSession = { clearDone },
             runConnect = {
-                val isUpgraded = true
-                if (SfaJwtMfaSupport.requiresAuthMfaFlow(isUpgraded)) {
-                    authParams.set(
-                        SfaJwtMfaSupport.buildJwtAuthLoginParams(
-                            loginParams = loginParams,
-                            loginHint = "uid-1",
-                            clientId = "client-1",
-                        )
-                    )
-                    authLaunched.set(true)
-                    // Auth redirect completes the login future later (simulated).
-                    future.complete("auth-session")
-                    return@start
-                }
-                fail("must not continue local share path when upgraded")
-            },
-        )
-
-        val result = future.get(2, TimeUnit.SECONDS)
-        assertEquals("auth-session", result)
-        assertTrue(authLaunched.get())
-        assertEquals(MFALevel.MANDATORY, authParams.get()?.mfaLevel)
-        assertEquals("firebase-jwt", authParams.get()?.extraLoginOptions?.id_token)
-        assertFalse(
-            result.contains(Web3AuthError.getError(ErrorCode.USER_ALREADY_ENABLED_MFA))
-        )
-    }
-
-    @Test(timeout = 5_000)
-    fun nonUpgradedSfaConnect_usesLocalSharePath() {
-        val future = CompletableFuture<String>()
-        val clearDone = CompletableFuture<Void>().also { it.complete(null) }
-        val localShareUsed = AtomicBoolean(false)
-        val authLaunched = AtomicBoolean(false)
-
-        SfaConnectFlow.start(
-            future = future,
-            clearSession = { clearDone },
-            runConnect = {
-                if (SfaJwtMfaSupport.requiresAuthMfaFlow(false)) {
-                    authLaunched.set(true)
-                    return@start
-                }
                 localShareUsed.set(true)
                 future.complete("0xlocal-sfa-key")
             },
@@ -88,7 +64,6 @@ class SfaMfaAuthFlowTest {
 
         assertEquals("0xlocal-sfa-key", future.get(2, TimeUnit.SECONDS))
         assertTrue(localShareUsed.get())
-        assertFalse(authLaunched.get())
     }
 
     @Test

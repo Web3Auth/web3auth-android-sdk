@@ -657,12 +657,14 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     }
 
     /**
-     * MFA-upgraded SFA/JWT users open Auth UI (Web parity) instead of failing locally.
+     * Custom JWT login via Auth `/start` (Web `connectWithJwtLogin` parity).
+     * Must run *before* any local Torus `retrieveShares` — that call marks the JWT
+     * used and Auth then fails with "token is used".
      * [loginCompletableFuture] completes from [setResultUrl] after Auth redirect.
      */
-    private fun launchJwtMfaAuthLogin(loginParams: LoginParams) {
+    private fun launchJwtAuthLogin(loginParams: LoginParams, forceMfaMandatory: Boolean = false) {
         actionType = "login"
-        val loginHint = getUserIdFromJWT(loginParams.idToken.toString())
+        val loginHint = loginParams.idToken?.let { getUserIdFromJWT(it) }
             ?: loginParams.loginHint
             ?: loginParams.extraLoginOptions?.login_hint
         val clientId = resolveAuthConnectionClientId(loginParams.authConnectionId)
@@ -670,9 +672,10 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             loginParams = loginParams,
             loginHint = loginHint,
             clientId = clientId,
+            forceMfaMandatory = forceMfaMandatory,
         )
         this.loginParams = authParams
-        // Session namespace switches to citadel Auth flow (not pure SFA share path).
+        // Citadel Auth session (not pure SFA session-service).
         SharedPrefsHelper.putBoolean(IS_SFA, false)
         storageManager = createStorageManager(
             context = baseContext,
@@ -711,9 +714,17 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         actionType = "login"
 
         this.loginParams = loginParams
+        val jwtAuthFirst = SfaJwtMfaSupport.shouldUseAuthFirstForJwt(
+            loginParams.idToken,
+            loginParams.mfaLevel,
+        )
         storageManager = createStorageManager(
             context = baseContext,
-            sessionNamespace = if (!loginParams.idToken.isNullOrEmpty()) "sfa" else resolveSessionNamespace()
+            sessionNamespace = when {
+                jwtAuthFirst -> resolveSessionNamespace()
+                !loginParams.idToken.isNullOrEmpty() -> "sfa"
+                else -> resolveSessionNamespace()
+            }
         )
         authSessionManager = createAuthSessionManager(baseContext)
 
@@ -747,7 +758,19 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 loginParams
             }
             login(pnpParams)
+        } else if (jwtAuthFirst) {
+            // Web parity: custom JWT → Auth /start first. Calling getTorusKey before
+            // Auth consumes the JWT and Auth fails with "token is used".
+            AnalyticsManager.trackEvent(
+                AnalyticsEvents.CONNECTION_STARTED,
+                analyticsProps + mutableMapOf<String, Any>(
+                    "is_sfa" to false,
+                    "is_jwt_auth" to true,
+                )
+            )
+            launchJwtAuthLogin(loginParams)
         } else {
+            // Silent SFA opt-in (mfaLevel=NONE): local shares only — not for MFA users.
             SharedPrefsHelper.putBoolean(IS_SFA, true)
             AnalyticsManager.trackEvent(
                 AnalyticsEvents.CONNECTION_STARTED,
@@ -798,10 +821,11 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             }
         }
 
-        // Web: MFA-upgraded JWT users continue through Auth UI, not a hard error.
+        // Local SFA (mfaLevel=NONE) hit an MFA-upgraded key. The JWT is already
+        // consumed by Torus — do not open Auth with it ("token is used"). Caller
+        // should retry connectTo with a fresh idToken (Auth-first default).
         if (SfaJwtMfaSupport.requiresAuthMfaFlow(torusKey.metadata?.isUpgraded)) {
-            launchJwtMfaAuthLogin(loginParams)
-            return
+            throw Exception(Web3AuthError.getError(ErrorCode.USER_ALREADY_ENABLED_MFA))
         }
 
         val privateKey = if (torusKey.finalKeyData?.privKey?.isEmpty() == true) {

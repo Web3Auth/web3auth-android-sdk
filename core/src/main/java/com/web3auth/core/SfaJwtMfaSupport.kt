@@ -12,19 +12,33 @@ import com.web3auth.core.types.UserInfo
 internal object SfaJwtMfaSupport {
 
     /**
-     * Torus `metadata.isUpgraded == true` means the user already has MFA factors —
-     * Web opens Auth UI; Android must not throw [ErrorCode.USER_ALREADY_ENABLED_MFA].
+     * Torus `metadata.isUpgraded == true` means the user already has MFA factors.
+     * Prefer Auth `/start` with a fresh JWT — never reuse a JWT already passed to
+     * [retrieveShares] (backend returns "token is used").
      */
     fun requiresAuthMfaFlow(isUpgraded: Boolean?): Boolean = isUpgraded == true
 
     /**
-     * Build Auth `/start` login params for an MFA-upgraded JWT user.
-     * Preserves connection ids and JWT credentials in [ExtraLoginOptions].
+     * Custom JWT login goes Auth-first (Web `connectWithJwtLogin`) by default.
+     * Local Torus retrieval first consumes the JWT so Auth MFA then fails with
+     * "token is used". Opt into silent local SFA with [MFALevel.NONE] only when
+     * the user is known not to have MFA.
+     */
+    fun shouldUseAuthFirstForJwt(idToken: String?, mfaLevel: MFALevel? = null): Boolean {
+        if (idToken.isNullOrBlank()) return false
+        if (mfaLevel == MFALevel.NONE) return false
+        return true
+    }
+
+    /**
+     * Build Auth `/start` login params for custom JWT (Web parity).
+     * Puts credentials in [ExtraLoginOptions]; does not force MFA level unless set.
      */
     fun buildJwtAuthLoginParams(
         loginParams: LoginParams,
         loginHint: String?,
         clientId: String? = null,
+        forceMfaMandatory: Boolean = false,
     ): LoginParams {
         val idToken = loginParams.idToken
         val hint = loginHint?.takeIf { it.isNotBlank() }
@@ -32,8 +46,12 @@ internal object SfaJwtMfaSupport {
             ?: loginParams.extraLoginOptions?.login_hint
 
         return loginParams.copy(
-            mfaLevel = MFALevel.MANDATORY,
+            mfaLevel = when {
+                forceMfaMandatory -> MFALevel.MANDATORY
+                else -> loginParams.mfaLevel
+            },
             loginHint = hint,
+            // Top-level idToken stays for SDK callers; Auth reads id_token from extras.
             extraLoginOptions = mergeJwtExtraLoginOptions(
                 existing = loginParams.extraLoginOptions,
                 idToken = idToken,
