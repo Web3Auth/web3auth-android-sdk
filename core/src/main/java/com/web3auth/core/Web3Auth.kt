@@ -243,17 +243,25 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
     private fun processRequest(
         actionType: String, params: LoginParams?
     ) {
-        if ((actionType == "enable_mfa" || actionType == "manage_mfa") && !params?.idToken.isNullOrEmpty()) {
-            throwEnableMFAError(ErrorCode.ENABLE_MFA_NOT_ALLOWED)
-            return
-        }
-
         if (actionType == "enable_mfa" || actionType == "manage_mfa") {
+            // Match Web: MFA needs an active session. JWT/SFA users may only have
+            // session-service state until Auth MFA creates a citadel session — still allow.
             refreshSession().whenComplete { _, error ->
                 if (error != null) {
-                    if (actionType == "enable_mfa") throwEnableMFAError(ErrorCode.NOUSERFOUND)
-                    else throwManageMFAError(ErrorCode.NOUSERFOUND)
-                    return@whenComplete
+                    val jwt = SfaJwtMfaSupport.resolveJwtForMfa(
+                        paramsIdToken = params?.idToken,
+                        paramsExtraIdToken = params?.extraLoginOptions?.id_token,
+                        storedLoginIdToken = this.loginParams?.idToken,
+                        userInfo = web3AuthResponse?.userInfo,
+                    )
+                    val hasLocalSession = StorageManager.getSessionIdFromStorage().isNotBlank() ||
+                        !web3AuthResponse?.privateKey.isNullOrBlank() ||
+                        !web3AuthResponse?.factorKey.isNullOrBlank()
+                    if (!SfaJwtMfaSupport.canLaunchMfaWithoutCitadel(jwt, hasLocalSession)) {
+                        if (actionType == "enable_mfa") throwEnableMFAError(ErrorCode.NOUSERFOUND)
+                        else throwManageMFAError(ErrorCode.NOUSERFOUND)
+                        return@whenComplete
+                    }
                 }
                 launchAuthRequest(actionType, params)
             }
@@ -312,7 +320,21 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 existingExtraLoginOptions =
                     gson.fromJson(extraOptionsString, ExtraLoginOptions::class.java)
             }
-            existingExtraLoginOptions.login_hint = userInfo?.userId
+            val jwt = SfaJwtMfaSupport.resolveJwtForMfa(
+                paramsIdToken = params?.idToken,
+                paramsExtraIdToken = existingExtraLoginOptions.id_token,
+                storedLoginIdToken = this.loginParams?.idToken,
+                userInfo = userInfo,
+            )
+            val clientId = resolveAuthConnectionClientId(
+                userInfo?.authConnectionId ?: params?.authConnectionId
+            )
+            existingExtraLoginOptions = SfaJwtMfaSupport.mergeJwtExtraLoginOptions(
+                existing = existingExtraLoginOptions,
+                idToken = jwt,
+                loginHint = userInfo?.userId,
+                clientId = clientId,
+            )
             initParamsJson.put("extraLoginOptions", gson.toJson(existingExtraLoginOptions))
             initParamsJson.put("mfaLevel", MFALevel.MANDATORY.name.lowercase(Locale.ROOT))
             if (actionType == "manage_mfa") {
@@ -614,6 +636,8 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
 
     private fun persistAuthTokens(sessionResponse: SessionResponse): CompletableFuture<Void> {
         StorageManager.saveSessionIdToStorage(sessionResponse.sessionId)
+        // Auth `/start` success creates a citadel session — leave pure-SFA mode.
+        SharedPrefsHelper.putBoolean(IS_SFA, false)
         return authSessionManager.setTokensAsync(
             AuthTokens(
                 sessionId = sessionResponse.sessionId,
@@ -622,6 +646,39 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 idToken = sessionResponse.idToken,
             )
         )
+    }
+
+    private fun resolveAuthConnectionClientId(authConnectionId: String?): String? {
+        if (authConnectionId.isNullOrBlank()) return null
+        return web3AuthOption.authConnectionConfig
+            ?.firstOrNull { it.authConnectionId == authConnectionId }
+            ?.clientId
+            ?: web3AuthOption.authConnectionConfig?.firstOrNull()?.clientId
+    }
+
+    /**
+     * MFA-upgraded SFA/JWT users open Auth UI (Web parity) instead of failing locally.
+     * [loginCompletableFuture] completes from [setResultUrl] after Auth redirect.
+     */
+    private fun launchJwtMfaAuthLogin(loginParams: LoginParams) {
+        actionType = "login"
+        val loginHint = getUserIdFromJWT(loginParams.idToken.toString())
+            ?: loginParams.loginHint
+            ?: loginParams.extraLoginOptions?.login_hint
+        val clientId = resolveAuthConnectionClientId(loginParams.authConnectionId)
+        val authParams = SfaJwtMfaSupport.buildJwtAuthLoginParams(
+            loginParams = loginParams,
+            loginHint = loginHint,
+            clientId = clientId,
+        )
+        this.loginParams = authParams
+        // Session namespace switches to citadel Auth flow (not pure SFA share path).
+        SharedPrefsHelper.putBoolean(IS_SFA, false)
+        storageManager = createStorageManager(
+            context = baseContext,
+            sessionNamespace = resolveSessionNamespace()
+        )
+        processRequest("login", authParams)
     }
 
     /**
@@ -741,6 +798,12 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             }
         }
 
+        // Web: MFA-upgraded JWT users continue through Auth UI, not a hard error.
+        if (SfaJwtMfaSupport.requiresAuthMfaFlow(torusKey.metadata?.isUpgraded)) {
+            launchJwtMfaAuthLogin(loginParams)
+            return
+        }
+
         val privateKey = if (torusKey.finalKeyData?.privKey?.isEmpty() == true) {
             torusKey.getoAuthKeyData().privKey
         } else {
@@ -757,6 +820,9 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 authConnection = AuthConnection.CUSTOM.name.lowercase(Locale.ROOT),
                 groupedAuthConnectionId = loginParams.groupedAuthConnectionId ?: "",
                 userId = jwt?.getClaim("user_id")?.asString() ?: "",
+                idToken = loginParams.idToken ?: "",
+                oAuthIdToken = loginParams.idToken ?: "",
+                isMfaEnabled = false,
             )
         } catch (e: Exception) {
             throw Exception(Web3AuthError.getError(ErrorCode.INVALID_LOGIN), e)
@@ -902,12 +968,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             )
         }
 
-        val isUpgraded = retrieveSharesResponse.metadata?.isUpgraded
-
-        if (isUpgraded == true) {
-            throw Exception(Web3AuthError.getError(ErrorCode.USER_ALREADY_ENABLED_MFA))
-        }
-
+        // MFA-upgraded keys are handled by the caller (open Auth UI). Do not throw.
         return retrieveSharesResponse
     }
 
@@ -1015,10 +1076,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
             )
         )
         enableMfaCompletableFuture = CompletableFuture()
-        if (SharedPrefsHelper.getBoolean(IS_SFA) || !loginParams?.idToken.isNullOrEmpty()) {
-            throwEnableMFAError(ErrorCode.ENABLE_MFA_NOT_ALLOWED)
-            return enableMfaCompletableFuture
-        }
+        // Match Web Auth: SFA / custom JWT users may enable MFA; only block if already enabled.
         if (web3AuthResponse?.userInfo?.isMfaEnabled == true) {
             throwEnableMFAError(ErrorCode.MFA_ALREADY_ENABLED)
             return enableMfaCompletableFuture
@@ -1046,10 +1104,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         )
         AnalyticsManager.trackEvent(AnalyticsEvents.MFA_MANAGEMENT_SELECTED)
         manageMfaCompletableFuture = CompletableFuture()
-        if (SharedPrefsHelper.getBoolean(IS_SFA) || !loginParams?.idToken.isNullOrEmpty()) {
-            throwManageMFAError(ErrorCode.ENABLE_MFA_NOT_ALLOWED)
-            return manageMfaCompletableFuture
-        }
+        // Match Web Auth: allow manageMFA for JWT/SFA when MFA is already enabled.
         if (web3AuthResponse?.userInfo?.isMfaEnabled == false) {
             throwManageMFAError(ErrorCode.MFA_NOT_ENABLED)
             return manageMfaCompletableFuture
