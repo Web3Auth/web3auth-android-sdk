@@ -88,8 +88,11 @@ class SfaJwtMfaSupportTest {
     }
 
     @Test
-    fun resolveJwtForMfa_prefersParamsThenStoredThenUserInfo() {
-        val user = UserInfo(idToken = "from-userinfo", oAuthIdToken = "from-oauth")
+    fun resolveJwtForMfa_prefersParamsThenStoredThenOAuthOverSessionIdToken() {
+        val user = UserInfo(
+            idToken = "session-id-token",
+            oAuthIdToken = "firebase-oauth-jwt",
+        )
         assertEquals(
             "from-params",
             SfaJwtMfaSupport.resolveJwtForMfa("from-params", null, null, user),
@@ -103,10 +106,71 @@ class SfaJwtMfaSupportTest {
             SfaJwtMfaSupport.resolveJwtForMfa(null, null, "from-stored", user),
         )
         assertEquals(
-            "from-userinfo",
+            "from-stored-extra",
+            SfaJwtMfaSupport.resolveJwtForMfa(
+                null, null, null, user, storedLoginExtraIdToken = "from-stored-extra",
+            ),
+        )
+        // After Auth-first + process death: prefer oAuthIdToken, not session idToken.
+        assertEquals(
+            "firebase-oauth-jwt",
             SfaJwtMfaSupport.resolveJwtForMfa(null, null, null, user),
         )
+        assertEquals(
+            "session-id-token-only",
+            SfaJwtMfaSupport.resolveJwtForMfa(
+                null, null, null, UserInfo(idToken = "session-id-token-only"),
+            ),
+        )
         assertNull(SfaJwtMfaSupport.resolveJwtForMfa(null, null, null, null))
+    }
+
+    @Test
+    fun hasLocalSessionForMfaFallback_usesPreRefreshSnapshotNotWipedResponse() {
+        // Mimics Bugbot: wiped Web3AuthResponse() looks empty; snapshot still has keys.
+        assertTrue(
+            SfaJwtMfaSupport.hasLocalSessionForMfaFallback(
+                storageSessionId = "",
+                privateKey = "0xabc",
+                factorKey = null,
+            )
+        )
+        assertTrue(
+            SfaJwtMfaSupport.hasLocalSessionForMfaFallback(
+                storageSessionId = "sess",
+                privateKey = null,
+                factorKey = null,
+            )
+        )
+        assertFalse(
+            SfaJwtMfaSupport.hasLocalSessionForMfaFallback(
+                storageSessionId = "",
+                privateKey = null,
+                factorKey = null,
+            )
+        )
+        // JWT + pre-refresh local session → can launch MFA without citadel
+        assertTrue(
+            SfaJwtMfaSupport.canLaunchMfaWithoutCitadel(
+                jwt = "firebase-jwt",
+                hasActiveLocalSession = SfaJwtMfaSupport.hasLocalSessionForMfaFallback(
+                    storageSessionId = "",
+                    privateKey = "0xabc",
+                    factorKey = null,
+                ),
+            )
+        )
+        // Same JWT but only wiped/empty state → reject
+        assertFalse(
+            SfaJwtMfaSupport.canLaunchMfaWithoutCitadel(
+                jwt = "firebase-jwt",
+                hasActiveLocalSession = SfaJwtMfaSupport.hasLocalSessionForMfaFallback(
+                    storageSessionId = "",
+                    privateKey = null,
+                    factorKey = null,
+                ),
+            )
+        )
     }
 
     @Test

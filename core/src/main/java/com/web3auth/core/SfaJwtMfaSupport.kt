@@ -81,20 +81,42 @@ internal object SfaJwtMfaSupport {
 
     /**
      * Resolve a JWT for MFA Auth from enable/manage params or the current user.
+     *
+     * Prefer [UserInfo.oAuthIdToken] over [UserInfo.idToken]: after Auth-first login,
+     * `idToken` is often the Web3Auth session JWT, while `oAuthIdToken` holds the
+     * provider / Firebase JWT needed in `extraLoginOptions.id_token`.
      */
     fun resolveJwtForMfa(
         paramsIdToken: String?,
         paramsExtraIdToken: String?,
         storedLoginIdToken: String?,
         userInfo: UserInfo?,
+        storedLoginExtraIdToken: String? = null,
     ): String? {
         return listOf(
             paramsIdToken,
             paramsExtraIdToken,
             storedLoginIdToken,
-            userInfo?.idToken,
+            storedLoginExtraIdToken,
             userInfo?.oAuthIdToken,
+            // Last resort only — may be a session JWT after Auth rehydrate.
+            userInfo?.idToken,
         ).firstOrNull { !it.isNullOrBlank() }
+    }
+
+    /**
+     * Whether in-memory / storage state still counts as a local session for MFA
+     * fallback after citadel refresh fails. Use a **pre-refresh** snapshot —
+     * [refreshSession] wipes [Web3AuthResponse] on failure.
+     */
+    fun hasLocalSessionForMfaFallback(
+        storageSessionId: String?,
+        privateKey: String?,
+        factorKey: String?,
+    ): Boolean {
+        return !storageSessionId.isNullOrBlank() ||
+            !privateKey.isNullOrBlank() ||
+            !factorKey.isNullOrBlank()
     }
 
     /**

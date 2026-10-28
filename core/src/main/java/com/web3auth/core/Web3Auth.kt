@@ -244,23 +244,33 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
         actionType: String, params: LoginParams?
     ) {
         if (actionType == "enable_mfa" || actionType == "manage_mfa") {
-            // Match Web: MFA needs an active session. JWT/SFA users may only have
-            // session-service state until Auth MFA creates a citadel session — still allow.
+            // Snapshot before refreshSession — on failure it clears web3AuthResponse,
+            // which would wipe JWT / authConnection identity needed for Auth MFA.
+            val preRefreshResponse = web3AuthResponse
+            val preRefreshLoginParams = this.loginParams
             refreshSession().whenComplete { _, error ->
                 if (error != null) {
                     val jwt = SfaJwtMfaSupport.resolveJwtForMfa(
                         paramsIdToken = params?.idToken,
                         paramsExtraIdToken = params?.extraLoginOptions?.id_token,
-                        storedLoginIdToken = this.loginParams?.idToken,
-                        userInfo = web3AuthResponse?.userInfo,
+                        storedLoginIdToken = preRefreshLoginParams?.idToken,
+                        userInfo = preRefreshResponse?.userInfo,
+                        storedLoginExtraIdToken = preRefreshLoginParams?.extraLoginOptions?.id_token,
                     )
-                    val hasLocalSession = StorageManager.getSessionIdFromStorage().isNotBlank() ||
-                        !web3AuthResponse?.privateKey.isNullOrBlank() ||
-                        !web3AuthResponse?.factorKey.isNullOrBlank()
+                    val hasLocalSession = SfaJwtMfaSupport.hasLocalSessionForMfaFallback(
+                        storageSessionId = StorageManager.getSessionIdFromStorage(),
+                        privateKey = preRefreshResponse?.privateKey,
+                        factorKey = preRefreshResponse?.factorKey,
+                    )
                     if (!SfaJwtMfaSupport.canLaunchMfaWithoutCitadel(jwt, hasLocalSession)) {
                         if (actionType == "enable_mfa") throwEnableMFAError(ErrorCode.NOUSERFOUND)
                         else throwManageMFAError(ErrorCode.NOUSERFOUND)
                         return@whenComplete
+                    }
+                    // Restore wiped in-memory user so launchAuthRequest still has
+                    // authConnection / oAuthIdToken for Auth MFA params.
+                    if (preRefreshResponse != null) {
+                        web3AuthResponse = preRefreshResponse
                     }
                 }
                 launchAuthRequest(actionType, params)
@@ -325,6 +335,7 @@ class Web3Auth(web3AuthOptions: Web3AuthOptions, context: Context) : WebViewResu
                 paramsExtraIdToken = existingExtraLoginOptions.id_token,
                 storedLoginIdToken = this.loginParams?.idToken,
                 userInfo = userInfo,
+                storedLoginExtraIdToken = this.loginParams?.extraLoginOptions?.id_token,
             )
             val clientId = resolveAuthConnectionClientId(
                 userInfo?.authConnectionId ?: params?.authConnectionId
