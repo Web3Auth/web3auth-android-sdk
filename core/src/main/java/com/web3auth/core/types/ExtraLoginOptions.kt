@@ -8,7 +8,8 @@ import java.io.Serializable
 data class ExtraLoginOptions(
     @Keep private var additionalParams: HashMap<String, String>? = null,
     @Keep private var domain: String? = null,
-    @Keep private var client_id: String? = null,
+    /** Public so JWT / MFA flows can preserve credentials like Web Auth. */
+    @Keep var client_id: String? = null,
     @Keep private var leeway: String? = null,
     @Keep private var userIdField: String? = null,
     @Keep private var isUserIdCaseSensitive: Boolean? = null,
@@ -18,7 +19,8 @@ data class ExtraLoginOptions(
     @Keep private var prompt: Prompt? = null,
     @Keep private var max_age: String? = null,
     @Keep private var ui_locales: String? = null,
-    @Keep private var id_token: String? = null,
+    /** Custom / Firebase JWT for Auth `/start` (SFA + enableMFA). */
+    @Keep var id_token: String? = null,
     @Keep private var id_token_hint: String? = null,
     @Keep var login_hint: String? = null,
     @Keep private var acr_values: String? = null,
